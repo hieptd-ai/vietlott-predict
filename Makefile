@@ -10,7 +10,7 @@ DEPLOY_FOLDER ?= /home/pi/projects/vietlott-data
 BINARY_ARM := bin/vietlott-crawler-arm64
 
 all: lint test
-.PHONY: all requirements-dev test lint build pypi run-crawl run-missing build-crawler build-arm-pi deploy deploy-arm-pi sync-data
+.PHONY: all requirements-dev test lint build pypi run-crawl run-missing build-crawler build-arm-pi deploy deploy-arm-pi sync-data render-analysis
 
 .venv:
 	@echo "Initializing virtual environment..."
@@ -33,6 +33,10 @@ lint: .venv
 build: lint test
 	@echo "Building..."
 	$(UV) run python -m build
+
+# Statistics, strategy backtests and ML evaluation for docs/analysis/ (the analysis dashboard)
+render-analysis:
+	$(UV) run --extra ml python src/machine_learning/render_analysis.py
 
 build-crawler:
 	cd crawler && go build -o ../bin/vietlott-crawler ./cmd/vietlott

@@ -36,6 +36,13 @@ MarkovChainStrategy
     Builds a transition matrix T[a][b] counting how often number ``a``
     in draw ``t`` was followed by number ``b`` in draw ``t+1``, then
     scores candidates based on the previous draw's composition.
+PositionalStrategy
+    Samples each sorted position (order statistic) from its own historical histogram
+    (adapted from thanhnhu/vietlott).
+MLClassifierStrategy
+    Walk-forward scikit-learn classifier (logistic regression, random forest or gradient
+    boosting) estimating, per number, the probability it appears in the next draw from causal
+    frequency / gap features.  Requires the optional ``ml`` extra.
 """
 
 from .base import PredictModel
@@ -43,9 +50,11 @@ from .exponential_decay import ExponentialDecayStrategy
 from .frequency import ColdNumbersStrategy, FrequencyStrategy, HotNumbersStrategy
 from .long_absence import LongAbsenceStrategy
 from .markov_chain import MarkovChainStrategy
+from .ml_classifier import MLClassifierStrategy
 from .not_repeat import NotRepeatStrategy
 from .pair_frequency import PairFrequencyStrategy
 from .pattern import PatternStrategy
+from .positional import PositionalStrategy
 from .random_strategy import RandomModel
 
 __all__ = [
@@ -60,4 +69,6 @@ __all__ = [
     "ExponentialDecayStrategy",
     "PairFrequencyStrategy",
     "MarkovChainStrategy",
+    "PositionalStrategy",
+    "MLClassifierStrategy",
 ]

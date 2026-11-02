@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Phân tích &amp; Dự đoán Vietlott</title>
+        <meta
+            name="description"
+            content="Phân tích thống kê Power 6/55 và Mega 6/45: tần suất, kiểm định ngẫu nhiên, backtest các chiến lược chọn số và đánh giá khả năng dự đoán của mô hình machine learning."
+        />
+        <link rel="canonical" href="https://vietvudanh.github.io/vietlott-data/analysis/" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="../styles.css" />
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>V</text></svg>" />
+        <style>
+            :root {
+                --series-1: #2a78d6;
+                --series-2: #eb6834;
+                --viz-grid: rgba(15, 23, 42, 0.08);
+                --viz-axis: rgba(15, 23, 42, 0.24);
+                --viz-hover: rgba(15, 23, 42, 0.05);
+            }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) {
+                    --series-1: #3987e5;
+                    --series-2: #d95926;
+                    --viz-grid: rgba(255, 255, 255, 0.07);
+                    --viz-axis: rgba(255, 255, 255, 0.2);
+                    --viz-hover: rgba(255, 255, 255, 0.05);
+                }
+            }
+            :root[data-theme="dark"] {
+                --series-1: #3987e5;
+                --series-2: #d95926;
+                --viz-grid: rgba(255, 255, 255, 0.07);
+                --viz-axis: rgba(255, 255, 255, 0.2);
+                --viz-hover: rgba(255, 255, 255, 0.05);
+            }
+            body {
+                background-color: var(--bg-page);
+            }
+
+            .controls-row {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.75rem 1.25rem;
+                margin-bottom: 1.5rem;
+            }
+            .controls-row .controls-label {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                font-weight: 600;
+            }
+            .controls-row .segmented-btn {
+                padding: 0.45rem 0.9rem;
+                font-size: 0.85rem;
+            }
+
+            .kpi-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 1rem;
+            }
+            .kpi {
+                padding: 1.25rem 1.35rem;
+            }
+            .kpi-label {
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .kpi-value {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                margin: 0.35rem 0 0.25rem;
+                font-variant-numeric: tabular-nums;
+            }
+            .kpi-note {
+                font-size: 0.82rem;
+                color: var(--text-secondary);
+            }
+            .verdict {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                font-size: 0.78rem;
+                font-weight: 600;
+                padding: 2px 8px;
+                border-radius: var(--radius-full);
+                border: 1px solid var(--border-default);
+                color: var(--text-secondary);
+                margin-top: 0.4rem;
+            }
+            .verdict::before {
+                content: "";
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+            .grid-2 {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.25rem;
+            }
+            @media (max-width: 900px) {
+                .grid-2 {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+            }
+            .card h3 {
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                margin-bottom: 0.25rem;
+            }
+            .card .card-sub {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                margin-bottom: 0.9rem;
+            }
+            .card-head {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .chart {
+                position: relative;
+                width: 100%;
+                min-height: 120px;
+            }
+            .chart svg {
+                display: block;
+                width: 100%;
+                overflow: visible;
+            }
+            .chart text {
+                font-family: var(--font-sans);
+                font-size: 11px;
+                fill: var(--text-muted);
+            }
+            .chart .hit:hover + .bar,
+            .chart .bar.is-hover {
+                filter: brightness(1.15);
+            }
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                margin-bottom: 0.5rem;
+            }
+            .legend-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+            .legend-swatch {
+                width: 12px;
+                height: 12px;
+                border-radius: 3px;
+                background: var(--series-1);
+            }
+            .legend-line {
+                width: 16px;
+                height: 0;
+                border-top: 2px dashed var(--series-2);
+            }
+
+            .viz-tooltip {
+                position: fixed;
+                z-index: 50;
+                pointer-events: none;
+                background: var(--bg-surface-raised);
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-sm);
+                box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+                padding: 0.5rem 0.65rem;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                min-width: 140px;
+                opacity: 0;
+                transition: opacity 80ms ease;
+            }
+            .viz-tooltip.show {
+                opacity: 1;
+            }
+            .viz-tooltip .tt-title {
+                font-weight: 600;
+                color: var(--text-muted);
+                margin-bottom: 0.25rem;
+            }
+            .viz-tooltip .tt-row {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                white-space: nowrap;
+            }
+            .viz-tooltip .tt-row strong {
+                color: var(--text-primary);
+                font-variant-numeric: tabular-nums;
+            }
+            .tt-key {
+                width: 12px;
+                height: 0;
+                border-top: 2px solid var(--series-1);
+            }
+            .tt-key.alt {
+                border-top-style: dashed;
+                border-top-color: var(--series-2);
+            }
+
+            .hrows {
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+            }
+            .hrow {
+                display: grid;
+                grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 4.2rem;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.84rem;
+            }
+            .hrow-label {
+                color: var(--text-secondary);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .hrow-value {
+                text-align: right;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+                font-size: 0.8rem;
+            }
+            .htrack {
+                position: relative;
+                height: 18px;
+                border-radius: 4px;
+                background: var(--bg-subtle);
+            }
+            .hbar {
+                position: absolute;
+                top: 3px;
+                bottom: 3px;
+                background: var(--series-1);
+                border-radius: 4px;
+            }
+            .hzero,
+            .hthresh {
+                position: absolute;
+                top: -3px;
+                bottom: -3px;
+                width: 0;
+            }
+            .hzero {
+                border-left: 1px solid var(--viz-axis);
+            }
+            .hthresh {
+                border-left: 2px dashed var(--series-2);
+            }
+            .haxis {
+                display: grid;
+                grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 4.2rem;
+                gap: 0.75rem;
+                font-size: 0.72rem;
+                color: var(--text-muted);
+            }
+            .haxis-scale {
+                display: flex;
+                justify-content: space-between;
+            }
+            @media (max-width: 640px) {
+                .hrow,
+                .haxis {
+                    grid-template-columns: minmax(0, 1fr) 3.6rem;
+                }
+                .hrow-label {
+                    grid-column: 1 / -1;
+                }
+                .haxis > span:first-child {
+                    display: none;
+                }
+            }
+
+            .balls {
+                display: inline-flex;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+            }
+            .ball {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                font-family: var(--font-mono);
+                font-weight: 600;
+                font-size: 0.82rem;
+                background: var(--color-brand-subtle);
+                border: 1px solid var(--color-brand-border);
+                color: var(--text-primary);
+            }
+            .ball.bonus {
+                background: transparent;
+                border: 2px dashed var(--cat-orange);
+            }
+            .ticket-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+            .ticket-card h4 {
+                font-size: 0.92rem;
+                color: var(--text-primary);
+                margin-bottom: 0.6rem;
+            }
+            .ticket-card .balls + .balls {
+                margin-top: 0.4rem;
+            }
+            .ticket-card .ticket-line {
+                display: block;
+            }
+
+            .ml-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1rem;
+            }
+            .stats-table,
+            .stats-table table {
+                min-width: 0;
+            }
+            #btTable {
+                min-width: 1180px;
+            }
+            #btTable td,
+            #btTable th {
+                white-space: nowrap;
+            }
+            .metric-list {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 0.35rem 1rem;
+                font-size: 0.85rem;
+                margin: 0.6rem 0 0;
+            }
+            .metric-list dt {
+                color: var(--text-muted);
+            }
+            .metric-list dd {
+                margin: 0;
+                text-align: right;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+            }
+
+            details.table-view {
+                margin-top: 0.9rem;
+            }
+            details.table-view summary {
+                cursor: pointer;
+                font-size: 0.85rem;
+                color: var(--color-brand);
+                font-weight: 600;
+            }
+            details.table-view .stats-table {
+                margin-top: 0.75rem;
+                max-height: 360px;
+                overflow: auto;
+            }
+            .stats-table table td,
+            .stats-table table th {
+                padding: 0.55rem 0.85rem;
+            }
+            .num {
+                font-family: var(--font-mono);
+                font-variant-numeric: tabular-nums;
+            }
+            .muted {
+                color: var(--text-muted);
+            }
+            .note {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                margin-top: 0.75rem;
+            }
+            .note strong {
+                color: var(--text-primary);
+            }
+            .loading-state {
+                padding: 3rem 0;
+                text-align: center;
+                color: var(--text-muted);
+            }
+            .is-hidden {
+                display: none !important;
+            }
+            .method-list {
+                margin: 0.5rem 0 0 1.1rem;
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+                display: grid;
+                gap: 0.4rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="ambient-glow" aria-hidden="true"></div>
+        <header class="top-nav-wrapper">
+            <div class="container">
+                <nav class="top-nav" aria-label="Main Navigation">
+                    <a href="../" class="brand-link">
+                        <div class="brand-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+                            </svg>
+                        </div>
+                        <span>Vietlott Data</span>
+                        <span class="brand-version">ML</span>
+                    </a>
+                    <ul class="nav-menu">
+                        <li><a href="#overview" class="nav-link">Tổng quan</a></li>
+                        <li><a href="#frequency" class="nav-link">Tần suất</a></li>
+                        <li><a href="#distribution" class="nav-link">Phân phối</a></li>
+                        <li><a href="#backtest" class="nav-link">Backtest</a></li>
+                        <li><a href="#ml" class="nav-link">Machine Learning</a></li>
+                        <li><a href="#tickets" class="nav-link">Gợi ý vé</a></li>
+                    </ul>
+                    <div class="nav-actions">
+                        <button class="icon-btn theme-toggle-btn" id="themeToggleBtn" aria-label="Chuyển chế độ sáng / tối">
+                            <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                            <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="hero-section" id="overview">
+                <div class="hero-pill">
+                    <span class="status-dot"></span>
+                    <span>Thống kê · Backtest · Machine Learning</span>
+                </div>
+                <h1 class="hero-title">Phân tích &amp; dự đoán xổ số Vietlott</h1>
+                <p class="hero-subtitle">
+                    Mỗi con số trên trang này được đặt cạnh giá trị kỳ vọng của một lần quay hoàn toàn ngẫu nhiên, để bạn thấy dữ liệu thực tế lệch khỏi may rủi bao nhiêu và các mô hình dự đoán thực sự làm được gì.
+                </p>
+                <div class="badges" id="heroBadges"></div>
+            </section>
+
+            <div class="controls-row" role="group" aria-label="Chọn sản phẩm">
+                <span class="controls-label">Sản phẩm</span>
+                <div class="segmented-control" id="productSwitch"></div>
+            </div>
+
+            <div id="loading" class="loading-state">Đang tải dữ liệu phân tích…</div>
+
+            <div id="content" class="is-hidden">
+                <section class="section">
+                    <div class="kpi-grid" id="kpis"></div>
+                </section>
+
+                <section class="section" id="frequency">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Tần suất</span>
+                        <h2 class="section-title">Mỗi số đã xuất hiện bao nhiêu lần?</h2>
+                        <p class="section-description">Chỉ tính 6 số chính; số đặc biệt của Power 6/55 được tách riêng.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-head">
+                            <div>
+                                <h3 id="freqTitle">Số lần xuất hiện theo từng số</h3>
+                                <p class="card-sub" id="freqSub"></p>
+                            </div>
+                            <div class="segmented-control" id="freqSwitch" role="group" aria-label="Khoảng thời gian">
+                                <button class="segmented-btn active" data-window="all">Toàn bộ</button>
+                                <button class="segmented-btn" data-window="recent">100 kỳ gần nhất</button>
+                            </div>
+                        </div>
+                        <div class="chart" id="freqChart"></div>
+                        <p class="note" id="freqNote"></p>
+                        <details class="table-view">
+                            <summary>Xem dạng bảng</summary>
+                            <div class="stats-table"><table id="freqTable"></table></div>
+                        </details>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Số kỳ chưa về của từng số</h3>
+                        <p class="card-sub" id="gapSub"></p>
+                        <div class="chart" id="gapChart"></div>
+                        <p class="note">
+                            "Số lâu chưa về" không có xác suất ra cao hơn ở kỳ tới: mỗi kỳ quay độc lập với các kỳ trước (ngộ nhận của người chơi, <em>gambler's fallacy</em>).
+                        </p>
+                    </div>
+                </section>
+
+                <section class="section" id="distribution">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Phân phối</span>
+                        <h2 class="section-title">Kết quả có "giống ngẫu nhiên" không?</h2>
+                        <p class="section-description">Cột: số kỳ quan sát được. Đường đứt nét: số kỳ kỳ vọng tính chính xác từ phân phối siêu bội (hypergeometric).</p>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Tổng 6 số</h3>
+                            <p class="card-sub" id="sumSub"></p>
+                            <div class="chart" id="sumChart"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Số lượng số lẻ trong một kỳ</h3>
+                            <p class="card-sub">Bao nhiêu trong 6 số chính là số lẻ</p>
+                            <div class="chart" id="oddChart"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Số lượng số nhỏ trong một kỳ</h3>
+                            <p class="card-sub" id="lowSub"></p>
+                            <div class="chart" id="lowChart"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Số trùng giữa 2 kỳ liên tiếp</h3>
+                            <p class="card-sub" id="overlapSub"></p>
+                            <div class="chart" id="overlapChart"></div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Cặp số hay đi cùng nhau nhất</h3>
+                        <p class="card-sub" id="pairSub"></p>
+                        <div class="stats-table"><table id="pairTable"></table></div>
+                        <p class="note" id="pairNote"></p>
+                    </div>
+                </section>
+
+                <section class="section" id="backtest">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Backtest walk-forward</span>
+                        <h2 class="section-title">Các chiến lược chọn số có thắng được may rủi không?</h2>
+                        <p class="section-description" id="btDesc"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Mức lệch so với vé ngẫu nhiên (z-score)</h3>
+                        <p class="card-sub">
+                            Cột đi về bên phải nghĩa là trúng trung bình nhiều số hơn vé ngẫu nhiên. Vạch đứt nét là ngưỡng có ý nghĩa thống kê sau hiệu chỉnh Bonferroni, vì có nhiều chiến lược được so sánh cùng lúc.
+                        </p>
+                        <div class="chart" id="zChart"></div>
+                        <p class="note" id="zNote"></p>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Chi tiết kết quả backtest</h3>
+                        <p class="card-sub">Chấm thưởng theo cơ cấu giải thật (jackpot tính ở mức khởi điểm). Số đặc biệt chỉ dùng để xét Jackpot 2.</p>
+                        <div class="stats-table"><table id="btTable"></table></div>
+                    </div>
+                </section>
+
+                <section class="section" id="ml">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Machine Learning</span>
+                        <h2 class="section-title">Mô hình có học được quy luật nào không?</h2>
+                        <p class="section-description" id="mlDesc"></p>
+                    </div>
+                    <div class="ml-grid" id="mlCards"></div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Xác suất mô hình dự đoán cho kỳ tới</h3>
+                        <p class="card-sub" id="probSub"></p>
+                        <div class="chart" id="probChart"></div>
+                        <p class="note" id="probNote"></p>
+                    </div>
+                    <div class="grid-2" style="margin-top: 1.25rem">
+                        <div class="card">
+                            <h3>Hiệu chuẩn (calibration)</h3>
+                            <p class="card-sub">Chia dự đoán thành 5 nhóm theo xác suất, rồi so tỉ lệ dự đoán với tỉ lệ thực tế ra số</p>
+                            <div class="stats-table"><table id="calTable"></table></div>
+                        </div>
+                        <div class="card">
+                            <h3>Mức ảnh hưởng của đặc trưng</h3>
+                            <p class="card-sub" id="impSub"></p>
+                            <div class="stats-table"><table id="impTable"></table></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="tickets">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Gợi ý vé kỳ tới</span>
+                        <h2 class="section-title">Vé mẫu từ từng chiến lược</h2>
+                        <p class="section-description">Chỉ để tham khảo và thử nghiệm. Mọi bộ 6 số đều có cùng xác suất trúng như nhau.</p>
+                    </div>
+                    <div class="ticket-grid" id="ticketGrid"></div>
+                </section>
+
+                <section class="section">
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Kết quả gần đây</h3>
+                            <p class="card-sub" id="recentSub"></p>
+                            <div class="stats-table"><table id="recentTable"></table></div>
+                        </div>
+                        <div class="card">
+                            <h3>Cơ cấu giải &amp; xác suất trúng của 1 vé</h3>
+                            <p class="card-sub" id="tierSub"></p>
+                            <div class="stats-table"><table id="tierTable"></table></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="card">
+                        <h3>Phương pháp</h3>
+                        <ul class="method-list">
+                            <li><strong>Không nhìn trước tương lai:</strong> mọi chiến lược và mô hình chỉ dùng các kỳ quay <em>trước</em> kỳ được dự đoán (walk-forward). Mô hình ML được huấn luyện lại định kỳ.</li>
+                            <li><strong>Đặc trưng ML</strong> cho từng cặp (kỳ, số): tần suất trong 10/30/100 kỳ gần nhất, tần suất toàn bộ, số kỳ chưa về, có ra ở kỳ trước hay không. Nhãn: số đó có ra ở kỳ này không.</li>
+                            <li><strong>Kiểm định đồng đều χ²</strong> đã hiệu chỉnh cho việc quay không hoàn lại (mỗi kỳ có 6 số khác nhau), với N−1 bậc tự do.</li>
+                            <li><strong>z-score backtest</strong> lấy sai số chuẩn theo trung bình từng kỳ, vì các vé của cùng một chiến lược trong cùng một kỳ thường giống nhau. Ngưỡng Bonferroni có tính đến số chiến lược được so sánh.</li>
+                            <li>Tài liệu nghiên cứu chi tiết: <a href="https://github.com/hieptd-ai/vietlott-predict/blob/main/docs/ML_RESEARCH.md" target="_blank" rel="noreferrer">docs/ML_RESEARCH.md</a>.</li>
+                        </ul>
+                    </div>
+                    <div class="disclaimer">
+                        <div>
+                            <h4>Lưu ý về tính ngẫu nhiên</h4>
+                            <p>Các kỳ quay Vietlott là độc lập và ngẫu nhiên. Không chiến lược hay mô hình nào ở đây có lợi thế bền vững so với chọn ngẫu nhiên, và kỳ vọng hoàn vốn của mỗi vé luôn âm. Trang này chỉ phục vụ học tập và nghiên cứu thống kê, không phải lời khuyên mua vé.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container footer-content">
+                <div><strong>Vietlott Data</strong> · Phân tích &amp; ML · Mã nguồn MIT</div>
+                <div class="footer-links">
+                    <a href="../">Trang chủ</a>
+                    <a href="../power-6-55/">Power 6/55</a>
+                    <a href="../mega-6-45/">Mega 6/45</a>
+                    <a href="analysis.json">analysis.json</a>
+                </div>
+            </div>
+        </footer>
+
+        <div class="viz-tooltip" id="tooltip" role="tooltip"></div>
+
+        <script>
+            (function () {
+                function getPreferredTheme() {
+                    try {
+                        const stored = localStorage.getItem("vietlott-theme");
+                        if (stored) return stored;
+                    } catch (e) {}
+                    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                function setTheme(theme) {
+                    document.documentElement.setAttribute("data-theme", theme);
+                    try {
+                        localStorage.setItem("vietlott-theme", theme);
+                    } catch (e) {}
+                }
+                setTheme(getPreferredTheme());
+                document.getElementById("themeToggleBtn").addEventListener("click", function () {
+                    const current = document.documentElement.getAttribute("data-theme") || "light";
+                    setTheme(current === "dark" ? "light" : "dark");
+                });
+            })();
+        </script>
+        <script src="analysis-data.js"></script>
+        <script>
+            (function () {
+                "use strict";
+                const SVG_NS = "http://www.w3.org/2000/svg";
+                const nf = new Intl.NumberFormat("vi-VN");
+                const nf1 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+                const nf2 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+                const nf3 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 3, minimumFractionDigits: 3 });
+                const nf4 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 4, minimumFractionDigits: 4 });
+                const tooltip = document.getElementById("tooltip");
+                const state = { data: null, product: null, freqWindow: "all" };
+                const renderers = [];
+
+                // ---------------------------------------------------------------- helpers
+                function el(tag, attrs, children) {
+                    const node = document.createElement(tag);
+                    if (attrs) {
+                        for (const [k, v] of Object.entries(attrs)) {
+                            if (k === "text") node.textContent = v;
+                            else if (k === "class") node.className = v;
+                            else node.setAttribute(k, v);
+                        }
+                    }
+                    (children || []).forEach(function (c) {
+                        node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+                    });
+                    return node;
+                }
+                function svg(tag, attrs) {
+                    const node = document.createElementNS(SVG_NS, tag);
+                    for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+                    return node;
+                }
+                function setText(id, text) {
+                    document.getElementById(id).textContent = text;
+                }
+                function money(v) {
+                    if (Math.abs(v) >= 1e9) return nf1.format(v / 1e9) + " tỷ";
+                    if (Math.abs(v) >= 1e6) return nf1.format(v / 1e6) + " triệu";
+                    return nf.format(v) + " đ";
+                }
+                function pval(p) {
+                    if (p === null || p === undefined) return "—";
+                    if (p < 0.001) return "< 0,001";
+                    return nf3.format(p);
+                }
+                function signed(v, f) {
+                    return (v > 0 ? "+" : "") + (f || nf2).format(v);
+                }
+                function balls(main, bonus) {
+                    const wrap = el("span", { class: "balls" });
+                    main.forEach(function (n) {
+                        wrap.appendChild(el("span", { class: "ball", text: String(n).padStart(2, "0") }));
+                    });
+                    if (bonus !== null && bonus !== undefined) {
+                        wrap.appendChild(el("span", { class: "ball bonus", text: String(bonus).padStart(2, "0"), title: "Số đặc biệt" }));
+                    }
+                    return wrap;
+                }
+                function fillTable(id, headers, rows) {
+                    const table = document.getElementById(id);
+                    table.replaceChildren();
+                    const thead = el("thead");
+                    const tr = el("tr");
+                    headers.forEach(function (h) {
+                        tr.appendChild(el("th", { text: h }));
+                    });
+                    thead.appendChild(tr);
+                    const tbody = el("tbody");
+                    rows.forEach(function (r) {
+                        const row = el("tr");
+                        r.forEach(function (cell) {
+                            const td = el("td");
+                            if (cell instanceof Node) td.appendChild(cell);
+                            else td.textContent = cell;
+                            row.appendChild(td);
+                        });
+                        tbody.appendChild(row);
+                    });
+                    table.append(thead, tbody);
+                }
+                function verdict(text) {
+                    return el("span", { class: "verdict", text: text });
+                }
+
+                // ---------------------------------------------------------------- tooltip
+                function showTip(evt, title, rows) {
+                    tooltip.replaceChildren(el("div", { class: "tt-title", text: title }));
+                    rows.forEach(function (r) {
+                        tooltip.appendChild(el("div", { class: "tt-row" }, [el("span", { class: "tt-key" + (r.alt ? " alt" : "") }), el("strong", { text: r.value }), el("span", { text: r.label })]));
+                    });
+                    tooltip.classList.add("show");
+                    moveTip(evt);
+                }
+                function moveTip(evt) {
+                    const pad = 14;
+                    const rect = tooltip.getBoundingClientRect();
+                    let x = evt.clientX + pad;
+                    let y = evt.clientY + pad;
+                    if (x + rect.width > window.innerWidth - 8) x = evt.clientX - rect.width - pad;
+                    if (y + rect.height > window.innerHeight - 8) y = evt.clientY - rect.height - pad;
+                    tooltip.style.left = Math.max(8, x) + "px";
+                    tooltip.style.top = Math.max(8, y) + "px";
+                }
+                function hideTip() {
+                    tooltip.classList.remove("show");
+                }
+
+                // ---------------------------------------------------------------- charts
+                function niceMax(v) {
+                    if (v <= 0) return 1;
+                    const exp = Math.pow(10, Math.floor(Math.log10(v)));
+                    const f = v / exp;
+                    const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+                    return nice * exp;
+                }
+
+                // Vertical bars (observed) with an optional expected series (dashed line + markers).
+                function barChart(containerId, opts) {
+                    const container = document.getElementById(containerId);
+                    function draw() {
+                        container.replaceChildren();
+                        const labels = opts.labels;
+                        const values = opts.values;
+                        const n = labels.length;
+                        const expected = opts.expected;
+                        const expArr = Array.isArray(expected) ? expected : expected !== undefined && expected !== null ? labels.map(function () { return expected; }) : null;
+                        if (expArr) {
+                            container.appendChild(
+                                el("div", { class: "legend" }, [
+                                    el("span", { class: "legend-item" }, [el("span", { class: "legend-swatch" }), opts.seriesLabel || "Thực tế"]),
+                                    el("span", { class: "legend-item" }, [el("span", { class: "legend-line" }), opts.expectedLabel || "Kỳ vọng nếu ngẫu nhiên"]),
+                                ]),
+                            );
+                        }
+                        const width = Math.max(280, container.clientWidth);
+                        const height = opts.height || 220;
+                        const m = { top: 10, right: 8, bottom: 26, left: 44 };
+                        const pw = width - m.left - m.right;
+                        const ph = height - m.top - m.bottom;
+                        const maxV = niceMax(Math.max.apply(null, values.concat(expArr || [])) * 1.05);
+                        const y = function (v) { return m.top + ph - (v / maxV) * ph; };
+                        const band = pw / n;
+                        const gap = Math.min(2, band * 0.25);
+                        const bw = Math.max(1, band - gap * 2);
+                        const root = svg("svg", { viewBox: "0 0 " + width + " " + height, height: height, role: "img", "aria-label": opts.ariaLabel || "" });
+
+                        const ticks = 4;
+                        for (let i = 0; i <= ticks; i++) {
+                            const v = (maxV / ticks) * i;
+                            root.appendChild(svg("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: i === 0 ? "var(--viz-axis)" : "var(--viz-grid)", "stroke-width": 1 }));
+                            const t = svg("text", { x: m.left - 6, y: y(v) + 4, "text-anchor": "end" });
+                            t.textContent = (opts.yFormat || nf.format)(v);
+                            root.appendChild(t);
+                        }
+                        const maxLabelChars = Math.max.apply(null, labels.map(function (l) { return String(l).length; }));
+                        const step = Math.max(1, Math.ceil((maxLabelChars * 6.5 + 6) / band));
+                        const bars = [];
+                        labels.forEach(function (label, i) {
+                            const v = values[i];
+                            const x = m.left + i * band + gap;
+                            const top = y(v);
+                            const h = Math.max(0, m.top + ph - top);
+                            const r = Math.min(4, bw / 2, h);
+                            const base = m.top + ph;
+                            const d = h <= 0 ? "" : "M" + x + "," + base + " V" + (top + r) + " Q" + x + "," + top + " " + (x + r) + "," + top + " H" + (x + bw - r) + " Q" + (x + bw) + "," + top + " " + (x + bw) + "," + (top + r) + " V" + base + " Z";
+                            const bar = svg("path", { d: d, fill: "var(--series-1)", class: "bar" });
+                            if (opts.highlight && !opts.highlight(i)) bar.setAttribute("fill-opacity", "0.45");
+                            root.appendChild(bar);
+                            bars.push(bar);
+                            if (i % step === 0) {
+                                const t = svg("text", { x: x + bw / 2, y: height - 8, "text-anchor": "middle" });
+                                t.textContent = label;
+                                root.appendChild(t);
+                            }
+                        });
+                        if (expArr) {
+                            if (Array.isArray(expected)) {
+                                const pts = expArr.map(function (v, i) { return m.left + i * band + band / 2 + "," + y(v); }).join(" ");
+                                root.appendChild(svg("polyline", { points: pts, fill: "none", stroke: "var(--series-2)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+                                if (n <= 20) {
+                                    expArr.forEach(function (v, i) {
+                                        root.appendChild(svg("circle", { cx: m.left + i * band + band / 2, cy: y(v), r: 4, fill: "var(--series-2)", stroke: "var(--bg-surface)", "stroke-width": 2 }));
+                                    });
+                                }
+                            } else {
+                                root.appendChild(svg("line", { x1: m.left, x2: width - m.right, y1: y(expected), y2: y(expected), stroke: "var(--series-2)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+                            }
+                        }
+                        labels.forEach(function (label, i) {
+                            const hit = svg("rect", { x: m.left + i * band, y: m.top, width: band, height: ph, fill: "transparent" });
+                            hit.addEventListener("pointerenter", function (evt) {
+                                bars[i].classList.add("is-hover");
+                                const rows = [{ value: (opts.valueFormat || nf.format)(values[i]), label: opts.seriesLabel || "thực tế" }];
+                                if (expArr) rows.push({ value: (opts.valueFormat || nf1.format)(expArr[i]), label: "kỳ vọng", alt: true });
+                                if (opts.extraRows) opts.extraRows(i).forEach(function (r) { rows.push(r); });
+                                showTip(evt, (opts.tooltipTitle || function (l) { return l; })(label, i), rows);
+                            });
+                            hit.addEventListener("pointermove", moveTip);
+                            hit.addEventListener("pointerleave", function () {
+                                bars[i].classList.remove("is-hover");
+                                hideTip();
+                            });
+                            root.appendChild(hit);
+                        });
+                        container.appendChild(root);
+                    }
+                    draw();
+                    renderers.push(draw);
+                }
+
+                // Horizontal bars around zero (z-scores) with symmetric threshold markers.
+                function zChart(containerId, rows, threshold) {
+                    const container = document.getElementById(containerId);
+                    container.replaceChildren();
+                    const maxAbs = Math.max(threshold * 1.25, Math.max.apply(null, rows.map(function (r) { return Math.abs(r.z); })) * 1.1);
+                    const pos = function (v) { return ((v + maxAbs) / (2 * maxAbs)) * 100; };
+                    const list = el("div", { class: "hrows" });
+                    rows.forEach(function (r) {
+                        const track = el("div", { class: "htrack" });
+                        const left = Math.min(pos(0), pos(r.z));
+                        const w = Math.abs(pos(r.z) - pos(0));
+                        const bar = el("div", { class: "hbar" });
+                        bar.style.left = left + "%";
+                        bar.style.width = Math.max(w, 0.4) + "%";
+                        const zero = el("div", { class: "hzero" });
+                        zero.style.left = pos(0) + "%";
+                        const t1 = el("div", { class: "hthresh" });
+                        t1.style.left = pos(threshold) + "%";
+                        const t2 = el("div", { class: "hthresh" });
+                        t2.style.left = pos(-threshold) + "%";
+                        track.append(zero, t1, t2, bar);
+                        const row = el("div", { class: "hrow" }, [el("span", { class: "hrow-label", text: r.name, title: r.name }), track, el("span", { class: "hrow-value", text: signed(r.z) })]);
+                        row.addEventListener("pointerenter", function (evt) {
+                            showTip(evt, r.name, [
+                                { value: signed(r.z), label: "z-score" },
+                                { value: nf4.format(r.avg_matches), label: "số trúng TB / vé" },
+                                { value: pval(r.p_adjusted), label: "p sau hiệu chỉnh", alt: true },
+                            ]);
+                        });
+                        row.addEventListener("pointermove", moveTip);
+                        row.addEventListener("pointerleave", hideTip);
+                        list.appendChild(row);
+                    });
+                    const axis = el("div", { class: "haxis" }, [
+                        el("span"),
+                        el("span", { class: "haxis-scale" }, [el("span", { text: signed(-maxAbs, nf1) }), el("span", { text: "0" }), el("span", { text: signed(maxAbs, nf1) })]),
+                        el("span"),
+                    ]);
+                    container.append(list, axis);
+                }
+
+                // ---------------------------------------------------------------- sections
+                function renderProduct() {
+                    renderers.length = 0;
+                    const p = state.data.products[state.product];
+                    const latestBonus = p.has_bonus ? p.latest.bonus : null;
+
+                    // KPIs
+                    const bestMl = p.ml.models.reduce(function (a, b) { return Math.abs(b.auc - 0.5) > Math.abs(a.auc - 0.5) ? b : a; });
+                    const kpis = document.getElementById("kpis");
+                    kpis.replaceChildren();
+                    function kpi(label, value, note, extra) {
+                        const card = el("div", { class: "card kpi" }, [el("div", { class: "kpi-label", text: label })]);
+                        if (value instanceof Node) {
+                            const wrap = el("div", { class: "kpi-value" });
+                            wrap.appendChild(value);
+                            card.appendChild(wrap);
+                        } else card.appendChild(el("div", { class: "kpi-value", text: value }));
+                        card.appendChild(el("div", { class: "kpi-note", text: note }));
+                        if (extra) card.appendChild(extra);
+                        kpis.appendChild(card);
+                    }
+                    kpi("Số kỳ quay", nf.format(p.n_draws), p.date_from + " → " + p.date_to);
+                    kpi("Kỳ mới nhất #" + p.latest.id, balls(p.latest.main, latestBonus), p.latest.date);
+                    const u = p.frequency.uniformity;
+                    kpi("Kiểm định đồng đều χ²", "p = " + pval(u.p_value), "χ² = " + nf1.format(u.chi2) + " với " + u.dof + " bậc tự do", verdict(u.p_value >= 0.05 ? "Phù hợp với ngẫu nhiên" : "Lệch đáng chú ý"));
+                    const ind = p.independence;
+                    kpi("Độc lập giữa 2 kỳ", "p = " + pval(ind.p_value), "Trùng TB " + nf3.format(ind.mean_overlap) + " số (kỳ vọng " + nf3.format(ind.expected_overlap) + ")", verdict(ind.p_value >= 0.05 ? "Không thấy phụ thuộc" : "Có dấu hiệu phụ thuộc"));
+                    kpi("ROC-AUC của ML", nf3.format(bestMl.auc), "Mô hình " + bestMl.model + ". Giá trị 0,5 tương đương đoán ngẫu nhiên", verdict(Math.abs(bestMl.auc - 0.5) < 0.03 ? "Không có tín hiệu" : "Cần kiểm tra thêm"));
+                    kpi("Hoàn vốn kỳ vọng / vé", nf1.format(p.backtest.expected_roi) + "%", "Lý thuyết cho mọi cách chọn số, với jackpot ở mức khởi điểm");
+
+                    // Frequency
+                    const f = p.frequency;
+                    const recent = state.freqWindow === "recent";
+                    const counts = recent ? f.recent_counts : f.counts;
+                    const exp = recent ? f.recent_expected : f.expected;
+                    setText("freqSub", recent ? f.recent_window + " kỳ gần nhất · kỳ vọng " + nf1.format(exp) + " lần/số" : p.n_draws + " kỳ · kỳ vọng " + nf1.format(exp) + " lần/số");
+                    barChart("freqChart", {
+                        labels: f.numbers,
+                        values: counts,
+                        expected: exp,
+                        seriesLabel: "Số lần xuất hiện",
+                        ariaLabel: "Tần suất xuất hiện của từng số",
+                        tooltipTitle: function (l) { return "Số " + l; },
+                        extraRows: function (i) { return [{ value: signed((counts[i] - exp) / Math.sqrt(exp * (1 - p.pick / (p.range[1] - p.range[0] + 1))), nf2), label: "độ lệch (σ)" }]; },
+                    });
+                    const sorted = f.numbers.map(function (n, i) { return { n: n, c: counts[i] }; }).sort(function (a, b) { return b.c - a.c; });
+                    const sd = Math.sqrt(exp * (1 - p.pick / (p.range[1] - p.range[0] + 1)));
+                    document.getElementById("freqNote").replaceChildren(
+                        "Nhiều nhất: ", el("strong", { text: "số " + sorted[0].n + " (" + sorted[0].c + " lần)" }),
+                        ". Ít nhất: ", el("strong", { text: "số " + sorted[sorted.length - 1].n + " (" + sorted[sorted.length - 1].c + " lần)" }),
+                        ". Với " + (p.range[1] - p.range[0] + 1) + " số, việc số nhiều nhất và ít nhất lệch khoảng ±2–3σ (σ ≈ " + nf1.format(sd) + ") so với kỳ vọng là bình thường, kể cả khi lồng cầu hoàn toàn công bằng.",
+                    );
+                    fillTable("freqTable", ["Số", "Toàn bộ", f.recent_window + " kỳ gần", "Số kỳ chưa về"], f.numbers.map(function (n, i) {
+                        return [String(n), nf.format(f.counts[i]), nf.format(f.recent_counts[i]), nf.format(f.gaps[i])];
+                    }));
+
+                    const gapCut = f.gaps.slice().sort(function (a, b) { return b - a; })[9];
+                    setText("gapSub", "Khoảng cách trung bình kỳ vọng giữa 2 lần về: " + nf1.format(f.expected_gap) + " kỳ · tô đậm 10 số lâu chưa về nhất");
+                    barChart("gapChart", {
+                        labels: f.numbers,
+                        values: f.gaps,
+                        expected: f.expected_gap,
+                        seriesLabel: "Số kỳ chưa về",
+                        expectedLabel: "Khoảng cách trung bình kỳ vọng",
+                        valueFormat: nf.format,
+                        ariaLabel: "Số kỳ chưa về của từng số",
+                        height: 200,
+                        highlight: function (i) { return f.gaps[i] >= gapCut; },
+                        tooltipTitle: function (l) { return "Số " + l; },
+                    });
+
+                    // Distribution
+                    const sh = p.shape;
+                    setText("sumSub", "Trung bình thực tế " + nf1.format(sh.sum.mean_observed) + " · kỳ vọng " + nf1.format(sh.sum.mean_expected));
+                    barChart("sumChart", { labels: sh.sum.labels, values: sh.sum.observed, expected: sh.sum.expected, seriesLabel: "Số kỳ", ariaLabel: "Phân phối tổng 6 số", height: 210, tooltipTitle: function (l) { return "Tổng " + l; } });
+                    barChart("oddChart", { labels: sh.odd.k, values: sh.odd.observed, expected: sh.odd.expected, seriesLabel: "Số kỳ", ariaLabel: "Phân phối số lẻ", height: 210, tooltipTitle: function (l) { return l + " số lẻ"; } });
+                    setText("lowSub", "Số nhỏ là các số ≤ " + sh.low.cut);
+                    barChart("lowChart", { labels: sh.low.k, values: sh.low.observed, expected: sh.low.expected, seriesLabel: "Số kỳ", ariaLabel: "Phân phối số nhỏ", height: 210, tooltipTitle: function (l) { return l + " số nhỏ"; } });
+                    setText("overlapSub", "Trung bình " + nf3.format(ind.mean_overlap) + " số trùng (kỳ vọng " + nf3.format(ind.expected_overlap) + ") · z = " + signed(ind.z) + " · p = " + pval(ind.p_value));
+                    barChart("overlapChart", { labels: ind.k, values: ind.observed, expected: ind.expected, seriesLabel: "Số cặp kỳ", ariaLabel: "Số trùng giữa hai kỳ liên tiếp", height: 210, tooltipTitle: function (l) { return l + " số trùng"; } });
+
+                    const pr = p.pairs;
+                    setText("pairSub", "Kỳ vọng mỗi cặp: " + nf1.format(pr.expected) + " lần · có " + nf.format(pr.n_pairs) + " cặp có thể");
+                    fillTable("pairTable", ["Cặp số", "Số lần", "Lệch (σ)"], pr.top.map(function (r) { return [balls(r.pair, null), nf.format(r.count), signed(r.z)]; }));
+                    document.getElementById("pairNote").textContent =
+                        "Khi so " + nf.format(pr.n_pairs) + " cặp cùng lúc, việc cặp đứng đầu lệch +3σ đến +4σ hoàn toàn có thể chỉ là do may rủi. Kết quả này không chứng minh có \"cặp số hay đi cùng nhau\".";
+
+                    // Backtest
+                    const bt = p.backtest;
+                    setText("btDesc", bt.window_draws + " kỳ gần nhất (" + bt.date_from + " → " + bt.date_to + "), mỗi chiến lược mua " + bt.tickets_per_draw + " vé/kỳ. Vé ngẫu nhiên trúng trung bình " + nf4.format(bt.expected_avg_matches) + " số/vé.");
+                    const ranked = bt.strategies.slice().sort(function (a, b) { return b.z - a.z; });
+                    zChart("zChart", ranked, bt.bonferroni_z);
+                    const sig = ranked.filter(function (r) { return Math.abs(r.z) >= bt.bonferroni_z; });
+                    document.getElementById("zNote").replaceChildren(
+                        "Ngưỡng có ý nghĩa sau hiệu chỉnh: |z| ≥ ", el("strong", { text: nf2.format(bt.bonferroni_z) }), ". ",
+                        sig.length === 0
+                            ? "Không chiến lược nào vượt ngưỡng, tức là không phân biệt được với chọn ngẫu nhiên."
+                            : sig.length + " chiến lược vượt ngưỡng trong cửa sổ này. Hãy xem lại kết quả với cửa sổ backtest khác trước khi kết luận, vì đây có thể là ngẫu nhiên.",
+                    );
+                    const tierKeys = p.tiers.map(function (t) { return t.key; });
+                    fillTable(
+                        "btTable",
+                        ["Chiến lược", "Vé", "Trúng TB/vé", "z", "p (hiệu chỉnh)"].concat(p.tiers.map(function (t) { return t.label.split(" (")[0]; })).concat(["Chi", "Thu", "ROI"]),
+                        ranked.map(function (r) {
+                            return [r.name, nf.format(r.tickets), nf4.format(r.avg_matches), signed(r.z), pval(r.p_adjusted)]
+                                .concat(tierKeys.map(function (k) { return nf.format(r.tiers[k] || 0); }))
+                                .concat([money(r.cost), money(r.gain), nf1.format(r.roi) + "%"]);
+                        }),
+                    );
+
+                    // ML
+                    const ml = p.ml;
+                    setText("mlDesc", "Đánh giá walk-forward trên " + ml.eval_draws + " kỳ gần nhất, huấn luyện lại sau mỗi " + ml.refit_every + " kỳ. Mức nền: mỗi số có xác suất ra " + nf4.format(ml.base_rate) + " trong một kỳ.");
+                    const cards = document.getElementById("mlCards");
+                    cards.replaceChildren();
+                    const names = { logistic: "Logistic Regression", random_forest: "Random Forest", gbm: "Gradient Boosting" };
+                    ml.models.forEach(function (m) {
+                        const dl = el("dl", { class: "metric-list" });
+                        function item(k, v) { dl.append(el("dt", { text: k }), el("dd", { text: v })); }
+                        item("ROC-AUC (nền 0,5)", nf4.format(m.auc));
+                        item("Log-loss", nf4.format(m.log_loss));
+                        item("Log-loss mức nền", nf4.format(ml.baseline.log_loss));
+                        const delta = ((m.log_loss - ml.baseline.log_loss) / ml.baseline.log_loss) * 100;
+                        item("Chênh log-loss", signed(delta, nf3) + "%");
+                        item("Brier", nf4.format(m.brier));
+                        item("Trúng TB với top-" + p.pick, nf3.format(m.top_hits) + " / " + nf3.format(ml.baseline.top_hits));
+                        item("Xác suất dự đoán", nf3.format(m.prob_min) + " – " + nf3.format(m.prob_max));
+                        const v = Math.abs(delta) < 0.1 && Math.abs(m.auc - 0.5) < 0.03 ? "Ngang mức nền, không có tín hiệu" : delta < 0 ? "Tốt hơn mức nền, cần kiểm chứng" : "Kém hơn mức nền";
+                        cards.appendChild(el("div", { class: "card" }, [el("h3", { text: names[m.model] || m.model }), verdict(v), dl]));
+                    });
+                    const logistic = ml.models.find(function (m) { return m.model === "logistic"; }) || ml.models[0];
+                    setText("probSub", "Mô hình " + (names[logistic.model] || logistic.model) + " huấn luyện trên toàn bộ lịch sử");
+                    const probs = logistic.next_draw_probs;
+                    barChart("probChart", {
+                        labels: f.numbers,
+                        values: probs,
+                        expected: ml.base_rate,
+                        seriesLabel: "Xác suất dự đoán",
+                        expectedLabel: "Mức nền " + p.pick + "/" + (p.range[1] - p.range[0] + 1),
+                        yFormat: function (v) { return nf.format(Math.round(v * 100)) + "%"; },
+                        valueFormat: function (v) { return nf2.format(v * 100) + "%"; },
+                        ariaLabel: "Xác suất mô hình dự đoán cho từng số",
+                        height: 200,
+                        tooltipTitle: function (l) { return "Số " + l; },
+                    });
+                    const pmax = Math.max.apply(null, probs);
+                    const pmin = Math.min.apply(null, probs);
+                    document.getElementById("probNote").textContent =
+                        "Xác suất dự đoán chỉ dao động trong khoảng " + nf2.format(pmin * 100) + "% – " + nf2.format(pmax * 100) + "%, sát mức nền " + nf2.format(ml.base_rate * 100) + "%. Mô hình gần như không phân biệt được số nào dễ ra hơn số nào.";
+                    fillTable("calTable", ["Nhóm", "Dự đoán TB", "Thực tế", "Số mẫu"], logistic.calibration.map(function (c, i) {
+                        return [String(i + 1), nf2.format(c.predicted * 100) + "%", nf2.format(c.observed * 100) + "%", nf.format(c.n)];
+                    }));
+                    const featLabels = { freq_last_10: "Tần suất 10 kỳ", freq_last_30: "Tần suất 30 kỳ", freq_last_100: "Tần suất 100 kỳ", freq_all: "Tần suất toàn bộ", gap_draws: "Số kỳ chưa về", in_last_draw: "Có ở kỳ trước" };
+                    const gb = ml.models.find(function (m) { return m.model === "random_forest"; }) || ml.models[ml.models.length - 1];
+                    setText("impSub", "Hệ số chuẩn hoá của Logistic Regression và độ quan trọng của " + (names[gb.model] || gb.model));
+                    fillTable("impTable", ["Đặc trưng", "Hệ số LR", "Quan trọng " + (gb.model === "random_forest" ? "RF" : "GB")], ml.features.map(function (k) {
+                        return [featLabels[k] || k, signed(logistic.importance[k] || 0, nf4), gb.importance[k] !== undefined ? nf3.format(gb.importance[k]) : "—"];
+                    }));
+
+                    // Tickets
+                    const grid = document.getElementById("ticketGrid");
+                    grid.replaceChildren();
+                    p.suggestions.forEach(function (s) {
+                        const card = el("div", { class: "card ticket-card" }, [el("h4", { text: s.name })]);
+                        s.tickets.forEach(function (t) { card.appendChild(balls(t, null)); });
+                        grid.appendChild(card);
+                    });
+
+                    // Recent & tiers
+                    setText("recentSub", p.has_bonus ? "Vòng tròn nét đứt là số đặc biệt" : "12 kỳ gần nhất");
+                    fillTable("recentTable", ["Kỳ", "Ngày", "Kết quả"], p.recent.map(function (r) { return ["#" + r.id, r.date, balls(r.main, p.has_bonus ? r.bonus : null)]; }));
+                    setText("tierSub", "Giá vé " + nf.format(p.ticket_price) + " đ. Xác suất tính chính xác cho một vé ngẫu nhiên");
+                    fillTable("tierTable", ["Giải", "Giá trị", "Xác suất"], p.tiers.map(function (t) { return [t.label, money(t.value), "1 / " + nf.format(Math.round(t.odds))]; }));
+                }
+
+                function setupSwitches() {
+                    const sw = document.getElementById("productSwitch");
+                    sw.replaceChildren();
+                    Object.keys(state.data.products).forEach(function (key) {
+                        const b = el("button", { class: "segmented-btn" + (key === state.product ? " active" : ""), text: state.data.products[key].title, "data-key": key });
+                        b.addEventListener("click", function () {
+                            state.product = key;
+                            sw.querySelectorAll("button").forEach(function (x) { x.classList.toggle("active", x.dataset.key === key); });
+                            try { localStorage.setItem("vietlott-analysis-product", key); } catch (e) {}
+                            renderProduct();
+                        });
+                        sw.appendChild(b);
+                    });
+                    document.querySelectorAll("#freqSwitch button").forEach(function (b) {
+                        b.addEventListener("click", function () {
+                            state.freqWindow = b.dataset.window;
+                            document.querySelectorAll("#freqSwitch button").forEach(function (x) { x.classList.toggle("active", x === b); });
+                            renderProduct();
+                        });
+                    });
+                }
+
+                function start(data) {
+                    state.data = data;
+                    const keys = Object.keys(data.products);
+                    let saved = null;
+                    try { saved = localStorage.getItem("vietlott-analysis-product"); } catch (e) {}
+                    state.product = keys.indexOf(saved) >= 0 ? saved : keys[0];
+                    const badges = document.getElementById("heroBadges");
+                    badges.replaceChildren(el("span", { class: "badge badge-green" }, [el("span", { text: "Cập nhật: " + data.generated_at.replace("T", " ").slice(0, 16) })]));
+                    keys.forEach(function (k) {
+                        badges.appendChild(el("span", { class: "badge" }, [el("span", { text: data.products[k].title + ": " + nf.format(data.products[k].n_draws) + " kỳ" })]));
+                    });
+                    setupSwitches();
+                    document.getElementById("loading").classList.add("is-hidden");
+                    document.getElementById("content").classList.remove("is-hidden");
+                    renderProduct();
+                    let timer = null;
+                    window.addEventListener("resize", function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () { renderers.forEach(function (r) { r(); }); }, 150);
+                    });
+                }
+
+                if (window.VIETLOTT_ANALYSIS) start(window.VIETLOTT_ANALYSIS);
+                else
+                    fetch("analysis.json")
+                        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+                        .then(start)
+                        .catch(function () {
+                            document.getElementById("loading").textContent = "Chưa có dữ liệu phân tích. Hãy chạy: uv run --extra ml python src/machine_learning/render_analysis.py";
+                        });
+            })();
+        </script>
+    </body>
+</html>

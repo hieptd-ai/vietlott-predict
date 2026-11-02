@@ -8,6 +8,7 @@ on:
       - "data/**"
       - "docs/**"
       - "src/vietlott/render_docs.py"
+      - "src/machine_learning/**"
       - "crawler/internal/render/**"
       - ".github/workflows/deploy-pages.yml"
   schedule:
@@ -43,7 +44,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --extra dev --extra ml
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -52,6 +53,9 @@ jobs:
 
       - name: Generate docs
         run: cd crawler && go run ./cmd/vietlott render-docs && cd .. && uv run --extra dev pytest src/vietlott/tests/test_freshness.py
+
+      - name: Generate analysis & ML dashboard data
+        run: uv run --extra dev --extra ml python src/machine_learning/render_analysis.py
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

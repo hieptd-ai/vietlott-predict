@@ -25,3 +25,12 @@ The Go crawler runs via scheduled execution on local/on-premise hardware (see `b
 - `vietlott-missing`: Detect and backfill missing draws.
 - `vietlott-render-readme`: Update repository README with current data statistics.
 - `vietlott-render-docs`: Update `docs/index.html` with current data statistics.
+## Analysis & ML Dashboard
+
+`src/machine_learning/` holds the prediction strategies and the analysis pipeline behind `docs/analysis/`:
+
+- `games.py`: prize tiers and exact hypergeometric probabilities for Power 6/55 and Mega 6/45. The Power 6/55 bonus number only decides Jackpot 2.
+- `features.py` + `strategies/ml_classifier.py`: causal per-number features and walk-forward scikit-learn classifiers.
+- `analysis.py` + `render_analysis.py`: frequency and randomness tests, strategy backtests and ML evaluation. They write `docs/analysis/analysis.json` and `analysis-data.js`.
+
+Regenerate with `make render-analysis`. The Deploy GitHub Pages workflow also does this before every deploy. Research notes are in [docs/ML_RESEARCH.md](docs/ML_RESEARCH.md).

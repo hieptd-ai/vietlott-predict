@@ -41,6 +41,7 @@ vietlott-crawl = "vietlott.cli.crawl:crawl"
 vietlott-missing = "vietlott.cli.missing:detect_missing_data"
 vietlott-render-readme = "vietlott.render_readme:main"
 vietlott-render-docs = "vietlott.render_docs:main"
+vietlott-render-analysis = "machine_learning.render_analysis:main"
 
 [tool.ruff]
 line-length = 120

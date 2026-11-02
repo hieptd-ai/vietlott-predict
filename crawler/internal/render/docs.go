@@ -23,15 +23,14 @@ const blogPostBadge = `
                         >
                     </a>`
 
-const mlReadmeURL = "https://github.com/vietvudanh/vietlott-data/blob/main/src/machine_learning"
+// analysisURL is the static analysis & ML dashboard rendered from src/machine_learning/render_analysis.py.
+const analysisURL = "analysis/"
 const benchmarkURL = "https://github.com/vietvudanh/vietlott-data/blob/main/docs/BENCHMARK.md"
 
 const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
             <section class="section">
                 <a
-                    href="` + mlReadmeURL + `"
-                    target="_blank"
-                    rel="noreferrer"
+                    href="` + analysisURL + `"
                     class="ml-card-banner"
                 >
                     <div class="ml-card-content">
@@ -39,8 +38,8 @@ const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
                         </div>
                         <div class="ml-card-text">
-                            <h3 data-vi="Phân tích Machine Learning →" data-en="Machine Learning Analysis →">Phân tích Machine Learning →</h3>
-                            <p data-vi="Khám phá các mô hình dự đoán và backtest dữ liệu xổ số Vietlott" data-en="Explore prediction models and backtesting for Vietlott lottery data">Khám phá các mô hình dự đoán và backtest dữ liệu xổ số Vietlott</p>
+                            <h3 data-vi="Phân tích &amp; Dự đoán (Machine Learning) →" data-en="Analysis &amp; Prediction (Machine Learning) →">Phân tích &amp; Dự đoán (Machine Learning) →</h3>
+                            <p data-vi="Tần suất, kiểm định ngẫu nhiên, backtest chiến lược và đánh giá mô hình ML cho Power 6/55, Mega 6/45" data-en="Frequencies, randomness tests, strategy backtests and ML model evaluation for Power 6/55 and Mega 6/45">Tần suất, kiểm định ngẫu nhiên, backtest chiến lược và đánh giá mô hình ML cho Power 6/55, Mega 6/45</p>
                         </div>
                     </div>
                     <div class="ml-card-arrow">
@@ -267,6 +266,7 @@ func renderSitemap(latestDate string) string {
 		{"https://vietvudanh.github.io/vietlott-data/bingo18/", "0.8"},
 		{"https://vietvudanh.github.io/vietlott-data/data-schema/", "0.8"},
 		{"https://vietvudanh.github.io/vietlott-data/python-examples/", "0.8"},
+		{"https://vietvudanh.github.io/vietlott-data/analysis/", "0.7"},
 	}
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")

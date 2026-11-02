@@ -125,7 +125,7 @@ def test_sitemap_and_dedicated_pages_exist() -> None:
     assert "llms.txt" not in sitemap_xml, "llms.txt should not be in sitemap.xml"
 
     urls = re.findall(r"<loc>(https://vietvudanh\.github\.io/vietlott-data/[^<]*)</loc>", sitemap_xml)
-    assert len(urls) == 11, f"Expected 11 canonical URLs in sitemap.xml, found {len(urls)}"
+    assert len(urls) == 12, f"Expected 12 canonical URLs in sitemap.xml, found {len(urls)}"
 
     prefix = "https://vietvudanh.github.io/vietlott-data/"
     for url in urls:
@@ -137,4 +137,4 @@ def test_sitemap_and_dedicated_pages_exist() -> None:
 
     root_index = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
     assert "noindex, nofollow" in root_index
-    print("Verified all 11 sitemap pages exist with self-referential canonicals.")
+    print("Verified all 12 sitemap pages exist with self-referential canonicals.")

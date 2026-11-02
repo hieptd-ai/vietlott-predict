@@ -17,6 +17,7 @@ except ImportError:
     HAS_MATPLOTLIB = False
     logger.warning("Matplotlib not available. Visualization features will be disabled.")
 
+from machine_learning.games import POWER_655
 from machine_learning.strategies.base import PredictModel
 
 
@@ -321,13 +322,9 @@ class StrategyBacktester:
         self.ticket_price = ticket_price
         self.min_history_days = min_history_days
 
-        # Prize structure for Power 6/55
-        self.prizes = {
-            6: 40_000_000_000,  # Jackpot
-            5: 5_000_000_000,  # Second prize
-            4: 500_000,  # Third prize
-            3: 50_000,  # Fourth prize
-        }
+        # Prize tiers for Power 6/55 (minimum jackpot values); the bonus number only decides Jackpot 2.
+        self.game = POWER_655
+        self.prizes = {tier.matches: tier.value for tier in self.game.tiers if not tier.needs_bonus}
 
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
         """
@@ -584,33 +581,36 @@ class StrategyBacktester:
                 progress_callback(i, total_rows, f"Processing {row['date']}")
 
             try:
-                predicted = strategy.predict(row["date"])
-                actual = row["result"]
+                main_numbers, bonus = self.game.split(row["result"])
 
-                # Validate prediction result
-                if not isinstance(predicted, list) or len(predicted) != strategy.number_predict:
-                    logger.warning(
-                        f"Invalid prediction for date {row['date']}: "
-                        f"Expected list of {strategy.number_predict} numbers, got {predicted}"
+                # Score every ticket bought for this draw so cost and revenue cover the same tickets
+                for _ in range(max(1, strategy.time_predict)):
+                    predicted = strategy.predict(row["date"])
+
+                    # Validate prediction result
+                    if not isinstance(predicted, list) or len(predicted) != strategy.number_predict:
+                        logger.warning(
+                            f"Invalid prediction for date {row['date']}: "
+                            f"Expected list of {strategy.number_predict} numbers, got {predicted}"
+                        )
+                        continue
+
+                    matches, bonus_hit, tier = self.game.score(predicted, main_numbers + ([bonus] if bonus else []))
+                    cost = self.ticket_price
+                    revenue = tier.value if tier else 0
+
+                    results.append(
+                        {
+                            "date": row["date"],
+                            "predicted": predicted,
+                            "actual": main_numbers,
+                            "matches": matches,
+                            "bonus_hit": bonus_hit,
+                            "cost": cost,
+                            "revenue": revenue,
+                            "profit": revenue - cost,
+                        }
                     )
-                    continue
-
-                # Calculate matches
-                matches = len(set(predicted) & set(actual))
-                cost = self.ticket_price * strategy.time_predict
-                revenue = self._calculate_revenue(matches)
-
-                results.append(
-                    {
-                        "date": row["date"],
-                        "predicted": predicted,
-                        "actual": actual,
-                        "matches": matches,
-                        "cost": cost,
-                        "revenue": revenue,
-                        "profit": revenue - cost,
-                    }
-                )
 
             except Exception as e:
                 # Handle error gracefully
