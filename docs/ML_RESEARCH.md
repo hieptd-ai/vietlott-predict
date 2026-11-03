@@ -251,6 +251,20 @@ Log-loss của mọi mô hình bằng hoặc **kém hơn** mô hình hằng số
    - Dashboard tự gắn nhãn cho phương pháp đứng đầu bảng (theo số trúng trung bình), kèm cảnh báo "không có ý nghĩa thống kê".
    - Cách duy nhất để biết một phương pháp có lợi thế thật là theo dõi **nhật ký dự đoán** qua nhiều kỳ trong tương lai. Kỳ vọng là thứ hạng sẽ xáo trộn liên tục.
 
+## 5d. Gợi ý trên trang chủ: 20 bộ "xác suất cao nhất" và 10 bộ "dễ trúng nhất"
+
+- **20 bộ có xác suất ra cao nhất (theo mô hình):**
+  - Lấy trung bình xác suất ra của từng số từ 3 mô hình ML (Logistic, Gradient Boosting, ML đa nguồn), được huấn luyện lại trên toàn bộ dữ liệu sau mỗi kỳ.
+  - Coi các số là độc lập: điểm của một bộ là tổng log xác suất của 6 số. Xét mọi tổ hợp 6 số trong 14 số có xác suất cao nhất, rồi lấy 20 bộ điểm cao nhất (`top_probability_tickets`).
+  - Hệ số `×r` là mức cao hơn vé ngẫu nhiên *theo mô hình*. Thực tế r chỉ khoảng 1,0–1,2, vì các mô hình gần như không phân biệt được số nào dễ ra hơn (AUC ≈ 0,5).
+- **10 bộ dễ trúng nhất:**
+  - Là 10 vé kỳ tới của phương pháp đứng đầu bảng so sánh năm 2026 (nhiều số trúng nhất mỗi vé khi chơi 10 vé mỗi kỳ).
+  - Hiện là "Tránh số vừa ra" cho 6/55 và "Lâu chưa về" cho 6/45.
+- **Ghi lại và thẩm định:**
+  - Cả 30 bộ được ghi vào nhật ký trước giờ quay (`picks_top20`, `picks_best10`) và được chấm tự động khi có kết quả.
+  - Trang chủ hiển thị kết quả thẩm định kỳ trước và kết quả lũy kế.
+  - Đây là cách trung thực để kiểm chứng: nếu các bộ "xác suất cao" không thực sự trúng nhiều hơn vé ngẫu nhiên qua nhiều kỳ, chúng không có giá trị dự đoán.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 làm sản phẩm được dự đoán (hiện chỉ dùng làm nguồn dữ liệu phụ) sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.
