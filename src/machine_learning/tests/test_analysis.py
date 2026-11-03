@@ -14,7 +14,10 @@ import pytest
 
 from machine_learning.analysis import (
     analyse_game,
+    decode_tickets,
+    encode_tickets,
     hypergeom_pmf,
+    play_simulation,
     prepare_draws,
     sum_distribution,
 )
@@ -195,9 +198,39 @@ def test_analyse_game_payload(tmp_path):
     assert len(payload["ml"]["models"][0]["next_draw_probs"]) == 55
     assert len(payload["suggestions"]) == 2
     assert payload["latest"]["bonus"] is not None
+    assert payload["tiers"][1]["needs_bonus"] is True and payload["tiers"][1]["matches"] == 5
+    assert payload["simulation"]["start_date"] == "2026-01-01"
 
     write_analysis({"generated_at": "now", "products": {"power_655": payload}}, tmp_path)
     data = json.loads((tmp_path / "analysis.json").read_text(encoding="utf-8"))
     assert data["products"]["power_655"]["title"] == "Power 6/55"
     assert (tmp_path / "analysis-data.js").read_text(encoding="utf-8").startswith("window.VIETLOTT_ANALYSIS = ")
     print("analysis payload is complete and serialisable")
+
+
+def test_ticket_encoding_roundtrip():
+    tickets = [[1, 9, 22, 33, 41, 55], [3, 4, 5, 6, 7, 8]]
+    packed = encode_tickets(tickets)
+    assert packed == "010922334155" + "030405060708"
+    assert decode_tickets(packed, 6) == tickets
+    print("tickets pack into 2-digit strings and back")
+
+
+def test_play_simulation_is_walk_forward_and_deterministic():
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    start = df["date"].iloc[60]
+    strategies = [("random", "Random", lambda d, g: RandomModel(d, min_val=g.min_val, max_val=g.max_val))]
+    sim = play_simulation(df, POWER_655, strategies, start_date=start, max_tickets=4, seed=5)
+    assert sim["start_date"] == str(start)
+    assert len(sim["draws"]) == 30
+    assert sim["draws"][0]["date"] == str(start)
+    assert all(d["bonus"] is not None for d in sim["draws"])
+    row = sim["strategies"][0]
+    assert len(row["tickets"]) == 30
+    for packed in row["tickets"] + [row["next"]]:
+        tickets = decode_tickets(packed, 6)
+        assert len(tickets) == 4
+        assert all(len(set(t)) == 6 and all(1 <= n <= 55 for n in t) for t in tickets)
+    again = play_simulation(df, POWER_655, strategies, start_date=start, max_tickets=4, seed=5)
+    assert again == sim
+    print("simulation covers every draw since the start date and is reproducible")

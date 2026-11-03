@@ -458,6 +458,61 @@ def suggestions(
     return out
 
 
+def encode_tickets(tickets: Sequence[Sequence[int]]) -> str:
+    """Pack tickets as one string of zero-padded 2-digit numbers (``pick`` numbers per ticket)."""
+    return "".join(f"{int(n):02d}" for ticket in tickets for n in sorted(ticket))
+
+
+def decode_tickets(packed: str, pick: int) -> List[List[int]]:
+    """Inverse of :func:`encode_tickets`."""
+    numbers = [int(packed[i : i + 2]) for i in range(0, len(packed), 2)]
+    return [numbers[i : i + pick] for i in range(0, len(numbers), pick)]
+
+
+def play_simulation(
+    df: pd.DataFrame,
+    game: GameSpec,
+    strategies: Sequence[Tuple[str, str, StrategyFactory]],
+    start_date: date = date(2026, 1, 1),
+    max_tickets: int = 10,
+    seed: int = 42,
+) -> dict:
+    """Tickets every strategy would have bought for each draw since ``start_date`` (walk-forward).
+
+    Each strategy predicts ``max_tickets`` tickets per draw using only earlier draws, plus
+    ``max_tickets`` tickets for the next, not-yet-drawn result.  The dashboard scores them in the
+    browser, so a visitor can choose the strategy, tickets per draw and start date and see the
+    profit or loss draw by draw.  Tickets are packed with :func:`encode_tickets`.
+    """
+    played = df[df["date"] >= start_date]
+    next_date = df["date"].iloc[-1] + timedelta(days=1)
+    rows = []
+    for index, (key, name, factory) in enumerate(strategies):
+        random.seed(seed + index)
+        np.random.seed(seed + index)
+        started = time.time()
+        try:
+            model = factory(df, game)
+        except Exception as exc:
+            logger.warning(f"skip simulation for {key}: {exc}")
+            continue
+        per_draw = [encode_tickets([model.predict(d) for _ in range(max_tickets)]) for d in played["date"].tolist()]
+        upcoming = encode_tickets([model.predict(next_date) for _ in range(max_tickets)])
+        rows.append({"key": key, "name": name, "tickets": per_draw, "next": upcoming})
+        logger.info(f"{game.key} simulation {key}: {len(per_draw)} draws in {time.time() - started:.1f}s")
+    return {
+        "start_date": str(start_date),
+        "max_tickets": max_tickets,
+        "next_date": str(next_date),
+        "draws": [
+            {"id": r.id, "date": str(r.date), "main": list(r.result), "bonus": _int(r.bonus)}
+            for r in played.itertuples(index=False)
+        ],
+        "expected_value": game.expected_value(),
+        "strategies": rows,
+    }
+
+
 def analyse_game(
     df: pd.DataFrame,
     game: GameSpec,
@@ -467,6 +522,8 @@ def analyse_game(
     seed: int = 42,
     strategies: Optional[Sequence[Tuple[str, str, StrategyFactory]]] = None,
     ml_models: Sequence[str] = ("logistic", "random_forest", "gbm"),
+    simulation_start: date = date(2026, 1, 1),
+    simulation_tickets: int = 10,
 ) -> dict:
     """Full analysis block for one game."""
     random.seed(seed)
@@ -487,6 +544,8 @@ def analyse_game(
             {
                 "key": t.key,
                 "label": t.label,
+                "matches": t.matches,
+                "needs_bonus": t.needs_bonus,
                 "value": t.value,
                 "probability": probs[t.key],
                 "odds": 1 / probs[t.key] if probs[t.key] else None,
@@ -508,6 +567,7 @@ def analyse_game(
         "backtest": backtest_strategies(df, game, strategies, backtest_window, tickets_per_draw),
         "ml": ml_predictability(df, game, ml_models, ml_eval_draws, seed=seed),
         "suggestions": suggestions(df, game, strategies),
+        "simulation": play_simulation(df, game, strategies, simulation_start, simulation_tickets, seed),
     }
 
 
