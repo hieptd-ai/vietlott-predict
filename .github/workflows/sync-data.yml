@@ -3,7 +3,8 @@ name: Sync data from upstream
 # Vietlott blocks non-Vietnam IPs, so GitHub runners cannot crawl vietlott.vn themselves.
 # Instead this pulls the daily-updated NDJSON files from the upstream project
 # (vietvudanh/vietlott-data, crawled from Vietnam), re-renders README/docs, commits the
-# result to main and triggers a Pages deploy.
+# result to main and triggers a Pages deploy. After every new draw it also re-trains every prediction
+# method on all known draws and records its tickets for the next draw in predictions/<product>.jsonl.
 on:
   schedule:
     # upstream commits at ~00:01 and ~12:01 UTC
@@ -81,18 +82,37 @@ jobs:
           go run ./cmd/vietlott render-readme
           go run ./cmd/vietlott render-docs
 
+      # re-train every method on all known draws and record the next-draw tickets (idempotent:
+      # nothing is written when a prediction after the latest draw already exists)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Predict the next draw
+        run: |
+          uv python install 3.11
+          uv sync --extra ml
+          uv run python src/machine_learning/predict_next.py
+
       - name: Commit & push
-        if: steps.merge.outputs.changed == 'true'
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data readme.md docs index.html
-          git commit -m "sync data from ${UPSTREAM_REPO} @ $(date -u +'%Y-%m-%d %H:%M:%S')"
+          git add data readme.md docs index.html predictions
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "sync data from ${UPSTREAM_REPO} and record next-draw predictions @ $(date -u +'%Y-%m-%d %H:%M:%S')"
           git push origin HEAD:main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
 
       # pushes made with GITHUB_TOKEN do not start other workflows, so dispatch the deploy explicitly
       - name: Trigger Pages deploy
-        if: steps.merge.outputs.changed == 'true'
+        if: steps.commit.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy-pages.yml --ref main --repo "${{ github.repository }}"
