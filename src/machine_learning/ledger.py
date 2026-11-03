@@ -51,6 +51,10 @@ def append_prediction(prediction: dict, generated_at: str, ledger_dir: Optional[
             {"key": r["key"], "name": r["name"], "tickets": [list(map(int, t)) for t in r["tickets"]]}
             for r in prediction["strategies"]
         ],
+        "picks": {
+            role: {k: v for k, v in meta.items() if k != "number_probabilities"}
+            for role, meta in prediction.get("picks", {}).items()
+        },
     }
     path = ledger_path(product, ledger_dir)
     path.parent.mkdir(parents=True, exist_ok=True)

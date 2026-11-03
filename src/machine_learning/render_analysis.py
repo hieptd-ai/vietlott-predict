@@ -39,11 +39,27 @@ def _compact(value, digits: int = 6):
 
 
 def write_analysis(payload: dict, out_dir: Path) -> None:
-    """Write ``analysis.json`` and ``analysis-data.js`` into ``out_dir``."""
+    """Write ``analysis.json`` / ``analysis-data.js`` and the homepage's ``picks.json`` / ``picks.js``."""
     out_dir.mkdir(parents=True, exist_ok=True)
     text = json.dumps(_compact(payload), ensure_ascii=False, separators=(",", ":"))
     (out_dir / "analysis.json").write_text(text + "\n", encoding="utf-8")
     (out_dir / "analysis-data.js").write_text(f"window.VIETLOTT_ANALYSIS = {text};\n", encoding="utf-8")
+    picks = {
+        "generated_at": payload.get("generated_at"),
+        "products": {
+            key: {
+                "title": product["title"],
+                "pick": product["pick"],
+                "has_bonus": product["has_bonus"],
+                **product["picks"],
+            }
+            for key, product in payload.get("products", {}).items()
+            if "picks" in product
+        },
+    }
+    picks_text = json.dumps(_compact(picks), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "picks.json").write_text(picks_text + "\n", encoding="utf-8")
+    (out_dir / "picks.js").write_text(f"window.VIETLOTT_PICKS = {picks_text};\n", encoding="utf-8")
     logger.info(f"wrote {out_dir / 'analysis.json'} and analysis-data.js ({len(text) / 1024:.0f} KiB)")
 
 

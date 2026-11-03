@@ -577,6 +577,32 @@ def next_seed(seed: int, index: int) -> int:
     return seed * 1000 + 777 + index
 
 
+PICK_TOP_KEY = "picks_top20"
+PICK_BEST_KEY = "picks_best10"
+ML_PROBABILITY_KEYS = ("ml_logistic", "ml_gbm", "ml_multi")
+
+
+def top_probability_tickets(
+    probabilities: Sequence[float], game: GameSpec, n_tickets: int = 20, pool_size: int = 14
+) -> List[dict]:
+    """The ``n_tickets`` tickets with the highest joint model probability.
+
+    Treats numbers as independent with the given per-number probabilities, so a ticket's score is the
+    sum of its numbers' log-probabilities; candidates come from the ``pool_size`` most likely numbers.
+    ``ratio`` is how much likelier the ticket is than a uniform ticket *according to the model*.
+    """
+    probs = np.clip(np.asarray(probabilities, dtype=float), 1e-9, None)
+    base = game.pick / game.pool
+    numbers = np.arange(game.min_val, game.max_val + 1)
+    pool = list(np.argsort(-probs, kind="stable")[: max(pool_size, game.pick)])
+    scored = []
+    for combo in combinations(sorted(pool), game.pick):
+        log_ratio = float(np.sum(np.log(probs[list(combo)] / base)))
+        scored.append((log_ratio, [int(numbers[i]) for i in combo]))
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return [{"ticket": ticket, "ratio": math.exp(log_ratio)} for log_ratio, ticket in scored[:n_tickets]]
+
+
 def predict_next_draw(
     df: pd.DataFrame,
     game: GameSpec,
@@ -584,24 +610,58 @@ def predict_next_draw(
     n_tickets: int = 10,
     seed: int = 42,
     models: Optional[Dict[str, PredictModel]] = None,
+    best_key: Optional[str] = None,
+    n_top: int = 20,
 ) -> dict:
     """Tickets every method predicts for the next draw, trained on all draws known so far.
 
     ML models are fitted on every stored draw, so calling this after each new result re-trains them.
     Pass already-built ``models`` (key -> strategy) to reuse their caches.
+
+    Two extra rows feed the homepage and are recorded and validated like any method:
+
+    * ``picks_top20`` – the ``n_top`` tickets with the highest joint probability under the average of
+      the ML models' per-number probabilities;
+    * ``picks_best10`` – the next-draw tickets of ``best_key``, the method with the most matches per
+      ticket in the 2026 comparison (the "easiest to hit" so far).
     """
     last = df.iloc[-1]
     target = next_draw_date(list(df["date"]))
+    models = dict(models or {})
     rows = []
     for index, (key, name, factory) in enumerate(strategies):
         try:
-            model = (models or {}).get(key) or factory(df, game)
+            model = models.get(key) or factory(df, game)
+            models[key] = model
             model.reseed(next_seed(seed, index))
             tickets = [model.predict(target) for _ in range(n_tickets)]
         except Exception as exc:
             logger.warning(f"skip next-draw prediction for {key}: {exc}")
             continue
         rows.append({"key": key, "name": name, "tickets": tickets})
+
+    picks: Dict[str, dict] = {}
+    ml = [models[k] for k in ML_PROBABILITY_KEYS if k in models and hasattr(models[k], "number_probabilities")]
+    if ml:
+        probabilities = np.mean([m.number_probabilities(target) for m in ml], axis=0)
+        top = top_probability_tickets(probabilities, game, n_top)
+        name = f"{n_top} bộ xác suất cao nhất (trung bình {len(ml)} mô hình ML)"
+        rows.append({"key": PICK_TOP_KEY, "name": name, "tickets": [t["ticket"] for t in top]})
+        picks["top"] = {
+            "key": PICK_TOP_KEY,
+            "name": name,
+            "models": [k for k in ML_PROBABILITY_KEYS if k in models],
+            "ratios": [t["ratio"] for t in top],
+            "number_probabilities": [float(x) for x in probabilities],
+        }
+    by_key = {r["key"]: r for r in rows}
+    if best_key not in by_key:
+        best_key = "consensus" if "consensus" in by_key else (rows[0]["key"] if rows else None)
+    if best_key:
+        best = by_key[best_key]
+        name = f"{len(best['tickets'])} bộ dễ trúng nhất ({best['name']})"
+        rows.append({"key": PICK_BEST_KEY, "name": name, "tickets": best["tickets"]})
+        picks["best"] = {"key": PICK_BEST_KEY, "name": name, "method_key": best_key, "method_name": best["name"]}
     return {
         "product": game.key,
         "after_id": str(last["id"]),
@@ -610,6 +670,7 @@ def predict_next_draw(
         "n_tickets": n_tickets,
         "seed": seed,
         "strategies": rows,
+        "picks": picks,
     }
 
 
@@ -762,7 +823,9 @@ def simulate_and_compare(
         "expected_value": game.expected_value(),
         "strategies": sim_rows,
     }
-    next_draw = predict_next_draw(df, game, strategies, tickets_per_draw, seed, models=models)
+    next_draw = predict_next_draw(
+        df, game, strategies, tickets_per_draw, seed, models=models, best_key=comparison["best_key"]
+    )
     by_key = {r["key"]: r for r in next_draw["strategies"]}
     for row in simulation["strategies"]:
         row["next"] = encode_tickets(by_key[row["key"]]["tickets"]) if row["key"] in by_key else ""
@@ -789,6 +852,7 @@ def analyse_game(
     simulation, comparison, next_draw = simulate_and_compare(
         df, game, strategies, simulation_start, simulation_tickets, n_runs, seed
     )
+    scored = score_ledger(ledger or [], df, game)
     builders, source_names = multi_source_builders(game, sources)
     multi_model = [("gbm_multi", "gbm", builders, source_names)] if ml_models else []
     results = df["result"].tolist()
@@ -830,7 +894,62 @@ def analyse_game(
         "comparison": comparison,
         "next_draw": next_draw,
         "simulation": simulation,
-        "ledger": score_ledger(ledger or [], df, game),
+        "ledger": scored,
+        "picks": homepage_picks(next_draw, comparison, ledger, scored),
+    }
+
+
+def homepage_picks(next_draw: dict, comparison: dict, ledger: Optional[List[dict]], scored: dict) -> dict:
+    """The homepage's 20 most-probable and 10 easiest-to-hit tickets, plus the last validation.
+
+    When the ledger already holds the prediction made after the latest draw, its tickets are shown, so
+    the homepage always displays exactly what was recorded and will be validated.
+    """
+    recorded = next((e for e in (ledger or []) if e["after_id"] == next_draw["after_id"]), None)
+    source = recorded or next_draw
+    rows = {r["key"]: r for r in source["strategies"]}
+    meta = {**next_draw.get("picks", {})}
+    for role, value in (recorded or {}).get("picks", {}).items():
+        meta[role] = {**meta.get(role, {}), **value}
+    top_meta, best_meta = meta.get("top", {}), meta.get("best", {})
+    top = rows.get(PICK_TOP_KEY, {"tickets": []})
+    computed_top = next((r for r in next_draw["strategies"] if r["key"] == PICK_TOP_KEY), {"tickets": []})
+    ratios = top_meta.get("ratios") if computed_top["tickets"] == top["tickets"] else None
+    method = next((r for r in comparison["rows"] if r["key"] == best_meta.get("method_key")), None)
+    last = scored["scored"][-1] if scored.get("scored") else None
+    validation = None
+    if last:
+        validation = {
+            "draw_id": last["draw_id"],
+            "draw_date": last["draw_date"],
+            "main": last["main"],
+            "bonus": last["bonus"],
+            "picks": [s for s in last["strategies"] if s["key"] in (PICK_TOP_KEY, PICK_BEST_KEY)],
+            "best_method": max(last["strategies"], key=lambda s: (s["best"], s["winners"]), default=None),
+        }
+    return {
+        "after_id": source["after_id"],
+        "after_date": source["after_date"],
+        "target_date": source["target_date"],
+        "recorded": recorded is not None,
+        "recorded_at": recorded["generated_at"] if recorded else None,
+        "top": {
+            "name": top_meta.get("name", ""),
+            "models": top_meta.get("models", []),
+            "tickets": top["tickets"],
+            "ratios": ratios,
+        },
+        "best": {
+            "name": best_meta.get("name", ""),
+            "method_key": best_meta.get("method_key"),
+            "method_name": best_meta.get("method_name"),
+            "tickets": rows.get(PICK_BEST_KEY, {"tickets": []})["tickets"],
+            "avg_matches": method["avg_matches"] if method else None,
+            "z": method["z"] if method else None,
+            "mean_roi": method["mean_roi"] if method else None,
+        },
+        "validation": validation,
+        "summary": [a for a in scored.get("summary", []) if a["key"] in (PICK_TOP_KEY, PICK_BEST_KEY)],
     }
 
 

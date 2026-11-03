@@ -204,7 +204,13 @@ def test_analyse_game_payload(tmp_path):
     assert models["gbm_multi"]["n_features"] == 6 + 3  # base features + calendar (no other sources)
     assert 0 <= models["logistic"]["auc"] <= 1
     assert len(models["logistic"]["next_draw_probs"]) == 55
-    assert [r["key"] for r in payload["next_draw"]["strategies"]] == ["random", "ml_logistic"]
+    keys = [r["key"] for r in payload["next_draw"]["strategies"]]
+    assert keys == ["random", "ml_logistic", "picks_top20", "picks_best10"]
+    picks = payload["picks"]
+    assert len(picks["top"]["tickets"]) == 20 and len(picks["top"]["ratios"]) == 20
+    assert picks["top"]["ratios"] == sorted(picks["top"]["ratios"], reverse=True)
+    assert picks["best"]["method_key"] == payload["comparison"]["best_key"] and len(picks["best"]["tickets"]) == 3
+    assert picks["recorded"] is False and picks["validation"] is None
     assert payload["ledger"]["n_recorded"] == 0
     assert payload["latest"]["bonus"] is not None
     assert payload["tiers"][1]["needs_bonus"] is True and payload["tiers"][1]["matches"] == 5
@@ -313,3 +319,68 @@ def test_ledger_records_once_and_scores_after_the_draw(tmp_path):
     summary = scored["summary"][0]
     assert summary["draws"] == 1 and summary["tickets"] == 3 and summary["cost"] == 30_000
     print("ledger entries are append-only and scored once their draw is known")
+
+
+def test_top_probability_tickets_rank_by_joint_model_probability():
+    from machine_learning.analysis import top_probability_tickets
+
+    probs = np.full(45, 6 / 45)
+    probs[[0, 1, 2, 3, 4, 5, 6]] = [0.2, 0.19, 0.18, 0.17, 0.16, 0.15, 0.14]
+    top = top_probability_tickets(probs, MEGA_645, n_tickets=5, pool_size=10)
+    assert top[0]["ticket"] == [1, 2, 3, 4, 5, 6]
+    assert top[1]["ticket"] == [1, 2, 3, 4, 5, 7]
+    assert all(a["ratio"] >= b["ratio"] for a, b in zip(top, top[1:]))
+    assert len({tuple(t["ticket"]) for t in top}) == 5
+    print("top tickets follow the model's joint probability")
+
+
+def test_ledger_keeps_picks_and_homepage_shows_recorded_tickets(tmp_path):
+    from machine_learning.analysis import homepage_picks
+    from machine_learning.ledger import append_prediction, load_ledger, score_ledger
+
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    strategies = _random_strategy() + [
+        ("ml_logistic", "ML", lambda d, g: MLClassifierStrategy(d, refit_every=20, min_train_draws=30, seed=1))
+    ]
+    known = df.iloc[:-1]
+    prediction = predict_next_draw(known, POWER_655, strategies, 4, seed=3, best_key="random", n_top=20)
+    assert append_prediction(prediction, "2026-11-03T11:00:00+07:00", tmp_path)
+    entry = load_ledger("power_655", tmp_path)[0]
+    assert entry["picks"]["best"]["method_key"] == "random" and "number_probabilities" not in entry["picks"]["top"]
+    comparison = {"rows": [{"key": "random", "avg_matches": 0.7, "z": 1.0, "mean_roi": -90.0}]}
+
+    pending = homepage_picks(prediction, comparison, [entry], score_ledger([entry], known, POWER_655))
+    assert pending["recorded"] and pending["recorded_at"] == "2026-11-03T11:00:00+07:00"
+    assert pending["best"]["tickets"] == next(r for r in prediction["strategies"] if r["key"] == "random")["tickets"]
+    assert len(pending["top"]["tickets"]) == 20 and pending["validation"] is None
+
+    nxt = predict_next_draw(df, POWER_655, strategies, 4, seed=3, best_key="random")
+    validated = homepage_picks(nxt, comparison, [entry], score_ledger([entry], df, POWER_655))
+    assert validated["validation"]["draw_id"] == df["id"].iloc[-1]
+    assert {p["key"] for p in validated["validation"]["picks"]} == {"picks_top20", "picks_best10"}
+    assert {a["key"] for a in validated["summary"]} == {"picks_top20", "picks_best10"}
+    print("homepage shows the recorded picks and validates them after the draw")
+
+
+def test_validation_markdown_lists_picks_first():
+    from machine_learning.predict_next import validation_markdown
+
+    scored = {
+        "n_recorded": 1,
+        "scored": [
+            {
+                "draw_id": "01419",
+                "draw_date": "2026-11-03",
+                "main": [1, 2, 3, 4, 5, 6],
+                "bonus": 7,
+                "strategies": [
+                    {"key": "random", "name": "Random", "best": 3, "winners": 1, "gain": 50000},
+                    {"key": "picks_top20", "name": "Top 20", "best": 2, "winners": 0, "gain": 0},
+                ],
+            }
+        ],
+    }
+    text = validation_markdown("Power 6/55", scored)
+    assert "kỳ #01419" in text and text.index("Top 20") < text.index("Random")
+    assert "Chưa có" in validation_markdown("Mega", {"n_recorded": 0, "scored": []})
+    print("validation report is readable")
