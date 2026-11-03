@@ -612,7 +612,7 @@
                     </a>
                     <ul class="nav-menu">
                         <li><a href="#overview" class="nav-link">Tổng quan</a></li>
-                        <li><a href="#compare" class="nav-link">Bảng so sánh 2026</a></li>
+                        <li><a href="#compare" class="nav-link">Bảng so sánh</a></li>
                         <li><a href="#tickets" class="nav-link">Vé kỳ tới</a></li>
                         <li><a href="#simulator" class="nav-link">Mô phỏng</a></li>
                         <li><a href="#ml" class="nav-link">Machine Learning</a></li>
@@ -656,10 +656,11 @@
                 <section class="section" id="compare">
                     <div class="section-header">
                         <span class="section-eyebrow">Bảng thống kê chung</span>
-                        <h2 class="section-title">So sánh mọi phương pháp nếu chơi từ năm 2026</h2>
+                        <h2 class="section-title" id="cmpTitle">So sánh mọi phương pháp</h2>
                         <p class="section-description" id="cmpDesc"></p>
                     </div>
                     <div class="card best-card" id="bestCard"></div>
+                    <div class="card" style="margin-top: 1.25rem" id="topRoiCard"></div>
                     <div class="card" style="margin-top: 1.25rem">
                         <h3>Bảng thống kê chung</h3>
                         <p class="card-sub" id="cmpSub"></p>
@@ -692,7 +693,7 @@
                 <section class="section" id="simulator">
                     <div class="section-header">
                         <span class="section-eyebrow">Mô phỏng chơi thật</span>
-                        <h2 class="section-title">Chọn số bằng ML và tính lãi/lỗ nếu chơi từ năm 2026</h2>
+                        <h2 class="section-title" id="simTitle">Chọn số bằng ML và tính lãi/lỗ</h2>
                         <p class="section-description" id="simDesc"></p>
                     </div>
                     <div class="card">
@@ -853,7 +854,7 @@
                         <ul class="method-list">
                             <li><strong>Không nhìn trước tương lai:</strong> mọi chiến lược và mô hình chỉ dùng các kỳ quay <em>trước</em> kỳ được dự đoán (walk-forward). Mô hình ML được <strong>huấn luyện lại sau mỗi kỳ quay mới</strong>, và vé cho kỳ tới được tính lại mỗi khi có kết quả mới.</li>
                             <li><strong>Nguồn dữ liệu:</strong> lịch sử của chính sản phẩm; với mô hình ML đa nguồn, thêm kết quả các sản phẩm khác (6/55, 6/45, 5/35) được quay <em>trước</em> ngày đó và lịch quay (thứ, tháng). Phương pháp đồng thuận kết hợp phiếu bầu của 6 phương pháp.</li>
-                            <li><strong>Bảng so sánh:</strong> mỗi phương pháp mua 10 vé mỗi kỳ từ 01/01/2026 và được chạy lại nhiều lần với seed khác nhau. Bảng ghi trung bình, độ lệch, ROI thấp nhất/cao nhất và tỉ lệ lần chạy có lãi.</li>
+                            <li><strong>Bảng so sánh:</strong> mỗi phương pháp mua 10 vé mỗi kỳ từ 01/01/2025 và được chạy lại nhiều lần với seed khác nhau. Chiến lược "Kết hợp 5 ROI cao nhất" xếp hạng lại các phương pháp theo ROI tích lũy trước mỗi kỳ (chỉ dùng các kỳ đã quay, có 30 kỳ khởi động trước 2025) và lấy 2 vé của mỗi phương pháp trong top 5. Bảng ghi trung bình, độ lệch, ROI thấp nhất/cao nhất và tỉ lệ lần chạy có lãi.</li>
                             <li><strong>Đặc trưng ML</strong> cho từng cặp (kỳ, số): tần suất trong 10/30/100 kỳ gần nhất, tần suất toàn bộ, số kỳ chưa về, có ra ở kỳ trước hay không. Nhãn: số đó có ra ở kỳ này không.</li>
                             <li><strong>Kiểm định đồng đều χ²</strong> đã hiệu chỉnh cho việc quay không hoàn lại (mỗi kỳ có 6 số khác nhau), với N−1 bậc tự do.</li>
                             <li><strong>z-score</strong> lấy sai số chuẩn theo trung bình từng kỳ, vì các vé của cùng một chiến lược trong cùng một kỳ thường giống nhau. Ngưỡng Bonferroni có tính đến số chiến lược được so sánh.</li>
@@ -1160,6 +1161,10 @@
                 }
 
                 // ---------------------------------------------------------------- sections
+                function cmp_label(cmp) {
+                    return "từ " + cmp.start_date.split("-").reverse().join("/") + " đến " + cmp.end_date.split("-").reverse().join("/");
+                }
+
                 function renderProduct() {
                     renderers.length = 0;
                     const p = state.data.products[state.product];
@@ -1246,7 +1251,10 @@
                     document.getElementById("pairNote").textContent =
                         "Khi so " + nf.format(pr.n_pairs) + " cặp cùng lúc, việc cặp đứng đầu lệch +3σ đến +4σ hoàn toàn có thể chỉ là do may rủi. Kết quả này không chứng minh có \"cặp số hay đi cùng nhau\".";
 
-                    // Comparison 2026
+                    // Comparison
+                    const yearLabel = cmp_label(p.comparison);
+                    setText("cmpTitle", "So sánh mọi phương pháp nếu chơi " + yearLabel);
+                    setText("simTitle", "Chọn số bằng ML và tính lãi/lỗ nếu chơi " + yearLabel);
                     const cmp = p.comparison;
                     const rows = cmp.rows;
                     const best = rows.find(function (r) { return r.key === cmp.best_key; }) || rows[0];
@@ -1256,7 +1264,7 @@
                     const bestCard = document.getElementById("bestCard");
                     bestCard.replaceChildren();
                     const sigText = cmp.best_significant
-                        ? "Vượt ngưỡng ý nghĩa thống kê trong năm 2026. Cần theo dõi thêm qua nhật ký dự đoán trước khi tin là có lợi thế thật."
+                        ? "Vượt ngưỡng ý nghĩa thống kê trong giai đoạn này. Cần theo dõi thêm qua nhật ký dự đoán trước khi tin là có lợi thế thật."
                         : "Không vượt ngưỡng ý nghĩa thống kê: hơn vé ngẫu nhiên một chút nhưng hoàn toàn có thể là may rủi.";
                     bestCard.append(
                         el("div", {}, [
@@ -1287,12 +1295,28 @@
                     );
                     document.querySelectorAll("#cmpTable tbody tr").forEach(function (tr, i) { if (rows[i].key === cmp.best_key) tr.classList.add("is-best"); });
                     zChart("zChart", rows.slice().sort(function (a, b) { return b.z - a.z; }), cmp.bonferroni_z);
+                    const topCard = document.getElementById("topRoiCard");
+                    topCard.replaceChildren();
+                    const topRow = rows.find(function (r) { return r.key === "top5_roi"; });
+                    if (topRow) {
+                        const nameOf = {};
+                        rows.forEach(function (r) { nameOf[r.key] = r.name; });
+                        const usage = (cmp.top_roi_usage || []).map(function (u) { return u.name + " (" + u.draws + " kỳ)"; }).join(" · ");
+                        topCard.append(
+                            el("h3", { text: "Chiến lược kết hợp 5 ROI cao nhất" }),
+                            el("p", { class: "card-sub", text: "Trước mỗi kỳ, xếp hạng các phương pháp theo ROI tích lũy đến kỳ trước (có " + cmp.warmup_draws + " kỳ khởi động trước " + cmp.start_date + "), rồi lấy 2 vé của mỗi phương pháp trong top 5. Xếp hạng #" + topRow.rank + " trong bảng, trúng TB " + nf4.format(topRow.avg_matches) + " số/vé, ROI TB " + nf1.format(topRow.mean_roi) + "%." }),
+                            el("p", { class: "note" }, [el("strong", { text: "Top 5 cho kỳ tới: " }), (cmp.top_roi_keys || []).map(function (k) { return nameOf[k] || k; }).join(", ")]),
+                            el("p", { class: "note" }, [el("strong", { text: "Số kỳ mỗi phương pháp được chọn (lần chạy 1): " }), usage]),
+                        );
+                    } else {
+                        topCard.classList.add("is-hidden");
+                    }
                     const sig = rows.filter(function (r) { return Math.abs(r.z) >= cmp.bonferroni_z; });
                     document.getElementById("zNote").replaceChildren(
                         "Ngưỡng có ý nghĩa sau hiệu chỉnh: |z| ≥ ", el("strong", { text: nf2.format(cmp.bonferroni_z) }), ". ",
                         sig.length === 0
                             ? "Không phương pháp nào vượt ngưỡng, tức là không phân biệt được với chọn ngẫu nhiên."
-                            : sig.length + " phương pháp vượt ngưỡng trong năm 2026. Cần xác nhận thêm bằng dữ liệu các kỳ sau (nhật ký dự đoán), vì kết quả này vẫn có thể do ngẫu nhiên.",
+                            : sig.length + " phương pháp vượt ngưỡng trong giai đoạn này. Cần xác nhận thêm bằng dữ liệu các kỳ sau (nhật ký dự đoán), vì kết quả này vẫn có thể do ngẫu nhiên.",
                     );
 
                     // ML
@@ -1348,13 +1372,14 @@
                     // Next draw & ledger
                     const nd = p.next_draw;
                     setText("nextTitle", "Vé dự đoán cho kỳ tới (dự kiến " + nd.target_date + ")");
-                    setText("nextDesc", "Mọi phương pháp được huấn luyện lại trên toàn bộ dữ liệu đến kỳ #" + nd.after_id + " (" + nd.after_date + "), mỗi phương pháp " + nd.n_tickets + " vé. Thứ tự theo bảng so sánh 2026. Mọi bộ số đều có cùng xác suất trúng.");
+                    setText("nextDesc", "Mọi phương pháp được huấn luyện lại trên toàn bộ dữ liệu đến kỳ #" + nd.after_id + " (" + nd.after_date + "), mỗi phương pháp " + nd.n_tickets + " vé. Thứ tự theo bảng so sánh. Mọi bộ số đều có cùng xác suất trúng.");
                     const grid = document.getElementById("ticketGrid");
                     grid.replaceChildren();
                     const order = {};
                     rows.forEach(function (r) { order[r.key] = r.rank; });
-                    nd.strategies.slice().sort(function (a, b) { return (order[a.key] || 99) - (order[b.key] || 99); }).forEach(function (s) {
+                    nd.strategies.filter(function (s) { return s.key.indexOf("picks_") !== 0; }).sort(function (a, b) { return (order[a.key] || 99) - (order[b.key] || 99); }).forEach(function (s) {
                         const card = el("div", { class: "card ticket-card" }, [el("h4", { text: (order[s.key] ? "#" + order[s.key] + " · " : "") + s.name })]);
+                        if (s.selected) card.appendChild(el("p", { class: "card-sub", text: "Top 5 ROI: " + s.selected.map(function (k) { const r = rows.find(function (x) { return x.key === k; }); return r ? r.name : k; }).join(", ") }));
                         const list = el("div", { class: "ticket-list" });
                         s.tickets.forEach(function (t, i) { list.appendChild(el("div", { class: "ticket-row" }, [el("span", { class: "muted", text: String(i + 1).padStart(2, "0") }), (function () { const b = el("span", { class: "balls" }); t.forEach(function (n) { b.appendChild(el("span", { class: "ball sm", text: String(n).padStart(2, "0") })); }); return b; })()])); });
                         card.appendChild(list);
