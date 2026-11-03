@@ -163,6 +163,21 @@ make render-analysis
 
 - Trên CI: workflow **Deploy GitHub Pages** tự sinh lại dữ liệu phân tích mỗi ngày trước khi deploy.
 
+## 5b. Mô phỏng "chơi từ năm 2026"
+
+Mục **Mô phỏng 2026** trên dashboard cho phép bạn chọn chiến lược hoặc mô hình ML (hoặc tự nhập một bộ số), số vé mỗi kỳ (1–10) và ngày bắt đầu (từ 01/01/2026). Trang sẽ tính cho từng kỳ: tiền mua vé, tiền thưởng, lãi/lỗ lũy kế và ROI. Trang cũng hiển thị vé dự đoán cho kỳ tới và xếp hạng mọi chiến lược với cùng thiết lập.
+
+- **Phần sinh vé (Python, chạy trong GitHub Actions):** `analysis.play_simulation()` sinh trước tối đa 10 vé cho mỗi kỳ từ 2026 theo kiểu walk-forward, tức là chỉ dùng các kỳ trước ngày quay. Kết quả được nén thành chuỗi số 2 chữ số trong `analysis-data.js`.
+- **Phần tính lợi nhuận (trình duyệt):** chấm vé theo đúng luật giải (số đặc biệt chỉ xét Jackpot 2), với jackpot tính ở mức khởi điểm vì dữ liệu không có giá trị jackpot thực tế từng kỳ.
+- Cách làm này không cần server, nên chạy được trên GitHub Pages miễn phí. Kết quả trên trang đã được đối chiếu với cách tính độc lập bằng Python.
+
+Kết quả mẫu (Power 6/55, 130 kỳ từ 01/01/2026, 5 vé mỗi kỳ):
+- ML Logistic Regression: chi 6,5 triệu, thu 350 nghìn, ROI **−94,6%**.
+- Chiến lược tốt nhất trong bảng xếp hạng: ROI −81,5%.
+- Kỳ vọng lý thuyết: −70,1%.
+
+Sai khác giữa các chiến lược chỉ là do may rủi trên số vé nhỏ.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.
