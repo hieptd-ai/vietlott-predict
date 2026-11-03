@@ -1,4 +1,6 @@
-# Agent Instructions for vietlott-data
+# Agent Instructions for vietlott-predict
+
+This repository (`hieptd-ai/vietlott-predict`) is a fork of [vietvudanh/vietlott-data](https://github.com/vietvudanh/vietlott-data) that adds the analysis & ML dashboard (`src/machine_learning`, `docs/analysis/`) and GitHub Actions automation (`ci.yml`, `sync-data.yml`, `deploy-pages.yml`).
 
 ## Quick Reference (Build/Lint/Test)
 - **Test all**: `uv run pytest src/vietlott/tests`
@@ -7,7 +9,7 @@
 - **Build**: `make build` (includes lint and test)
 
 ## Project Overview
-This project is a Python-based data pipeline that crawls, analyzes, and stores Vietnamese lottery data from the official Vietlott website. It provides a CLI for crawling and backfilling data. Scheduled crawling runs on local/on-premise hardware (as Vietlott blocks non-Vietnam IP addresses) and commits data to GitHub.
+This project is a Python-based data pipeline that crawls, analyzes, and stores Vietnamese lottery data from the official Vietlott website. It provides a CLI for crawling and backfilling data. Vietlott blocks non-Vietnam IP addresses, so this fork syncs the data crawled in Vietnam by the upstream project with the `sync-data.yml` workflow; a local runner in Vietnam (`bin/github_data.sh`) can crawl directly instead.
 
 The project uses Python libraries including `requests`, `beautifulsoup4`, `polars`, `click`, and `pendulum`.
 
@@ -27,8 +29,8 @@ The Go crawler (`/crawler`, built with `make build-crawler`) is the production c
 ## Development Setup
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/vietvudanh/vietlott-data.git
-    cd vietlott-data
+    git clone https://github.com/hieptd-ai/vietlott-predict.git
+    cd vietlott-predict
     ```
 
 2.  **Create a virtual environment and install dependencies:**

@@ -12,7 +12,7 @@ Key points:
 
 ## Runner
 
-The Go crawler runs via scheduled execution on local/on-premise hardware (see `bin/github_data.sh` and `Procfile`) and commits updated data back to GitHub. GitHub Actions is no longer used for data crawling because the Vietlott website blocks non-Vietnam IP addresses (see [issue #13](https://github.com/vietvudanh/vietlott-data/issues/13) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+The Go crawler runs via scheduled execution on local/on-premise hardware (see `bin/github_data.sh` and `Procfile`) and commits updated data back to GitHub. GitHub Actions is no longer used for data crawling because the Vietlott website blocks non-Vietnam IP addresses (see [upstream issue #13](https://github.com/vietvudanh/vietlott-data/issues/13) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). In this fork, the `sync-data.yml` GitHub Actions workflow copies the data crawled in Vietnam by the upstream project [vietvudanh/vietlott-data](https://github.com/vietvudanh/vietlott-data) twice a day, then `deploy-pages.yml` rebuilds and deploys the site.
 
 ### Go CLI Commands (Recommended)
 - `./bin/vietlott-crawler status`: Compare existing stored draws vs. latest upstream draws.

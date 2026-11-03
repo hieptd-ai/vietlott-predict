@@ -1,10 +1,10 @@
 # Deployment Guide
 
-This document outlines the deployment and scheduling architecture for vietlott-data.
+This document outlines the deployment and scheduling architecture for vietlott-predict (a fork of [vietvudanh/vietlott-data](https://github.com/vietvudanh/vietlott-data)).
 
 ## Architecture & Geo-blocking
 
-The Vietlott web endpoints block HTTP requests originating from IP addresses outside Vietnam (see [issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)). As a result:
+The Vietlott web endpoints block HTTP requests originating from IP addresses outside Vietnam (see [upstream issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)). As a result:
 
 - Cloud-hosted runners (such as standard GitHub Actions environments) cannot crawl data from Vietlott directly.
 - The crawler is deployed on local/on-premise hardware located in Vietnam.
@@ -18,8 +18,8 @@ The Vietlott web endpoints block HTTP requests originating from IP addresses out
 ## Local Setup
 
 ```bash
-git clone https://github.com/vietvudanh/vietlott-data.git
-cd vietlott-data
+git clone https://github.com/hieptd-ai/vietlott-predict.git
+cd vietlott-predict
 make build-crawler
 ```
 

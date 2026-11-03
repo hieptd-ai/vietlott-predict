@@ -1,5 +1,5 @@
 # Dev environment
-You can check [Makefile]() to see the basic flow to dev at local
+You can check the [Makefile](Makefile) to see the basic flow to dev at local. Repository: https://github.com/hieptd-ai/vietlott-predict
 
 # Release Process
 
@@ -14,4 +14,4 @@ To publish a new version to PyPI:
    ```
 4. The GitHub Actions workflow will automatically build and publish to PyPI
 
-Note: The workflow uses PyPI's trusted publishing (OIDC) for secure authentication. Make sure the PyPI project is configured to accept trusted publishing from this GitHub repository.
+Note: The workflow uses PyPI's trusted publishing (OIDC) for secure authentication. Make sure the PyPI project is configured to accept trusted publishing from this GitHub repository. The PyPI name `vietlott-data` belongs to the upstream project: publishing from this fork needs your own PyPI project name (change `name` in `pyproject.toml`) and trusted-publisher setup.
