@@ -436,6 +436,119 @@
                 text-align: center;
                 color: var(--text-muted);
             }
+            .sim-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.9rem 1.25rem;
+                align-items: flex-end;
+                margin-bottom: 1.25rem;
+            }
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.3rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--text-muted);
+            }
+            .field select,
+            .field input {
+                font: inherit;
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: var(--text-primary);
+                background: var(--bg-input);
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-sm);
+                padding: 0.5rem 0.65rem;
+                min-width: 10rem;
+            }
+            .field input[type="text"] {
+                min-width: 15rem;
+                font-family: var(--font-mono);
+            }
+            .field-error {
+                color: var(--cat-red);
+                font-size: 0.8rem;
+                font-weight: 500;
+                min-height: 1em;
+            }
+            .sim-kpis {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+            .sim-kpi {
+                background: var(--bg-subtle);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--radius-md);
+                padding: 0.8rem 0.95rem;
+            }
+            .sim-kpi .kpi-label {
+                font-size: 0.72rem;
+            }
+            .sim-kpi .kpi-value {
+                font-size: 1.3rem;
+                margin: 0.2rem 0 0;
+            }
+            .ball.hit {
+                background: var(--series-1);
+                border-color: var(--series-1);
+                color: #fff;
+            }
+            .ball.bonus.hit {
+                background: var(--cat-orange);
+                border: 2px solid var(--cat-orange);
+            }
+            .ball.sm {
+                width: 1.7rem;
+                height: 1.7rem;
+                font-size: 0.74rem;
+            }
+            .ticket-list {
+                display: grid;
+                gap: 0.35rem;
+                padding: 0.5rem 0 0.25rem;
+            }
+            .ticket-row {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                flex-wrap: wrap;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+            }
+            #simTable details summary {
+                cursor: pointer;
+                color: var(--color-brand);
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            #simTable {
+                min-width: 820px;
+            }
+            #simTable td {
+                vertical-align: top;
+            }
+            #leaderTable tbody tr {
+                cursor: pointer;
+            }
+            #leaderTable td {
+                white-space: nowrap;
+                font-family: var(--font-sans);
+                font-size: 0.86rem;
+                color: var(--text-primary);
+            }
+            #leaderTable tbody tr.is-selected td {
+                background: var(--color-brand-subtle);
+            }
+            .pos {
+                color: var(--cat-green);
+            }
+            .neg {
+                color: var(--cat-red);
+            }
             .is-hidden {
                 display: none !important;
             }
@@ -464,6 +577,7 @@
                     </a>
                     <ul class="nav-menu">
                         <li><a href="#overview" class="nav-link">Tổng quan</a></li>
+                        <li><a href="#simulator" class="nav-link">Mô phỏng 2026</a></li>
                         <li><a href="#frequency" class="nav-link">Tần suất</a></li>
                         <li><a href="#distribution" class="nav-link">Phân phối</a></li>
                         <li><a href="#backtest" class="nav-link">Backtest</a></li>
@@ -503,6 +617,52 @@
             <div id="content" class="is-hidden">
                 <section class="section">
                     <div class="kpi-grid" id="kpis"></div>
+                </section>
+
+                <section class="section" id="simulator">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Mô phỏng chơi thật</span>
+                        <h2 class="section-title">Chọn số bằng ML và tính lãi/lỗ nếu chơi từ năm 2026</h2>
+                        <p class="section-description" id="simDesc"></p>
+                    </div>
+                    <div class="card">
+                        <div class="sim-controls">
+                            <label class="field">Chiến lược / mô hình
+                                <select id="simStrategy"></select>
+                            </label>
+                            <label class="field" id="simTicketsField">Số vé mỗi kỳ
+                                <select id="simTickets"></select>
+                            </label>
+                            <label class="field">Chơi từ ngày
+                                <input type="date" id="simFrom" />
+                            </label>
+                            <label class="field is-hidden" id="simCustomField">Bộ số tự chọn
+                                <input type="text" id="simCustom" inputmode="numeric" placeholder="vd: 5 12 23 34 41 50" />
+                                <span class="field-error" id="simCustomError"></span>
+                            </label>
+                        </div>
+                        <div class="sim-kpis" id="simKpis"></div>
+                        <h3>Lãi/lỗ lũy kế theo từng kỳ</h3>
+                        <p class="card-sub">Đường đứt nét là mức lỗ kỳ vọng theo lý thuyết, áp dụng cho mọi cách chọn số khi mua cùng số vé</p>
+                        <div class="chart" id="simChart"></div>
+                    </div>
+                    <div class="grid-2" style="margin-top: 1.25rem">
+                        <div class="card">
+                            <h3 id="simNextTitle">Vé dự đoán cho kỳ tới</h3>
+                            <p class="card-sub" id="simNextSub"></p>
+                            <div class="ticket-list" id="simNext"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Xếp hạng chiến lược với cùng thiết lập</h3>
+                            <p class="card-sub">Bấm vào một dòng để xem chi tiết chiến lược đó</p>
+                            <div class="stats-table"><table id="leaderTable"></table></div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Chi tiết từng kỳ</h3>
+                        <p class="card-sub">Số tô màu là số trúng. Mở "Xem vé" để xem tất cả vé đã mua trong kỳ.</p>
+                        <div class="stats-table" style="max-height: 560px; overflow: auto"><table id="simTable"></table></div>
+                    </div>
                 </section>
 
                 <section class="section" id="frequency">
@@ -1130,6 +1290,328 @@
                     fillTable("recentTable", ["Kỳ", "Ngày", "Kết quả"], p.recent.map(function (r) { return ["#" + r.id, r.date, balls(r.main, p.has_bonus ? r.bonus : null)]; }));
                     setText("tierSub", "Giá vé " + nf.format(p.ticket_price) + " đ. Xác suất tính chính xác cho một vé ngẫu nhiên");
                     fillTable("tierTable", ["Giải", "Giá trị", "Xác suất"], p.tiers.map(function (t) { return [t.label, money(t.value), "1 / " + nf.format(Math.round(t.odds))]; }));
+
+                    // Simulator
+                    if (p.simulation) {
+                        setupSimulator(p);
+                        renderSimulator();
+                    }
+                }
+
+                // ---------------------------------------------------------------- simulator
+                const sim = { strategy: null, tickets: 5, from: null, custom: [] };
+
+                function decodeTickets(packed, pick) {
+                    const out = [];
+                    for (let i = 0; i < packed.length; i += pick * 2) {
+                        const t = [];
+                        for (let j = 0; j < pick; j++) t.push(parseInt(packed.substr(i + j * 2, 2), 10));
+                        out.push(t);
+                    }
+                    return out;
+                }
+                function tierFor(tiers, matches, bonusHit) {
+                    let best = null;
+                    tiers.forEach(function (t) {
+                        if (t.matches === matches && (bonusHit || !t.needs_bonus) && (!best || t.value > best.value)) best = t;
+                    });
+                    return best;
+                }
+                function scoreTicket(p, ticket, draw) {
+                    const main = new Set(draw.main);
+                    let matches = 0;
+                    ticket.forEach(function (n) { if (main.has(n)) matches++; });
+                    const bonusHit = p.has_bonus && draw.bonus !== null && ticket.indexOf(draw.bonus) >= 0;
+                    return { ticket: ticket, matches: matches, bonusHit: bonusHit, tier: tierFor(p.tiers, matches, bonusHit) };
+                }
+                function ticketsFor(p, key, drawIndex, count) {
+                    if (key === "__custom") return sim.custom.length ? [sim.custom] : [];
+                    const row = p.simulation.strategies.find(function (r) { return r.key === key; });
+                    return decodeTickets(row.tickets[drawIndex], p.pick).slice(0, count);
+                }
+                function runSimulation(p, key, count, from) {
+                    const draws = p.simulation.draws;
+                    const rows = [];
+                    const tierCounts = {};
+                    let cost = 0, gain = 0, nTickets = 0, winners = 0;
+                    draws.forEach(function (draw, i) {
+                        if (draw.date < from) return;
+                        const tickets = ticketsFor(p, key, i, count);
+                        if (!tickets.length) return;
+                        const scored = tickets.map(function (t) { return scoreTicket(p, t, draw); });
+                        const drawCost = tickets.length * p.ticket_price;
+                        const drawGain = scored.reduce(function (a, s) { return a + (s.tier ? s.tier.value : 0); }, 0);
+                        scored.forEach(function (s) {
+                            if (s.tier) {
+                                tierCounts[s.tier.key] = (tierCounts[s.tier.key] || 0) + 1;
+                                winners++;
+                            }
+                        });
+                        cost += drawCost;
+                        gain += drawGain;
+                        nTickets += tickets.length;
+                        rows.push({ draw: draw, scored: scored, cost: drawCost, gain: drawGain, cumCost: cost, cum: gain - cost });
+                    });
+                    return { rows: rows, cost: cost, gain: gain, profit: gain - cost, roi: cost ? ((gain - cost) / cost) * 100 : 0, tickets: nTickets, winners: winners, tierCounts: tierCounts };
+                }
+                function signedMoney(v) {
+                    return (v > 0 ? "+" : v < 0 ? "−" : "") + money(Math.abs(v));
+                }
+                function scoredBalls(p, s, small) {
+                    const wrap = el("span", { class: "balls" });
+                    s.ticket.forEach(function (n) {
+                        const hit = s.drawMain && s.drawMain.has(n);
+                        wrap.appendChild(el("span", { class: "ball" + (small ? " sm" : "") + (hit ? " hit" : ""), text: String(n).padStart(2, "0") }));
+                    });
+                    return wrap;
+                }
+                function drawBalls(draw, hasBonus, ticketSet) {
+                    const wrap = el("span", { class: "balls" });
+                    draw.main.forEach(function (n) {
+                        wrap.appendChild(el("span", { class: "ball sm" + (ticketSet && ticketSet.has(n) ? " hit" : ""), text: String(n).padStart(2, "0") }));
+                    });
+                    if (hasBonus && draw.bonus !== null) {
+                        wrap.appendChild(el("span", { class: "ball sm bonus" + (ticketSet && ticketSet.has(draw.bonus) ? " hit" : ""), text: String(draw.bonus).padStart(2, "0"), title: "Số đặc biệt" }));
+                    }
+                    return wrap;
+                }
+                function tierLabel(t) {
+                    return t ? t.label.split(" (")[0] : "—";
+                }
+
+                // Line chart with crosshair: actual cumulative profit + expected cumulative profit.
+                function lineChart(containerId, opts) {
+                    const container = document.getElementById(containerId);
+                    function draw() {
+                        container.replaceChildren();
+                        const n = opts.values.length;
+                        if (!n) {
+                            container.appendChild(el("p", { class: "note", text: "Không có kỳ nào trong khoảng đã chọn." }));
+                            return;
+                        }
+                        container.appendChild(
+                            el("div", { class: "legend" }, [
+                                el("span", { class: "legend-item" }, [el("span", { class: "legend-line", style: "border-top-style: solid; border-top-color: var(--series-1)" }), opts.seriesLabel]),
+                                el("span", { class: "legend-item" }, [el("span", { class: "legend-line" }), opts.expectedLabel]),
+                            ]),
+                        );
+                        const width = Math.max(280, container.clientWidth);
+                        const height = 240;
+                        const m = { top: 10, right: 12, bottom: 26, left: 64 };
+                        const pw = width - m.left - m.right;
+                        const ph = height - m.top - m.bottom;
+                        const all = opts.values.concat(opts.expected, [0]);
+                        let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+                        if (hi === lo) hi = lo + 1;
+                        const pad = (hi - lo) * 0.08;
+                        lo -= pad; hi += pad;
+                        const x = function (i) { return m.left + (n === 1 ? pw / 2 : (i / (n - 1)) * pw); };
+                        const y = function (v) { return m.top + ((hi - v) / (hi - lo)) * ph; };
+                        const root = svg("svg", { viewBox: "0 0 " + width + " " + height, height: height, role: "img", "aria-label": opts.ariaLabel });
+                        for (let i = 0; i <= 4; i++) {
+                            const v = lo + ((hi - lo) / 4) * i;
+                            root.appendChild(svg("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: "var(--viz-grid)", "stroke-width": 1 }));
+                            const t = svg("text", { x: m.left - 6, y: y(v) + 4, "text-anchor": "end" });
+                            t.textContent = opts.yFormat(v);
+                            root.appendChild(t);
+                        }
+                        root.appendChild(svg("line", { x1: m.left, x2: width - m.right, y1: y(0), y2: y(0), stroke: "var(--viz-axis)", "stroke-width": 1 }));
+                        const step = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(pw / 90))));
+                        for (let i = 0; i < n; i += step) {
+                            const t = svg("text", { x: x(i), y: height - 8, "text-anchor": "middle" });
+                            t.textContent = opts.labels[i].slice(5);
+                            root.appendChild(t);
+                        }
+                        function path(vals) { return vals.map(function (v, i) { return (i ? "L" : "M") + x(i) + "," + y(v); }).join(" "); }
+                        root.appendChild(svg("path", { d: path(opts.expected), fill: "none", stroke: "var(--series-2)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+                        root.appendChild(svg("path", { d: path(opts.values), fill: "none", stroke: "var(--series-1)", "stroke-width": 2, "stroke-linejoin": "round" }));
+                        const cross = svg("line", { y1: m.top, y2: m.top + ph, stroke: "var(--viz-axis)", "stroke-width": 1, visibility: "hidden" });
+                        const dot1 = svg("circle", { r: 4, fill: "var(--series-1)", stroke: "var(--bg-surface)", "stroke-width": 2, visibility: "hidden" });
+                        const dot2 = svg("circle", { r: 4, fill: "var(--series-2)", stroke: "var(--bg-surface)", "stroke-width": 2, visibility: "hidden" });
+                        root.append(cross, dot2, dot1);
+                        const hit = svg("rect", { x: m.left, y: m.top, width: pw, height: ph, fill: "transparent" });
+                        function move(evt) {
+                            const rect = root.getBoundingClientRect();
+                            const px = ((evt.clientX - rect.left) / rect.width) * width;
+                            const i = Math.max(0, Math.min(n - 1, Math.round(n === 1 ? 0 : ((px - m.left) / pw) * (n - 1))));
+                            [cross, dot1, dot2].forEach(function (e) { e.setAttribute("visibility", "visible"); });
+                            cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i));
+                            dot1.setAttribute("cx", x(i)); dot1.setAttribute("cy", y(opts.values[i]));
+                            dot2.setAttribute("cx", x(i)); dot2.setAttribute("cy", y(opts.expected[i]));
+                            showTip(evt, opts.tooltipTitle(i), [
+                                { value: signedMoney(opts.values[i]), label: opts.seriesLabel.toLowerCase() },
+                                { value: signedMoney(opts.expected[i]), label: "kỳ vọng", alt: true },
+                            ]);
+                        }
+                        hit.addEventListener("pointerenter", move);
+                        hit.addEventListener("pointermove", move);
+                        hit.addEventListener("pointerleave", function () {
+                            [cross, dot1, dot2].forEach(function (e) { e.setAttribute("visibility", "hidden"); });
+                            hideTip();
+                        });
+                        root.appendChild(hit);
+                        container.appendChild(root);
+                    }
+                    draw();
+                    renderers.push(draw);
+                }
+
+                function parseCustom(p, text) {
+                    const nums = (text.match(/\d+/g) || []).map(Number);
+                    const unique = Array.from(new Set(nums));
+                    if (nums.length !== p.pick) return { error: "Cần đúng " + p.pick + " số (đang có " + nums.length + ")." };
+                    if (unique.length !== p.pick) return { error: "Các số không được trùng nhau." };
+                    if (unique.some(function (n) { return n < p.range[0] || n > p.range[1]; })) return { error: "Mỗi số phải trong khoảng " + p.range[0] + "–" + p.range[1] + "." };
+                    return { ticket: unique.sort(function (a, b) { return a - b; }) };
+                }
+
+                function setupSimulator(p) {
+                    const s = p.simulation;
+                    const strategySel = document.getElementById("simStrategy");
+                    strategySel.replaceChildren();
+                    s.strategies.forEach(function (r) { strategySel.appendChild(el("option", { value: r.key, text: r.name })); });
+                    strategySel.appendChild(el("option", { value: "__custom", text: "Vé tự chọn (nhập 1 bộ số)" }));
+                    if (!sim.strategy || (sim.strategy !== "__custom" && !s.strategies.some(function (r) { return r.key === sim.strategy; }))) {
+                        sim.strategy = (s.strategies.find(function (r) { return r.key === "ml_logistic"; }) || s.strategies[0]).key;
+                    }
+                    strategySel.value = sim.strategy;
+                    const ticketSel = document.getElementById("simTickets");
+                    ticketSel.replaceChildren();
+                    for (let k = 1; k <= s.max_tickets; k++) ticketSel.appendChild(el("option", { value: String(k), text: k + " vé (" + nf.format(k * p.ticket_price) + " đ/kỳ)" }));
+                    sim.tickets = Math.min(sim.tickets, s.max_tickets);
+                    ticketSel.value = String(sim.tickets);
+                    const fromInput = document.getElementById("simFrom");
+                    fromInput.min = s.start_date;
+                    fromInput.max = p.date_to;
+                    if (!sim.from || sim.from < s.start_date || sim.from > p.date_to) sim.from = s.start_date;
+                    fromInput.value = sim.from;
+                    if (sim.custom.length && parseCustom(p, sim.custom.join(" ")).error) sim.custom = [];
+                    document.getElementById("simCustom").value = sim.custom.join(" ");
+                    setText("simCustomError", "");
+                }
+
+                function renderSimulator() {
+                    const p = state.data.products[state.product];
+                    const s = p.simulation;
+                    const custom = sim.strategy === "__custom";
+                    document.getElementById("simCustomField").classList.toggle("is-hidden", !custom);
+                    document.getElementById("simTicketsField").classList.toggle("is-hidden", custom);
+                    setText("simDesc", s.draws.length + " kỳ quay " + p.title + " từ " + s.start_date + " đến " + p.date_to + ". Mỗi chiến lược chỉ dùng dữ liệu của các kỳ trước ngày quay để chọn số (không nhìn trước kết quả). Lợi nhuận được tính ngay trên trình duyệt theo cơ cấu giải thật, jackpot tính ở mức khởi điểm.");
+                    const count = custom ? 1 : sim.tickets;
+                    const result = runSimulation(p, sim.strategy, count, sim.from);
+                    const strategyName = custom ? "Vé tự chọn" : s.strategies.find(function (r) { return r.key === sim.strategy; }).name;
+                    const evRatio = s.expected_value / p.ticket_price - 1;
+
+                    // KPIs
+                    const kpis = document.getElementById("simKpis");
+                    kpis.replaceChildren();
+                    function kpi(label, value, cls) {
+                        kpis.appendChild(el("div", { class: "sim-kpi" }, [el("div", { class: "kpi-label", text: label }), el("div", { class: "kpi-value" + (cls ? " " + cls : ""), text: value })]));
+                    }
+                    const tierText = p.tiers.filter(function (t) { return result.tierCounts[t.key]; }).map(function (t) { return result.tierCounts[t.key] + "× " + tierLabel(t); }).join(", ");
+                    kpi("Số kỳ đã chơi", nf.format(result.rows.length));
+                    kpi("Tổng số vé", nf.format(result.tickets));
+                    kpi("Tiền mua vé", money(result.cost));
+                    kpi("Tiền thưởng", money(result.gain));
+                    kpi("Lãi / lỗ", signedMoney(result.profit), result.profit >= 0 ? "pos" : "neg");
+                    kpi("ROI", (result.roi > 0 ? "+" : "") + nf1.format(result.roi) + "%", result.roi >= 0 ? "pos" : "neg");
+                    kpi("Vé trúng thưởng", result.winners ? nf.format(result.winners) + (tierText ? " (" + tierText + ")" : "") : "0");
+                    kpi("ROI kỳ vọng lý thuyết", nf1.format(evRatio * 100) + "%");
+
+                    lineChart("simChart", {
+                        labels: result.rows.map(function (r) { return r.draw.date; }),
+                        values: result.rows.map(function (r) { return r.cum; }),
+                        expected: result.rows.map(function (r) { return r.cumCost * evRatio; }),
+                        seriesLabel: "Lãi/lỗ thực tế",
+                        expectedLabel: "Kỳ vọng lý thuyết",
+                        ariaLabel: "Lãi lỗ lũy kế khi chơi " + strategyName,
+                        yFormat: function (v) { return (v < 0 ? "−" : "") + nf1.format(Math.abs(v) / 1e6) + " tr"; },
+                        tooltipTitle: function (i) { return "Kỳ #" + result.rows[i].draw.id + " · " + result.rows[i].draw.date; },
+                    });
+
+                    // Next draw tickets
+                    setText("simNextTitle", "Vé dự đoán cho kỳ tới · " + strategyName);
+                    setText("simNextSub", custom ? "Bộ số bạn nhập" : "Sinh từ toàn bộ lịch sử đến " + p.date_to + ". Kỳ tới là kỳ quay đầu tiên sau ngày này.");
+                    const next = document.getElementById("simNext");
+                    next.replaceChildren();
+                    const nextTickets = custom ? (sim.custom.length ? [sim.custom] : []) : decodeTickets(s.strategies.find(function (r) { return r.key === sim.strategy; }).next, p.pick).slice(0, count);
+                    if (!nextTickets.length) next.appendChild(el("p", { class: "note", text: "Nhập bộ số để mô phỏng." }));
+                    nextTickets.forEach(function (t, i) {
+                        next.appendChild(el("div", { class: "ticket-row" }, [el("span", { class: "muted", text: "Vé " + (i + 1) }), balls(t, null)]));
+                    });
+
+                    // Leaderboard (same settings, every strategy)
+                    const board = s.strategies.map(function (r) {
+                        const res = runSimulation(p, r.key, sim.tickets, sim.from);
+                        let best = null;
+                        res.rows.forEach(function (row) { row.scored.forEach(function (sc) { if (sc.tier && (!best || sc.tier.value > best.value)) best = sc.tier; }); });
+                        return { key: r.key, name: r.name, res: res, best: best };
+                    });
+                    if (custom && sim.custom.length) board.push({ key: "__custom", name: "Vé tự chọn", res: result, best: null });
+                    board.sort(function (a, b) { return b.res.profit - a.res.profit; });
+                    fillTable("leaderTable", ["#", "Chiến lược", "Lãi / lỗ", "ROI", "Vé trúng", "Giải cao nhất"], board.map(function (b, i) {
+                        return [String(i + 1), b.name, signedMoney(b.res.profit), nf1.format(b.res.roi) + "%", nf.format(b.res.winners), tierLabel(b.best)];
+                    }));
+                    document.querySelectorAll("#leaderTable tbody tr").forEach(function (tr, i) {
+                        const key = board[i].key;
+                        if (key === sim.strategy) tr.classList.add("is-selected");
+                        tr.addEventListener("click", function () {
+                            sim.strategy = key;
+                            document.getElementById("simStrategy").value = key;
+                            renderSimulator();
+                        });
+                    });
+
+                    // Per-draw table (newest first)
+                    const rows = result.rows.slice().reverse().map(function (r) {
+                        const scored = r.scored.slice().sort(function (a, b) { return (b.tier ? b.tier.value : 0) - (a.tier ? a.tier.value : 0) || b.matches - a.matches; });
+                        const bestTicket = scored[0];
+                        const mainSet = new Set(r.draw.main);
+                        const decorate = function (sc) { return Object.assign({}, sc, { drawMain: mainSet }); };
+                        const won = r.scored.filter(function (sc) { return sc.tier; }).length;
+                        const det = el("details");
+                        det.appendChild(el("summary", { text: "Xem " + r.scored.length + " vé" }));
+                        det.addEventListener("toggle", function () {
+                            if (!det.open || det.dataset.filled) return;
+                            det.dataset.filled = "1";
+                            const list = el("div", { class: "ticket-list" });
+                            r.scored.forEach(function (sc, i) {
+                                list.appendChild(el("div", { class: "ticket-row" }, [el("span", { class: "muted", text: "Vé " + (i + 1) }), scoredBalls(p, decorate(sc), true), el("span", { text: sc.matches + " số" + (sc.bonusHit ? " + ĐB" : "") + (sc.tier ? " · " + tierLabel(sc.tier) : "") })]));
+                            });
+                            det.appendChild(list);
+                        });
+                        const bestCell = el("div", {}, [scoredBalls(p, decorate(bestTicket), true)]);
+                        bestCell.appendChild(det);
+                        return [
+                            "#" + r.draw.id,
+                            r.draw.date,
+                            drawBalls(r.draw, p.has_bonus, new Set(bestTicket.ticket)),
+                            bestCell,
+                            bestTicket.matches + " số" + (bestTicket.bonusHit ? " + ĐB" : ""),
+                            won ? won + " vé · " + money(r.gain) : "—",
+                            el("span", { class: r.cum >= 0 ? "pos" : "neg", text: signedMoney(r.cum) }),
+                        ];
+                    });
+                    fillTable("simTable", ["Kỳ", "Ngày", "Kết quả", "Vé tốt nhất", "Trúng", "Thưởng", "Lãi lũy kế"], rows);
+                }
+
+                function bindSimulator() {
+                    document.getElementById("simStrategy").addEventListener("change", function (e) { sim.strategy = e.target.value; renderSimulator(); });
+                    document.getElementById("simTickets").addEventListener("change", function (e) { sim.tickets = parseInt(e.target.value, 10); renderSimulator(); });
+                    document.getElementById("simFrom").addEventListener("change", function (e) {
+                        const p = state.data.products[state.product];
+                        const v = e.target.value || p.simulation.start_date;
+                        sim.from = v < p.simulation.start_date ? p.simulation.start_date : v;
+                        e.target.value = sim.from;
+                        renderSimulator();
+                    });
+                    document.getElementById("simCustom").addEventListener("input", function (e) {
+                        const p = state.data.products[state.product];
+                        const parsed = parseCustom(p, e.target.value);
+                        setText("simCustomError", parsed.error || "");
+                        sim.custom = parsed.ticket || [];
+                        renderSimulator();
+                    });
                 }
 
                 function setupSwitches() {
@@ -1166,6 +1648,7 @@
                         badges.appendChild(el("span", { class: "badge" }, [el("span", { text: data.products[k].title + ": " + nf.format(data.products[k].n_draws) + " kỳ" })]));
                     });
                     setupSwitches();
+                    bindSimulator();
                     document.getElementById("loading").classList.add("is-hidden");
                     document.getElementById("content").classList.remove("is-hidden");
                     renderProduct();
