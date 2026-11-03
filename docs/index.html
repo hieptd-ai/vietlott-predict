@@ -221,6 +221,9 @@
                     <!-- Navigation Links -->
                     <ul class="nav-menu">
                         <li>
+                            <a href="#predictions" class="nav-link" data-vi="Dự đoán" data-en="Predictions">Dự đoán</a>
+                        </li>
+                        <li>
                             <a href="#overview" class="nav-link" data-vi="Tổng quan" data-en="Overview">Tổng quan</a>
                         </li>
                         <li>
@@ -330,7 +333,11 @@
 
                 <!-- Hero Actions -->
                 <div class="hero-actions">
-                    <a href="#statistics" class="btn btn-primary">
+                    <a href="analysis/" class="btn btn-primary">
+                        <span data-vi="Phân tích &amp; dự đoán (ML)" data-en="Analysis &amp; predictions (ML)">Phân tích &amp; dự đoán (ML)</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="#statistics" class="btn btn-secondary">
                         <span data-vi="Xem Thống kê Dữ liệu" data-en="Explore Statistics">Xem Thống kê Dữ liệu</span>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
@@ -338,6 +345,53 @@
                         <span data-vi="Mã nguồn GitHub" data-en="GitHub Repository">Mã nguồn GitHub</span>
                     </a>
                 </div>
+            </section>
+
+            <!-- Next-draw predictions (rendered in the browser from analysis/picks.js) -->
+            <section class="section" id="predictions">
+                <div class="section-header">
+                    <span class="section-eyebrow" data-vi="Dự đoán kỳ tới" data-en="Next draw">Dự đoán kỳ tới</span>
+                    <h2 class="section-title" data-vi="Gợi ý bộ số cho kỳ quay tới" data-en="Suggested tickets for the next draw">Gợi ý bộ số cho kỳ quay tới</h2>
+                    <p
+                        class="section-description"
+                        data-vi="Mô hình được huấn luyện lại sau mỗi kỳ quay mới. Các bộ số được ghi lại trước giờ quay và được thẩm định tự động khi có kết quả."
+                        data-en="Models are re-trained after every new draw. Tickets are recorded before the draw and validated automatically once the result is known."
+                    >
+                        Mô hình được huấn luyện lại sau mỗi kỳ quay mới. Các bộ số được ghi lại trước giờ quay và được thẩm định tự động khi có kết quả.
+                    </p>
+                </div>
+                <div class="picks-controls">
+                    <div class="segmented-control" id="picksSwitch" role="group" aria-label="Product"></div>
+                    <span class="picks-meta" id="picksMeta"></span>
+                </div>
+                <div class="picks-grid" id="picksGrid">
+                    <div class="card picks-card">
+                        <p class="picks-sub" data-vi="Đang tải dự đoán… Nếu không hiển thị, xem trang Phân tích &amp; dự đoán." data-en="Loading predictions… If nothing shows, open the Analysis &amp; predictions page.">Đang tải dự đoán… Nếu không hiển thị, xem trang Phân tích &amp; dự đoán.</p>
+                    </div>
+                </div>
+                <div class="card picks-validation" id="picksValidation"></div>
+                <a href="analysis/" class="ml-card-banner" style="margin-top: 1.25rem">
+                    <div class="ml-card-content">
+                        <div class="ml-card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                        </div>
+                        <div class="ml-card-text">
+                            <h3 data-vi="Xem phân tích &amp; dự đoán đầy đủ →" data-en="Full analysis &amp; predictions →">Xem phân tích &amp; dự đoán đầy đủ →</h3>
+                            <p data-vi="Bảng so sánh 14 phương pháp năm 2026, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định" data-en="2026 comparison of 14 methods, profit simulator, every method's tickets and the validation log">Bảng so sánh 14 phương pháp năm 2026, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định</p>
+                        </div>
+                    </div>
+                    <div class="ml-card-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                </a>
+                <p
+                    class="picks-meta"
+                    style="margin-top: 0.75rem"
+                    data-vi="Lưu ý: kết quả xổ số là ngẫu nhiên; mọi bộ số có cùng xác suất trúng thật. &quot;Xác suất cao nhất&quot; là theo mô hình, và chưa phương pháp nào thắng được chọn ngẫu nhiên một cách có ý nghĩa thống kê."
+                    data-en="Note: lottery draws are random; every ticket has the same true odds. &quot;Most probable&quot; is according to the models, and no method has beaten random picks with statistical significance."
+                >
+                    Lưu ý: kết quả xổ số là ngẫu nhiên; mọi bộ số có cùng xác suất trúng thật. "Xác suất cao nhất" là theo mô hình, và chưa phương pháp nào thắng được chọn ngẫu nhiên một cách có ý nghĩa thống kê.
+                </p>
             </section>
 
             <!-- Project Overview Card -->
@@ -1474,6 +1528,133 @@
                     console.error("Failed to copy:", err);
                 });
             }
+        </script>
+        <script src="analysis/picks.js"></script>
+        <script>
+            (function () {
+                "use strict";
+                const data = window.VIETLOTT_PICKS;
+                if (!data || !data.products) return;
+                const lang = function () { return typeof currentLang !== "undefined" ? currentLang : "vi"; };
+                function el(tag, cls, text) {
+                    const node = document.createElement(tag);
+                    if (cls) node.className = cls;
+                    if (text !== undefined) node.textContent = text;
+                    return node;
+                }
+                function tx(tag, cls, vi, en) {
+                    const node = el(tag, cls, lang() === "en" ? en : vi);
+                    node.setAttribute("data-vi", vi);
+                    node.setAttribute("data-en", en);
+                    return node;
+                }
+                const nf = new Intl.NumberFormat("vi-VN");
+                const pad = function (n) { return String(n).padStart(2, "0"); };
+                function balls(ticket, hits, bonus) {
+                    const wrap = el("span", "pick-balls");
+                    ticket.forEach(function (n) { wrap.appendChild(el("span", "pick-ball" + (hits && hits.has(n) ? " hit" : ""), pad(n))); });
+                    if (bonus !== undefined && bonus !== null) {
+                        const b = el("span", "pick-ball bonus" + (hits && hits.has(bonus) ? " hit" : ""), pad(bonus));
+                        b.title = "Số đặc biệt / bonus";
+                        wrap.appendChild(b);
+                    }
+                    return wrap;
+                }
+                function list(tickets, extra) {
+                    const box = el("div", "pick-list");
+                    tickets.forEach(function (t, i) {
+                        const row = el("div", "pick-row");
+                        row.append(el("span", "pick-index", pad(i + 1)), balls(t));
+                        if (extra) { const e = extra(i); if (e) row.appendChild(e); }
+                        box.appendChild(row);
+                    });
+                    return box;
+                }
+                const keys = Object.keys(data.products);
+                let current = keys[0];
+                try { const saved = localStorage.getItem("vietlott-picks-product"); if (keys.indexOf(saved) >= 0) current = saved; } catch (e) {}
+
+                function render() {
+                    const p = data.products[current];
+                    document.getElementById("picksMeta").replaceChildren(
+                        tx("span", "", "Kỳ tới dự kiến " + p.target_date + " · dự đoán sau kỳ #" + p.after_id + (p.recorded ? " · đã ghi lúc " + p.recorded_at.replace("T", " ").slice(0, 16) : ""),
+                            "Next draw expected " + p.target_date + " · predicted after draw #" + p.after_id + (p.recorded ? " · recorded at " + p.recorded_at.replace("T", " ").slice(0, 16) : "")),
+                    );
+                    const grid = document.getElementById("picksGrid");
+                    grid.replaceChildren();
+
+                    const top = el("div", "card picks-card");
+                    top.append(
+                        tx("h3", "", p.top.tickets.length + " bộ số có xác suất ra cao nhất", p.top.tickets.length + " most probable tickets"),
+                        tx("p", "picks-sub", "Xếp theo xác suất kết hợp của các số, lấy trung bình từ " + p.top.models.length + " mô hình ML (Logistic, Gradient Boosting, đa nguồn). Hệ số ×1,xx là mức cao hơn vé ngẫu nhiên theo mô hình.",
+                            "Ranked by the joint probability of the numbers, averaged over " + p.top.models.length + " ML models (logistic, gradient boosting, multi-source). ×1.xx is how much likelier than a random ticket according to the models."),
+                        list(p.top.tickets, function (i) { return p.top.ratios ? el("span", "pick-ratio", "×" + p.top.ratios[i].toFixed(3)) : null; }),
+                    );
+                    const best = el("div", "card picks-card");
+                    const stats = p.best.avg_matches !== null && p.best.avg_matches !== undefined
+                        ? " (năm 2026: trúng TB " + p.best.avg_matches.toFixed(3) + " số/vé, ROI " + p.best.mean_roi.toFixed(1) + "%)"
+                        : "";
+                    const statsEn = p.best.avg_matches !== null && p.best.avg_matches !== undefined
+                        ? " (2026: " + p.best.avg_matches.toFixed(3) + " matches/ticket, ROI " + p.best.mean_roi.toFixed(1) + "%)"
+                        : "";
+                    best.append(
+                        tx("h3", "", p.best.tickets.length + " bộ số dễ trúng nhất", p.best.tickets.length + " easiest-to-hit tickets"),
+                        tx("p", "picks-sub", "Dự đoán của phương pháp trúng nhiều số nhất khi chơi thử năm 2026 với 10 vé mỗi kỳ: " + p.best.method_name + stats + ".",
+                            "Predicted by the method with the most matches per ticket when playing 2026 with 10 tickets per draw: " + p.best.method_name + statsEn + "."),
+                        list(p.best.tickets),
+                    );
+                    grid.append(top, best);
+
+                    const val = document.getElementById("picksValidation");
+                    val.replaceChildren();
+                    if (!p.validation) {
+                        val.append(
+                            tx("h3", "", "Thẩm định dự đoán", "Validation"),
+                            tx("p", "picks-sub", "Chưa có kỳ nào được thẩm định. Sau kỳ quay tới, các bộ số trên sẽ được chấm tự động với kết quả thật.",
+                                "No draw validated yet. After the next draw these tickets are scored automatically against the real result."),
+                        );
+                    } else {
+                        const v = p.validation;
+                        const hits = new Set(v.main.concat(v.bonus !== null ? [v.bonus] : []));
+                        const head = el("div", "pick-row");
+                        head.append(tx("span", "", "Kết quả kỳ #" + v.draw_id + " (" + v.draw_date + "):", "Result of draw #" + v.draw_id + " (" + v.draw_date + "):"), balls(v.main, null, p.has_bonus ? v.bonus : null));
+                        const table = el("table");
+                        const thead = el("thead");
+                        const tr = el("tr");
+                        [["Dự đoán đã ghi", "Recorded prediction"], ["Trúng nhiều nhất", "Best match"], ["Vé trúng thưởng", "Winning tickets"], ["Tiền thưởng", "Winnings"]].forEach(function (h) { tr.appendChild(tx("th", "", h[0], h[1])); });
+                        thead.appendChild(tr);
+                        const tbody = el("tbody");
+                        v.picks.concat(v.best_method && v.picks.every(function (x) { return x.key !== v.best_method.key; }) ? [v.best_method] : []).forEach(function (s, i) {
+                            const row = el("tr");
+                            const label = i >= v.picks.length ? tx("td", "", "Tốt nhất kỳ này: " + s.name, "Best this draw: " + s.name) : el("td", "", s.name);
+                            row.append(label, el("td", "", s.best + "/" + p.pick), el("td", "", nf.format(s.winners) + "/" + nf.format(s.cost / 10000)), el("td", "", nf.format(s.gain) + " đ"));
+                            tbody.appendChild(row);
+                        });
+                        table.append(thead, tbody);
+                        const wrap = el("div", "stats-table");
+                        wrap.style.marginTop = "0.75rem";
+                        wrap.appendChild(table);
+                        val.append(tx("h3", "", "Thẩm định dự đoán kỳ trước", "Validation of the previous prediction"), head, wrap);
+                        if (p.summary && p.summary.length) {
+                            const sum = p.summary.map(function (a) { return a.name + ": " + a.draws + " kỳ, ROI " + a.roi.toFixed(1) + "%"; }).join(" · ");
+                            val.appendChild(tx("p", "picks-sub", "Lũy kế: " + sum, "Cumulative: " + sum));
+                        }
+                    }
+                }
+
+                const sw = document.getElementById("picksSwitch");
+                keys.forEach(function (k) {
+                    const b = el("button", "segmented-btn" + (k === current ? " active" : ""), data.products[k].title);
+                    b.addEventListener("click", function () {
+                        current = k;
+                        try { localStorage.setItem("vietlott-picks-product", k); } catch (e) {}
+                        sw.querySelectorAll("button").forEach(function (x) { x.classList.toggle("active", x === b); });
+                        render();
+                    });
+                    sw.appendChild(b);
+                });
+                render();
+            })();
         </script>
     </body>
 </html>
