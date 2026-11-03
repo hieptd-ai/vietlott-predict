@@ -265,6 +265,34 @@ Log-loss của mọi mô hình bằng hoặc **kém hơn** mô hình hằng số
   - Trang chủ hiển thị kết quả thẩm định kỳ trước và kết quả lũy kế.
   - Đây là cách trung thực để kiểm chứng: nếu các bộ "xác suất cao" không thực sự trúng nhiều hơn vé ngẫu nhiên qua nhiều kỳ, chúng không có giá trị dự đoán.
 
+## 5e. Chiến lược "Kết hợp 5 ROI cao nhất" và phân tích từ 01/01/2025 đến nay
+
+### Cách hoạt động (`top5_roi`)
+- Trước **mỗi kỳ quay**, xếp hạng 14 phương pháp còn lại theo lãi/lỗ tích lũy (cùng số vé nên tương đương ROI) của chính các vé chúng đã mua ở các kỳ **trước đó**.
+- Có 30 kỳ "khởi động" trước 01/01/2025 để chiến lược có bảng xếp hạng ngay từ kỳ đầu.
+- Lấy 2 vé của mỗi phương pháp trong top 5, được 10 vé.
+- Vé cho kỳ tới lấy từ top 5 theo ROI trung bình của cả giai đoạn. Danh sách top 5 được ghi kèm trong nhật ký dự đoán.
+- Có test kiểm tra không nhìn trước kết quả: đổi kết quả kỳ cuối thì vé của chiến lược không đổi.
+
+### Kết quả (10 vé/kỳ, 5 lần chạy, 2025-01-01 → 2026-11, snapshot 2026-11-03)
+| | Power 6/55 (285 kỳ) | Mega 6/45 (287 kỳ) |
+|---|---|---|
+| Vé ngẫu nhiên kỳ vọng | 0,6545 số/vé, ROI −70,1% | 0,8000 số/vé, ROI −71,6% |
+| Đứng đầu (trúng TB/vé) | Tránh số vừa ra 0,6839 (z +0,95) | Lâu chưa về 0,8281 (z +1,08) |
+| \|z\| lớn nhất | 1,52 (Mẫu khoảng cách, âm) | 2,22 (Theo vị trí) |
+| Ngưỡng Bonferroni (15 phương pháp) | 2,94 | 2,94 |
+| **Kết hợp 5 ROI cao nhất** | hạng 6/15: 0,6594 số/vé, ROI −90,1% | hạng 12/15: 0,7981 số/vé, ROI −90,0% |
+| Ngẫu nhiên (baseline) | hạng 5: 0,6596, ROI −89,6% | hạng 11: 0,7990, ROI −89,7% |
+| Lần chạy có lãi | 2/75 (Cặp số và Số lạnh, mỗi phương pháp 1 lần, nhờ trúng Giải Nhất 40 triệu) | 0/75 |
+
+### Nhận xét
+1. **Kết hợp 5 ROI cao nhất không tốt hơn chọn ngẫu nhiên**, và cũng không tốt hơn từng phương pháp thành phần.
+   - Xếp hạng theo ROI chủ yếu bám theo các lần trúng Giải Nhì/Nhất hiếm hoi, tức là bám theo may rủi.
+   - Ở lần chạy 1 của 6/55, chính phương pháp **Ngẫu nhiên** nằm trong top 5 ở cả 285 kỳ.
+   - Nói cách khác, "chọn phương pháp đang thắng" không có quán tính: phương pháp ROI cao ở các kỳ trước không tiếp tục cao ở kỳ sau.
+2. Mở rộng dữ liệu từ 2025 (gấp đôi số kỳ) không thay đổi kết luận của §5c. Không phương pháp nào vượt ngưỡng ý nghĩa thống kê, và phương pháp đứng đầu vẫn khác nhau giữa 6/55 và 6/45.
+3. Hai lần chạy có lãi (+48–50%) đều đến từ **một** vé trúng Giải Nhất trong khoảng 2.850 vé. Đây là ví dụ điển hình cho thấy ROI dao động rất mạnh và không thể dùng ROI của vài trăm kỳ để chọn chiến lược.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 làm sản phẩm được dự đoán (hiện chỉ dùng làm nguồn dữ liệu phụ) sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.
