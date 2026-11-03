@@ -377,7 +377,7 @@
                         </div>
                         <div class="ml-card-text">
                             <h3 data-vi="Xem phân tích &amp; dự đoán đầy đủ →" data-en="Full analysis &amp; predictions →">Xem phân tích &amp; dự đoán đầy đủ →</h3>
-                            <p data-vi="Bảng so sánh 14 phương pháp năm 2026, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định" data-en="2026 comparison of 14 methods, profit simulator, every method's tickets and the validation log">Bảng so sánh 14 phương pháp năm 2026, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định</p>
+                            <p data-vi="Bảng so sánh 15 phương pháp từ 2025 đến nay, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định" data-en="Comparison of 15 methods since 2025, profit simulator, every method's tickets and the validation log">Bảng so sánh 15 phương pháp từ 2025 đến nay, mô phỏng lãi/lỗ, vé của từng phương pháp và nhật ký thẩm định</p>
                         </div>
                     </div>
                     <div class="ml-card-arrow">
@@ -1167,7 +1167,7 @@
                         </div>
                         <div class="ml-card-text">
                             <h3 data-vi="Phân tích &amp; Dự đoán (Machine Learning) →" data-en="Analysis &amp; Prediction (Machine Learning) →">Phân tích &amp; Dự đoán (Machine Learning) →</h3>
-                            <p data-vi="Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45" data-en="ML-picked tickets, a play-since-2026 profit simulator, randomness tests and strategy backtests for Power 6/55 and Mega 6/45">Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45</p>
+                            <p data-vi="Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2025, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45" data-en="ML-picked tickets, a play-since-2025 profit simulator, randomness tests and strategy backtests for Power 6/55 and Mega 6/45">Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2025, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45</p>
                         </div>
                     </div>
                     <div class="ml-card-arrow">
@@ -1592,15 +1592,15 @@
                     );
                     const best = el("div", "card picks-card");
                     const stats = p.best.avg_matches !== null && p.best.avg_matches !== undefined
-                        ? " (năm 2026: trúng TB " + p.best.avg_matches.toFixed(3) + " số/vé, ROI " + p.best.mean_roi.toFixed(1) + "%)"
+                        ? " (trúng TB " + p.best.avg_matches.toFixed(3) + " số/vé, ROI " + p.best.mean_roi.toFixed(1) + "%)"
                         : "";
                     const statsEn = p.best.avg_matches !== null && p.best.avg_matches !== undefined
-                        ? " (2026: " + p.best.avg_matches.toFixed(3) + " matches/ticket, ROI " + p.best.mean_roi.toFixed(1) + "%)"
+                        ? " (" + p.best.avg_matches.toFixed(3) + " matches/ticket, ROI " + p.best.mean_roi.toFixed(1) + "%)"
                         : "";
                     best.append(
                         tx("h3", "", p.best.tickets.length + " bộ số dễ trúng nhất", p.best.tickets.length + " easiest-to-hit tickets"),
-                        tx("p", "picks-sub", "Dự đoán của phương pháp trúng nhiều số nhất khi chơi thử năm 2026 với 10 vé mỗi kỳ: " + p.best.method_name + stats + ".",
-                            "Predicted by the method with the most matches per ticket when playing 2026 with 10 tickets per draw: " + p.best.method_name + statsEn + "."),
+                        tx("p", "picks-sub", "Dự đoán của phương pháp trúng nhiều số nhất khi chơi thử từ " + (p.window_start || "2025-01-01") + " với 10 vé mỗi kỳ: " + p.best.method_name + stats + ".",
+                            "Predicted by the method with the most matches per ticket when playing since " + (p.window_start || "2025-01-01") + " with 10 tickets per draw: " + p.best.method_name + statsEn + "."),
                         list(p.best.tickets),
                     );
                     grid.append(top, best);
