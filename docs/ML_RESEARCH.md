@@ -293,6 +293,48 @@ Log-loss của mọi mô hình bằng hoặc **kém hơn** mô hình hằng số
 2. Mở rộng dữ liệu từ 2025 (gấp đôi số kỳ) không thay đổi kết luận của §5c. Không phương pháp nào vượt ngưỡng ý nghĩa thống kê, và phương pháp đứng đầu vẫn khác nhau giữa 6/55 và 6/45.
 3. Hai lần chạy có lãi (+48–50%) đều đến từ **một** vé trúng Giải Nhất trong khoảng 2.850 vé. Đây là ví dụ điển hình cho thấy ROI dao động rất mạnh và không thể dùng ROI của vài trăm kỳ để chọn chiến lược.
 
+## 5f. Chạy lại "dự đoán → thẩm định" cho từng kỳ năm 2026 (không lộ dữ liệu tương lai)
+
+### Cách chạy (`src/machine_learning/replay.py`)
+Với **mỗi** kỳ quay từ 01/07/2025 (79 kỳ khởi động) đến kỳ mới nhất, replay làm đúng như `predict_next.py` chạy ngay trước kỳ đó:
+1. Cắt lịch sử của sản phẩm và mọi nguồn dữ liệu phụ, chỉ còn các kỳ có ngày nhỏ hơn ngày quay. Có `assert` chặn trường hợp ngược lại.
+2. Dựng lại mọi phương pháp và mô hình ML từ đầu trên dữ liệu đã cắt.
+3. Sinh 10 vé cho mỗi phương pháp, 20 bộ "xác suất cao nhất", 10 bộ "dễ trúng nhất" và "Kết hợp 5 ROI cao nhất". "Phương pháp tốt nhất" và "top 5 ROI" chỉ dựa trên điểm thẩm định các kỳ trước trong chính lần replay.
+4. Chấm mọi vé với kết quả thật. Kết quả lưu ở `predictions/replay/<sản phẩm>.jsonl` (đủ vé và kết quả để kiểm toán) và `-summary.json`.
+
+### Bằng chứng không lộ dữ liệu tương lai
+- **Kiểm tra trên file kết quả:** cả 419 lần dự đoán đều có `trained_until_id = draw_id − 1` và ngày học < ngày quay. Không có vi phạm nào.
+- **Test xác suất ML:** mô hình walk-forward (dùng trong bảng so sánh) cho xác suất **giống hệt** mô hình chỉ học trên dữ liệu đã cắt, với cả Logistic lẫn GBM.
+- **Test vé:** với cùng seed, cả 13 phương pháp cho **cùng bộ vé** dù có hay không có dữ liệu các kỳ sau. ML đa nguồn được loại khỏi test này chỉ vì đặc trưng lịch của kỳ kế tiếp dùng ngày ước lượng; nó vẫn chỉ học từ dữ liệu quá khứ.
+- **Test thay kết quả:** thay kết quả của kỳ đang dự đoán và mọi kỳ sau thì vé dự đoán của kỳ đó không đổi.
+
+### Kết quả năm 2026 (10 vé/kỳ; riêng 20 bộ xác suất cao là 20 vé/kỳ)
+| | Power 6/55 (130 kỳ) | Mega 6/45 (131 kỳ) |
+|---|---|---|
+| Vé ngẫu nhiên kỳ vọng | 0,6545 số/vé, ROI −70,1% | 0,8000 số/vé, ROI −71,6% |
+| **20 bộ xác suất cao nhất** | 0,6458 (z −0,15), 45 vé trúng / 2.600, ROI −84,4%, hạng 14/17 | 0,7786 (z −0,39), 45 / 2.620, ROI −91,8%, hạng 15/17 |
+| **10 bộ dễ trúng nhất** | 0,6415 (z −0,50), 14 / 1.300, ROI −91,2%, hạng 15/17 | 0,8351 (z +0,94), 37 / 1.310, ROI −87,4%, hạng 2/17 |
+| **Kết hợp 5 ROI cao nhất** | 0,6492 (z −0,25), 22 / 1.300, ROI −91,5%, hạng 11/17 | 0,7656 (z −1,27), 20 / 1.310, ROI −95,4%, hạng 17/17 |
+| Đứng đầu | Lâu chưa về 0,7123 (z +1,44) | Lâu chưa về 0,8718 (z +1,74) |
+| \|z\| lớn nhất / ngưỡng | 2,21 (ML Logistic) / 2,97 | 1,74 / 2,97 |
+| Giải cao nhất trúng được | Giải Nhì (4 số) | Giải Nhì (4 số) |
+
+### Đánh giá
+1. **Không bộ gợi ý nào tốt hơn vé ngẫu nhiên.**
+   - Cả 3 bộ gợi ý trên trang chủ đều có |z| < 1,3, rất xa ngưỡng 2,97. Không phương pháp nào trong 17 phương pháp vượt ngưỡng.
+   - Không vé nào trúng từ Giải Nhất trở lên. ROI từ −77% đến −97%, đều tệ hơn mức kỳ vọng lý thuyết −70%, vì mức kỳ vọng đó đã tính cả phần jackpot.
+2. **"20 bộ xác suất cao nhất" không đáng tin hơn mà còn rủi ro hơn.**
+   - 20 bộ này gần như chỉ xoay quanh khoảng 10 số mà mô hình chấm cao nhất (hệ số chỉ khoảng ×1,07 so với ngẫu nhiên), nên chúng trúng hoặc trượt cùng nhau.
+   - Với 6/55: 36/130 kỳ không trúng số nào trên cả 20 vé, và chỉ 11 kỳ có vé trúng thưởng. Với 20 vé ngẫu nhiên độc lập, kỳ vọng là khoảng 33 kỳ.
+   - Số tiền trung bình không đổi nhưng rủi ro tăng. Nếu vẫn muốn mua nhiều vé, nên chọn vé *khác nhau* để phủ nhiều số hơn.
+3. **"10 bộ dễ trúng nhất" xếp hạng 2 ở 6/45 nhưng hạng 15 ở 6/55.**
+   - Phương pháp được chọn thay đổi liên tục, vì nó phụ thuộc vào thành tích các kỳ trước. Ở 6/55 có tới 9 phương pháp khác nhau từng được chọn, kể cả "Ngẫu nhiên" trong 18 kỳ.
+   - Không có quán tính: phương pháp đang dẫn đầu không tiếp tục dẫn đầu.
+4. **"Kết hợp 5 ROI cao nhất" là phương pháp kém nhất ở 6/45** (hạng 17/17). Điều này khớp với kết luận ở §5e: chạy theo ROI quá khứ là chạy theo may rủi.
+5. **ML Logistic có z +2,21 ở 6/55** nhưng không lặp lại ở 6/45 (z +0,42) và vẫn dưới ngưỡng sau hiệu chỉnh. Với 17 phép so sánh trên 2 sản phẩm, xuất hiện một giá trị |z| > 2 là chuyện bình thường do ngẫu nhiên.
+
+**Kết luận:** quy trình đã được kiểm chứng là không nhìn trước kết quả. Chính vì vậy, kết quả thẩm định là trung thực: dự đoán bằng ML hay thống kê không giúp trúng nhiều hơn. Nhật ký dự đoán thật (ghi trước giờ quay) sẽ tiếp tục kiểm chứng điều này qua các kỳ tới.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 làm sản phẩm được dự đoán (hiện chỉ dùng làm nguồn dữ liệu phụ) sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.
