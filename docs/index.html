@@ -1661,8 +1661,10 @@
                     });
                     table.append(thead, tbody);
                     box.appendChild(table);
+                    const title = tx("h3", "", "Thẩm định chạy lại " + rp.n_draws + " kỳ", "Replayed validation of " + rp.n_draws + " draws");
+                    title.style.marginTop = "1.25rem";
                     val.append(
-                        tx("h3", "", "Thẩm định chạy lại " + rp.n_draws + " kỳ", "Replayed validation of " + rp.n_draws + " draws"),
+                        title,
                         tx("p", "picks-sub", "Mỗi kỳ được dự đoán chỉ từ dữ liệu trước ngày quay, rồi chấm với kết quả thật. Cột 2 so với vé ngẫu nhiên.", "Each draw predicted from earlier draws only, then scored against the real result. Column 2 compares with a random ticket."),
                         box,
                     );
