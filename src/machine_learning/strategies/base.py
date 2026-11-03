@@ -9,9 +9,15 @@ the :meth:`predict` method.  The base class provides:
 * :meth:`evaluate` that flattens the backtest results and computes accuracy
   statistics; and
 * :meth:`revenue` that estimates profit/loss given the prize structure.
+
+Stored Power 6/55 results carry the bonus number last (``[n1..n6, bonus]``).  The constructor splits it
+into a separate ``bonus`` column so strategies only ever learn from, and are scored against, the six
+main numbers; the bonus is used solely to decide the Jackpot 2 tier (see :mod:`machine_learning.games`).
 """
 
 import pandas as pd
+
+from machine_learning.games import POWER_655, GameSpec
 
 
 class PredictModel:
@@ -30,8 +36,9 @@ class PredictModel:
         How many distinct numbers form a single ticket (6).
     ticket_price
         Cost of a single ticket in VND (10,000).
-    prices
-        Mapping from ``correct_num`` → prize amount in VND.
+    game
+        :class:`~machine_learning.games.GameSpec` with the prize tiers used for scoring.  Defaults to
+        Power 6/55; assign ``MEGA_645`` (and ``max_val=45``) to evaluate Mega 6/45.
     col_*
         Column name constants used across backtest / evaluate DataFrames.
     """
@@ -41,7 +48,7 @@ class PredictModel:
     number_predict = 6
     ticket_price = 10000
 
-    prices = {6: 40_000_000_000, 5: 5_000_000_000, 4: 500000, 3: 50000}
+    game: GameSpec = POWER_655
 
     col_date = "date"
     col_result = "result"
@@ -50,6 +57,9 @@ class PredictModel:
     col_predict_metadata = "predict_metadata"
     col_correct = "is_correct"
     col_correct_num = "correct_num"
+    col_bonus = "bonus"
+    col_bonus_hit = "bonus_hit"
+    col_prize = "prize"
 
     def __init__(
         self,
@@ -74,7 +84,7 @@ class PredictModel:
         max_val:
             Largest valid lottery number (inclusive).
         """
-        self.df = df
+        self.df = self._split_bonus(df)
         self.df_backtest = None
         self.df_backtest_explode = None
         self.df_backtest_evaluate = None
@@ -85,6 +95,47 @@ class PredictModel:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    @classmethod
+    def _split_bonus(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """Return a copy of ``df`` whose ``result`` holds only the main numbers.
+
+        Any number stored after the first ``number_predict`` (the Power 6/55 bonus) moves to a
+        ``bonus`` column, so it is neither learned from nor counted as a regular match.
+        """
+        if cls.col_result not in df.columns or cls.col_bonus in df.columns:
+            return df
+        out = df.copy()
+        # polars -> pandas yields numpy arrays rather than lists, so accept any non-string sequence
+        results = [[int(n) for n in r] if cls._is_sequence(r) else r for r in out[cls.col_result].tolist()]
+        if not any(cls._is_sequence(r) and len(r) > cls.number_predict for r in results):
+            return out
+        out[cls.col_bonus] = [
+            r[cls.number_predict] if cls._is_sequence(r) and len(r) > cls.number_predict else None for r in results
+        ]
+        out[cls.col_result] = [r[: cls.number_predict] if cls._is_sequence(r) else r for r in results]
+        return out
+
+    @staticmethod
+    def _is_sequence(value) -> bool:
+        return hasattr(value, "__len__") and hasattr(value, "__getitem__") and not isinstance(value, (str, bytes))
+
+    def score_ticket(self, ticket, main_numbers, bonus=None) -> dict:
+        """Score ``ticket`` against a draw; returns match count, bonus hit, full-match flag and prize."""
+        main_numbers = [int(n) for n in main_numbers]
+        if len(main_numbers) > self.number_predict:
+            if bonus is None:
+                bonus = main_numbers[self.number_predict]
+            main_numbers = main_numbers[: self.number_predict]
+        correct, correct_num = self._compare_list(main_numbers, ticket)
+        bonus_hit = bonus is not None and not pd.isna(bonus) and int(bonus) in set(ticket)
+        tier = self.game.tier_for(correct_num, bonus_hit)
+        return {
+            PredictModel.col_correct: correct,
+            PredictModel.col_correct_num: correct_num,
+            PredictModel.col_bonus_hit: bonus_hit,
+            PredictModel.col_prize: tier.value if tier else 0,
+        }
 
     @classmethod
     def _count_number(cls, number_series):
@@ -161,15 +212,14 @@ class PredictModel:
 
         def fn_apply(row):
             predicted = []
+            bonus = getattr(row, PredictModel.col_bonus, None)
             for i in range(self.time_predict):
                 loop_predict = self.predict(row.date)
-                correct, correct_num = self._compare_list(row.result, loop_predict)
                 predicted.append(
                     {
                         PredictModel.col_predict + "_idx": i,
                         PredictModel.col_predict: loop_predict,
-                        PredictModel.col_correct: correct,
-                        PredictModel.col_correct_num: correct_num,
+                        **self.score_ticket(loop_predict, row.result, bonus),
                     }
                 )
 
@@ -209,9 +259,10 @@ class PredictModel:
         Returns
         -------
         (cost, gain, profit)
-            All values in VND.  ``profit = gain - cost``.
+            All values in VND.  ``profit = gain - cost``.  Prizes follow :attr:`game` (minimum jackpot
+        values), with the bonus number only deciding the Jackpot 2 tier.
         """
         cost = len(self.df_backtest_evaluate) * self.ticket_price
-        gain = self.df_backtest_evaluate[PredictModel.col_correct_num].map(self.prices).fillna(0).astype(int).sum()
+        gain = int(self.df_backtest_evaluate[PredictModel.col_prize].fillna(0).astype("int64").sum())
 
         return cost, gain, gain - cost

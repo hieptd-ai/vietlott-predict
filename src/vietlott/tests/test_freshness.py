@@ -1,6 +1,7 @@
 """Tests for dataset freshness, SEO metadata, schema documentation, and sitemap consistency."""
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -9,6 +10,11 @@ import polars as pl
 from vietlott.config.products import get_config
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+# Mirrors crawler/internal/render/site.go: the site the docs are rendered for.
+REPO = os.environ.get("VIETLOTT_REPO") or "hieptd-ai/vietlott-predict"
+_OWNER, _NAME = REPO.split("/", 1)
+SITE_URL = (os.environ.get("VIETLOTT_SITE_URL") or f"https://{_OWNER.lower()}.github.io/{_NAME}").rstrip("/") + "/"
 
 
 def _compute_expected_stats() -> list[dict[str, str | int]]:
@@ -90,7 +96,11 @@ def test_jsonld_and_freshness_badge_synchronized() -> None:
     assert len(datasets) == 1, "Expected exactly 1 Dataset node in JSON-LD @graph"
 
     dataset = datasets[0]
-    assert dataset.get("identifier") == "https://github.com/vietvudanh/vietlott-data"
+    assert dataset.get("identifier") == f"https://github.com/{REPO}"
+    assert dataset.get("url") == SITE_URL
+    assert all(
+        d["contentUrl"].startswith(f"https://raw.githubusercontent.com/{REPO}/") for d in dataset["distribution"]
+    )
     assert dataset.get("datePublished") == "2021-04-01"
     assert dataset.get("dateModified") == latest_date
     assert dataset.get("temporalCoverage") == f"2017-08-01/{latest_date}"
@@ -124,10 +134,11 @@ def test_sitemap_and_dedicated_pages_exist() -> None:
     sitemap_xml = (REPO_ROOT / "docs" / "sitemap.xml").read_text(encoding="utf-8")
     assert "llms.txt" not in sitemap_xml, "llms.txt should not be in sitemap.xml"
 
-    urls = re.findall(r"<loc>(https://vietvudanh\.github\.io/vietlott-data/[^<]*)</loc>", sitemap_xml)
-    assert len(urls) == 11, f"Expected 11 canonical URLs in sitemap.xml, found {len(urls)}"
+    urls = re.findall(rf"<loc>({re.escape(SITE_URL)}[^<]*)</loc>", sitemap_xml)
+    assert len(urls) == 12, f"Expected 12 canonical URLs in sitemap.xml, found {len(urls)}"
 
-    prefix = "https://vietvudanh.github.io/vietlott-data/"
+    assert "vietvudanh.github.io" not in sitemap_xml
+    prefix = SITE_URL
     for url in urls:
         rel_dir = url.removeprefix(prefix).strip("/")
         target_html = REPO_ROOT / "docs" / rel_dir / "index.html" if rel_dir else REPO_ROOT / "docs" / "index.html"
@@ -137,4 +148,4 @@ def test_sitemap_and_dedicated_pages_exist() -> None:
 
     root_index = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
     assert "noindex, nofollow" in root_index
-    print("Verified all 11 sitemap pages exist with self-referential canonicals.")
+    print("Verified all 12 sitemap pages exist with self-referential canonicals.")

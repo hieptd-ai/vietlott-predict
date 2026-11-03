@@ -10,6 +10,7 @@ name = "vietlott-data"
 version = "0.3.0"
 description = "Open historical Vietlott lottery dataset — Power 6/55, Mega 6/45, Keno, Max 3D and more. Free NDJSON downloads, daily updates, statistics, and Python/Go tools."
 authors = [{ name = "Viet Vu", email = "vietvudanh@gmail.com" }]
+maintainers = [{ name = "hieptd-ai" }]
 dependencies = [
     "bs4",
     "polars",
@@ -28,8 +29,10 @@ readme = "README.md"
 license = { text = "MIT" }
 
 [project.urls]
-Homepage = "https://github.com/vietvudanh/vietlott-data"
-Issues = "https://github.com/vietvudanh/vietlott-data/issues"
+Homepage = "https://hieptd-ai.github.io/vietlott-predict/"
+Repository = "https://github.com/hieptd-ai/vietlott-predict"
+Upstream = "https://github.com/vietvudanh/vietlott-data"
+Issues = "https://github.com/hieptd-ai/vietlott-predict/issues"
 
 
 [project.optional-dependencies]
@@ -41,6 +44,7 @@ vietlott-crawl = "vietlott.cli.crawl:crawl"
 vietlott-missing = "vietlott.cli.missing:detect_missing_data"
 vietlott-render-readme = "vietlott.render_readme:main"
 vietlott-render-docs = "vietlott.render_docs:main"
+vietlott-render-analysis = "machine_learning.render_analysis:main"
 
 [tool.ruff]
 line-length = 120

@@ -30,7 +30,7 @@ To enable GitHub Pages for this repository, follow these steps:
 - The workflow `.github/workflows/deploy-pages.yml` builds and deploys the static documentation site
 - It runs on a daily schedule and can be triggered via workflow dispatch
 - Site content is located in the `docs/` directory
-- Published URL: `https://vietvudanh.github.io/vietlott-data/`
+- Published URL: `https://hieptd-ai.github.io/vietlott-predict/` (analysis & ML dashboard: `/analysis/`)
 
 ## Manual Deployment
 

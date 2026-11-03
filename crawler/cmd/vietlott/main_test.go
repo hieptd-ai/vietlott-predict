@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vietvudanh/vietlott-data/crawler/internal/crawler"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/crawler"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
 )
 
 func TestParseArgsValidatesSelectionAndMaxDraws(t *testing.T) {

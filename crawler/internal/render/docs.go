@@ -23,15 +23,14 @@ const blogPostBadge = `
                         >
                     </a>`
 
-const mlReadmeURL = "https://github.com/vietvudanh/vietlott-data/blob/main/src/machine_learning"
-const benchmarkURL = "https://github.com/vietvudanh/vietlott-data/blob/main/docs/BENCHMARK.md"
+// analysisURL is the static analysis & ML dashboard rendered from src/machine_learning/render_analysis.py.
+const analysisURL = "analysis/"
+const benchmarkURL = "https://github.com/hieptd-ai/vietlott-predict/blob/main/docs/BENCHMARK.md"
 
 const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
             <section class="section">
                 <a
-                    href="` + mlReadmeURL + `"
-                    target="_blank"
-                    rel="noreferrer"
+                    href="` + analysisURL + `"
                     class="ml-card-banner"
                 >
                     <div class="ml-card-content">
@@ -39,8 +38,8 @@ const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
                         </div>
                         <div class="ml-card-text">
-                            <h3 data-vi="Phân tích Machine Learning →" data-en="Machine Learning Analysis →">Phân tích Machine Learning →</h3>
-                            <p data-vi="Khám phá các mô hình dự đoán và backtest dữ liệu xổ số Vietlott" data-en="Explore prediction models and backtesting for Vietlott lottery data">Khám phá các mô hình dự đoán và backtest dữ liệu xổ số Vietlott</p>
+                            <h3 data-vi="Phân tích &amp; Dự đoán (Machine Learning) →" data-en="Analysis &amp; Prediction (Machine Learning) →">Phân tích &amp; Dự đoán (Machine Learning) →</h3>
+                            <p data-vi="Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45" data-en="ML-picked tickets, a play-since-2026 profit simulator, randomness tests and strategy backtests for Power 6/55 and Mega 6/45">Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45</p>
                         </div>
                     </div>
                     <div class="ml-card-arrow">
@@ -256,17 +255,18 @@ func renderSitemap(latestDate string) string {
 		loc      string
 		priority string
 	}{
-		{"https://vietvudanh.github.io/vietlott-data/", "1.0"},
-		{"https://vietvudanh.github.io/vietlott-data/en/", "0.9"},
-		{"https://vietvudanh.github.io/vietlott-data/power-6-55/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/mega-6-45/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/power-5-35/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/keno/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/max-3d/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/max-3d-pro/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/bingo18/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/data-schema/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/python-examples/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/", "1.0"},
+		{"https://hieptd-ai.github.io/vietlott-predict/en/", "0.9"},
+		{"https://hieptd-ai.github.io/vietlott-predict/power-6-55/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/mega-6-45/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/power-5-35/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/keno/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/max-3d/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/max-3d-pro/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/bingo18/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/data-schema/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/python-examples/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/analysis/", "0.7"},
 	}
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
@@ -348,7 +348,8 @@ func UpdateDocsHTML(root string) error {
 		html = replaceWhole(html, `(?s)<!-- BEGIN_MACHINE_LEARNING_SECTION -->.*?<!-- END_MACHINE_LEARNING_SECTION -->`, mlSection)
 	}
 
-	if err := os.WriteFile(htmlPath, []byte(html), 0o644); err != nil {
+	site := CurrentSite()
+	if err := os.WriteFile(htmlPath, []byte(site.Apply(html)), 0o644); err != nil {
 		return err
 	}
 
@@ -373,5 +374,8 @@ func UpdateDocsHTML(root string) error {
 		}
 	}
 	sitemapPath := filepath.Join(root, "docs", "sitemap.xml")
-	return os.WriteFile(sitemapPath, []byte(renderSitemap(latestDate)), 0o644)
+	if err := os.WriteFile(sitemapPath, []byte(site.Apply(renderSitemap(latestDate))), 0o644); err != nil {
+		return err
+	}
+	return site.ApplyToStaticFiles(root)
 }

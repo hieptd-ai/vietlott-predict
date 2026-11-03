@@ -4,8 +4,9 @@
 set -euo pipefail
 
 DATA_FOLDER=data
-USER="Viet VU"
-EMAIL="vietvudanh@gmail.com"
+# commit identity; override with GIT_USER_NAME / GIT_USER_EMAIL
+GIT_USER_NAME="${GIT_USER_NAME:-hieptd-ai}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-hieptd-ai@users.noreply.github.com}"
 MAX_DRAWS="${MAX_DRAWS:-0}"
 
 cd "$(dirname "$0")/.."
@@ -22,8 +23,8 @@ echo "pwd $(pwd)"
 ./bin/vietlott-crawler render-docs
 
 # commit and push
-git config user.name "$USER"
-git config user.email "$EMAIL"
+git config user.name "$GIT_USER_NAME"
+git config user.email "$GIT_USER_EMAIL"
 git status
 git add $DATA_FOLDER
 git add readme.md

@@ -12,7 +12,7 @@ Key points:
 
 ## Runner
 
-The Go crawler runs via scheduled execution on local/on-premise hardware (see `bin/github_data.sh` and `Procfile`) and commits updated data back to GitHub. GitHub Actions is no longer used for data crawling because the Vietlott website blocks non-Vietnam IP addresses (see [issue #13](https://github.com/vietvudanh/vietlott-data/issues/13) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+The Go crawler runs via scheduled execution on local/on-premise hardware (see `bin/github_data.sh` and `Procfile`) and commits updated data back to GitHub. GitHub Actions is no longer used for data crawling because the Vietlott website blocks non-Vietnam IP addresses (see [upstream issue #13](https://github.com/vietvudanh/vietlott-data/issues/13) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). In this fork, the `sync-data.yml` GitHub Actions workflow copies the data crawled in Vietnam by the upstream project [vietvudanh/vietlott-data](https://github.com/vietvudanh/vietlott-data) twice a day, then `deploy-pages.yml` rebuilds and deploys the site.
 
 ### Go CLI Commands (Recommended)
 - `./bin/vietlott-crawler status`: Compare existing stored draws vs. latest upstream draws.
@@ -25,3 +25,12 @@ The Go crawler runs via scheduled execution on local/on-premise hardware (see `b
 - `vietlott-missing`: Detect and backfill missing draws.
 - `vietlott-render-readme`: Update repository README with current data statistics.
 - `vietlott-render-docs`: Update `docs/index.html` with current data statistics.
+## Analysis & ML Dashboard
+
+`src/machine_learning/` holds the prediction strategies and the analysis pipeline behind `docs/analysis/`:
+
+- `games.py`: prize tiers and exact hypergeometric probabilities for Power 6/55 and Mega 6/45. The Power 6/55 bonus number only decides Jackpot 2.
+- `features.py` + `strategies/ml_classifier.py`: causal per-number features and walk-forward scikit-learn classifiers.
+- `analysis.py` + `render_analysis.py`: frequency and randomness tests, strategy backtests and ML evaluation. They write `docs/analysis/analysis.json` and `analysis-data.js`.
+
+Regenerate with `make render-analysis`. The Deploy GitHub Pages workflow also does this before every deploy. Research notes are in [docs/ML_RESEARCH.md](docs/ML_RESEARCH.md).

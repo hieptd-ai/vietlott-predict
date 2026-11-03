@@ -20,9 +20,11 @@ from machine_learning.strategies import (
     HotNumbersStrategy,
     LongAbsenceStrategy,
     MarkovChainStrategy,
+    MLClassifierStrategy,
     NotRepeatStrategy,
     PairFrequencyStrategy,
     PatternStrategy,
+    PositionalStrategy,
     RandomModel,
 )
 from machine_learning.strategies.base import PredictModel
@@ -197,6 +199,10 @@ STRATEGY_FACTORIES = [
     lambda df: ExponentialDecayStrategy(df, time_predict=1, half_life_days=30),
     lambda df: PairFrequencyStrategy(df, time_predict=1, lookback_days=90),
     lambda df: MarkovChainStrategy(df, time_predict=1, lookback_days=90),
+    lambda df: PositionalStrategy(df, time_predict=1),
+    lambda df: MLClassifierStrategy(
+        df, time_predict=1, model_type="logistic", refit_every=10, min_train_draws=10, seed=1
+    ),
 ]
 
 STRATEGY_NAMES = [
@@ -209,6 +215,8 @@ STRATEGY_NAMES = [
     "ExponentialDecayStrategy",
     "PairFrequencyStrategy",
     "MarkovChainStrategy",
+    "PositionalStrategy",
+    "MLClassifierStrategy",
 ]
 
 

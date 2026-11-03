@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
 )
 
 func TestPower535RequestBodyUsesSchemaDimensions(t *testing.T) {
