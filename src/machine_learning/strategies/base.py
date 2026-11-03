@@ -15,6 +15,9 @@ into a separate ``bonus`` column so strategies only ever learn from, and are sco
 main numbers; the bonus is used solely to decide the Jackpot 2 tier (see :mod:`machine_learning.games`).
 """
 
+import random
+
+import numpy as np
 import pandas as pd
 
 from machine_learning.games import POWER_655, GameSpec
@@ -95,6 +98,11 @@ class PredictModel:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def reseed(self, seed: int) -> None:
+        """Reset every random source the strategy samples from, so ticket generation is reproducible."""
+        random.seed(seed)
+        np.random.seed(seed)
 
     @classmethod
     def _split_bonus(cls, df: pd.DataFrame) -> pd.DataFrame:
