@@ -31,15 +31,18 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ANALYSIS_JSON = REPO_ROOT / "docs" / "analysis" / "analysis.json"
 
 
-def published_best_methods(path: Path = ANALYSIS_JSON) -> dict:
-    """Product -> best method key of the last published 2026 comparison (empty when unavailable)."""
+def published_comparison(path: Path = ANALYSIS_JSON) -> dict:
+    """Product -> ``(best method key, top-ROI method keys)`` of the last published comparison."""
     if not path.exists():
         return {}
     try:
         products = json.loads(path.read_text(encoding="utf-8")).get("products", {})
     except json.JSONDecodeError:
         return {}
-    return {key: p.get("comparison", {}).get("best_key") for key, p in products.items()}
+    return {
+        key: (p.get("comparison", {}).get("best_key"), p.get("comparison", {}).get("top_roi_keys", []))
+        for key, p in products.items()
+    }
 
 
 def validation_markdown(title: str, scored: dict) -> str:
@@ -69,14 +72,17 @@ def validation_markdown(title: str, scored: dict) -> str:
 def main(tickets: int, top: int, seed: int, ledger_dir: Optional[Path]) -> None:
     """Validate recorded predictions, then predict the next Power 6/55 and Mega 6/45 draw with every method."""
     sources = load_sources()
-    best_methods = published_best_methods()
+    published = published_comparison()
     generated_at = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").isoformat(timespec="seconds")
     # no timestamp in the scorecard: it only changes (and gets committed) when there is something new
     scorecard, report = {"products": {}}, []
     for key, game in GAMES.items():
         df = load_draws(game)
         strategies = default_strategies(seed, sources)
-        prediction = predict_next_draw(df, game, strategies, tickets, seed, best_key=best_methods.get(key), n_top=top)
+        best_key, top_roi_keys = published.get(key, (None, []))
+        prediction = predict_next_draw(
+            df, game, strategies, tickets, seed, best_key=best_key, n_top=top, top_roi_keys=top_roi_keys
+        )
         written = append_prediction(prediction, generated_at, ledger_dir)
         state = "recorded" if written else "already recorded"
         logger.info(f"{game.title}: prediction after draw #{prediction['after_id']} {state}")

@@ -367,6 +367,10 @@ STRATEGY_INFO: Dict[str, Tuple[str, str]] = {
         "Gradient Boosting đa nguồn, huấn luyện lại sau mỗi kỳ",
     ),
     "consensus": ("Kết hợp 6 phương pháp", "Bỏ phiếu: số được nhiều phương pháp chọn được ưu tiên"),
+    "top5_roi": (
+        "ROI tích lũy của các phương pháp khác đến kỳ trước",
+        "Trước mỗi kỳ chọn 5 phương pháp có ROI cao nhất, lấy 2 vé của mỗi phương pháp",
+    ),
 }
 
 
@@ -577,6 +581,8 @@ def next_seed(seed: int, index: int) -> int:
     return seed * 1000 + 777 + index
 
 
+TOP_ROI_KEY = "top5_roi"
+TOP_ROI_N = 5
 PICK_TOP_KEY = "picks_top20"
 PICK_BEST_KEY = "picks_best10"
 ML_PROBABILITY_KEYS = ("ml_logistic", "ml_gbm", "ml_multi")
@@ -612,6 +618,7 @@ def predict_next_draw(
     models: Optional[Dict[str, PredictModel]] = None,
     best_key: Optional[str] = None,
     n_top: int = 20,
+    top_roi_keys: Optional[Sequence[str]] = None,
 ) -> dict:
     """Tickets every method predicts for the next draw, trained on all draws known so far.
 
@@ -623,7 +630,10 @@ def predict_next_draw(
     * ``picks_top20`` – the ``n_top`` tickets with the highest joint probability under the average of
       the ML models' per-number probabilities;
     * ``picks_best10`` – the next-draw tickets of ``best_key``, the method with the most matches per
-      ticket in the 2026 comparison (the "easiest to hit" so far).
+      ticket in the comparison (the "easiest to hit" so far).
+
+    With ``top_roi_keys`` (the methods with the highest ROI so far) the adaptive ``top5_roi`` method
+    is added too: 2 next-draw tickets from each of them.
     """
     last = df.iloc[-1]
     target = next_draw_date(list(df["date"]))
@@ -639,6 +649,18 @@ def predict_next_draw(
             logger.warning(f"skip next-draw prediction for {key}: {exc}")
             continue
         rows.append({"key": key, "name": name, "tickets": tickets})
+
+    by_key = {r["key"]: r for r in rows}
+    chosen = [k for k in (top_roi_keys or []) if k in by_key][:TOP_ROI_N]
+    if len(chosen) == TOP_ROI_N:
+        rows.append(
+            {
+                "key": TOP_ROI_KEY,
+                "name": f"Kết hợp {TOP_ROI_N} chiến lược ROI cao nhất (xếp lại sau mỗi kỳ)",
+                "tickets": combine_top_tickets({k: by_key[k]["tickets"] for k in chosen}, chosen, n_tickets),
+                "selected": chosen,
+            }
+        )
 
     picks: Dict[str, dict] = {}
     ml = [models[k] for k in ML_PROBABILITY_KEYS if k in models and hasattr(models[k], "number_probabilities")]
@@ -679,14 +701,32 @@ def _score_tickets(game: GameSpec, tickets: Sequence[Sequence[int]], main: Seque
     return [game.score(t, result) for t in tickets]
 
 
+def top_roi_selection(
+    profits: Dict[str, float], matches: Dict[str, float], order: Sequence[str], n: int = TOP_ROI_N
+) -> List[str]:
+    """The ``n`` strategies with the highest cumulative profit (= ROI, equal stakes); ties by matches, then order."""
+    rank = {key: i for i, key in enumerate(order)}
+    return sorted(order, key=lambda k: (-profits.get(k, 0.0), -matches.get(k, 0.0), rank[k]))[:n]
+
+
+def combine_top_tickets(
+    tickets_by_key: Dict[str, List[List[int]]], keys: Sequence[str], n_tickets: int
+) -> List[List[int]]:
+    """``n_tickets`` tickets taken round-robin from the selected strategies' own tickets (2 each for 5 x 10)."""
+    per = math.ceil(n_tickets / max(len(keys), 1))
+    combined = [list(t) for k in keys for t in tickets_by_key[k][:per]]
+    return combined[:n_tickets]
+
+
 def simulate_and_compare(
     df: pd.DataFrame,
     game: GameSpec,
     strategies: Sequence[Tuple[str, str, StrategyFactory]],
-    start_date: date = date(2026, 1, 1),
+    start_date: date = date(2025, 1, 1),
     tickets_per_draw: int = 10,
-    n_runs: int = 10,
+    n_runs: int = 5,
     seed: int = 42,
+    warmup_draws: int = 30,
 ) -> Tuple[dict, dict, dict]:
     """Play every method on every draw since ``start_date`` and compare them in one table.
 
@@ -694,19 +734,30 @@ def simulate_and_compare(
     ML re-trained after every draw).  Random methods are replayed ``n_runs`` times with different seeds
     so the table reports averages and spreads rather than one lucky or unlucky run.
 
+    The adaptive ``top5_roi`` method is built on top: before every draw it ranks the other methods by
+    the profit (ROI) their tickets made on all earlier draws - including ``warmup_draws`` draws before
+    ``start_date`` so it has a ranking from the first draw - and buys 2 tickets of each of the top 5.
+
     Returns ``(simulation, comparison, next_draw)``: run 0's tickets for the interactive simulator, the
     summary table, and the next-draw tickets (same as :func:`predict_next_draw`).
     """
-    played = df[df["date"] >= start_date]
-    dates = played["date"].tolist()
-    mains = played["result"].tolist()
-    bonuses = played["bonus"].tolist()
+    first = next((i for i, d in enumerate(df["date"]) if d >= start_date), len(df))
+    warm = max(0, first - warmup_draws)
+    span = df.iloc[warm:]
+    dates = span["date"].tolist()
+    mains = span["result"].tolist()
+    bonuses = span["bonus"].tolist()
+    offset = first - warm  # index of the first scored draw inside ``span``
+    played = df.iloc[first:]
     n_draws = len(played)
     match_pmf = game.match_probabilities()
     expected_avg = game.expected_matches()
     per_ticket_var = sum((k - expected_avg) ** 2 * p for k, p in enumerate(match_pmf))
     tier_probs = game.tier_probabilities()
-    sim_rows, rows, models = [], [], {}
+
+    # 1. walk-forward tickets of every method, every run, warm-up included
+    names, models, timing = {}, {}, {}
+    tickets: Dict[str, List[List[List[List[int]]]]] = {}
     for index, (key, name, factory) in enumerate(strategies):
         started = time.time()
         try:
@@ -714,18 +765,56 @@ def simulate_and_compare(
         except Exception as exc:
             logger.warning(f"skip comparison for {key}: {exc}")
             continue
-        models[key] = model
-        runs = []
-        draw_matches = np.zeros(n_draws)
+        models[key], names[key] = model, name
+        tickets[key] = []
         for run in range(n_runs):
             model.reseed(seed + index + 1000 * run)
-            tickets = [[model.predict(d) for _ in range(tickets_per_draw)] for d in dates]
-            if run == 0:
-                sim_rows.append({"key": key, "name": name, "tickets": [encode_tickets(t) for t in tickets]})
+            tickets[key].append([[model.predict(d) for _ in range(tickets_per_draw)] for d in dates])
+        timing[key] = time.time() - started
+    base_keys = list(tickets)
+
+    # 2. score every ticket once: scores[key][run][draw] = list of (matches, tier)
+    scores = {
+        key: [
+            [_score_tickets(game, t, m, b) for t, m, b in zip(runs_tickets, mains, bonuses)]
+            for runs_tickets in tickets[key]
+        ]
+        for key in base_keys
+    }
+
+    # 3. adaptive top-5-by-ROI method, re-ranked before every draw
+    selections: List[List[str]] = []
+    if len(base_keys) >= TOP_ROI_N:
+        tickets[TOP_ROI_KEY], scores[TOP_ROI_KEY] = [], []
+        names[TOP_ROI_KEY] = f"Kết hợp {TOP_ROI_N} chiến lược ROI cao nhất (xếp lại sau mỗi kỳ)"
+        for run in range(n_runs):
+            profit = {k: 0.0 for k in base_keys}
+            matched = {k: 0.0 for k in base_keys}
+            run_tickets, run_scores = [], []
+            for j in range(len(dates)):
+                chosen = top_roi_selection(profit, matched, base_keys)
+                if run == 0:
+                    selections.append(chosen)
+                combo = combine_top_tickets({k: tickets[k][run][j] for k in chosen}, chosen, tickets_per_draw)
+                run_tickets.append(combo)
+                run_scores.append(_score_tickets(game, combo, mains[j], bonuses[j]))
+                for k in base_keys:
+                    outcome = scores[k][run][j]
+                    profit[k] += sum(t.value for _, _, t in outcome if t) - len(outcome) * game.ticket_price
+                    matched[k] += sum(m for m, _, _ in outcome)
+            tickets[TOP_ROI_KEY].append(run_tickets)
+            scores[TOP_ROI_KEY].append(run_scores)
+        timing[TOP_ROI_KEY] = 0.0
+
+    # 4. statistics over the scored window only
+    sim_rows, rows = [], []
+    for key in list(tickets):
+        runs, draw_matches = [], np.zeros(n_draws)
+        for run in range(n_runs):
             tiers: Counter = Counter()
             gain = matches = winners = 0
-            for i, (draw_tickets, main, bonus) in enumerate(zip(tickets, mains, bonuses)):
-                for m, _, tier in _score_tickets(game, draw_tickets, main, bonus):
+            for i, outcome in enumerate(scores[key][run][offset:]):
+                for m, _, tier in outcome:
                     matches += m
                     draw_matches[i] += m
                     if tier:
@@ -744,6 +833,9 @@ def simulate_and_compare(
                     "tiers": tiers,
                 }
             )
+        sim_rows.append(
+            {"key": key, "name": names[key], "tickets": [encode_tickets(t) for t in tickets[key][0][offset:]]}
+        )
         n_tickets = n_draws * tickets_per_draw * n_runs
         avg = float(np.mean([r["avg_matches"] for r in runs])) if runs else 0.0
         draw_means = draw_matches / (tickets_per_draw * n_runs)
@@ -752,16 +844,15 @@ def simulate_and_compare(
         se = max(se_independent, se_cluster)
         z = (avg - expected_avg) / se if se else 0.0
         rois = [r["roi"] for r in runs]
-        best_tier = None
-        for t in sorted(game.tiers, key=lambda t: -t.value):
-            if any(r["tiers"].get(t.key) for r in runs):
-                best_tier = t.key
-                break
+        best_tier = next(
+            (t.key for t in sorted(game.tiers, key=lambda t: -t.value) if any(r["tiers"].get(t.key) for r in runs)),
+            None,
+        )
         source, method = STRATEGY_INFO.get(key, ("", ""))
         rows.append(
             {
                 "key": key,
-                "name": name,
+                "name": names[key],
                 "source": source,
                 "method": method,
                 "runs": n_runs,
@@ -781,12 +872,11 @@ def simulate_and_compare(
                 "mean_winners": float(np.mean([r["winners"] for r in runs])) if runs else 0.0,
                 "mean_tiers": {t.key: float(np.mean([r["tiers"].get(t.key, 0) for r in runs])) for t in game.tiers},
                 "best_tier": best_tier,
-                "seconds": round(time.time() - started, 2),
+                "seconds": round(timing.get(key, 0.0), 2),
             }
         )
         logger.info(
-            f"{game.key} compare {key}: avg={avg:.4f} z={z:+.2f} roi={rows[-1]['mean_roi']:.1f}% "
-            f"({time.time() - started:.1f}s)"
+            f"{game.key} compare {key}: avg={avg:.4f} z={z:+.2f} roi={rows[-1]['mean_roi']:.1f}% ({timing.get(key, 0):.1f}s)"
         )
     n = len(rows)
     for row in rows:
@@ -797,9 +887,15 @@ def simulate_and_compare(
     threshold = _bonferroni_z(n)
     best = rows[0] if rows else None
     roi_best = max(rows, key=lambda r: r["mean_roi"]) if rows else None
+    base_rows = [r for r in rows if r["key"] in base_keys]
+    top_roi_keys = [r["key"] for r in sorted(base_rows, key=lambda r: (-r["mean_profit"], -r["avg_matches"]))][
+        :TOP_ROI_N
+    ]
+    picked = Counter(k for chosen in selections[offset:] for k in chosen)
     comparison = {
         "start_date": str(start_date),
-        "end_date": str(dates[-1]) if dates else None,
+        "end_date": str(played["date"].iloc[-1]) if n_draws else None,
+        "warmup_draws": offset,
         "n_draws": n_draws,
         "tickets_per_draw": tickets_per_draw,
         "n_runs": n_runs,
@@ -810,6 +906,9 @@ def simulate_and_compare(
         "best_key": best["key"] if best else None,
         "best_significant": bool(best and best["z"] >= threshold),
         "best_roi_key": roi_best["key"] if roi_best else None,
+        "top_roi_keys": top_roi_keys,
+        "top_roi_usage": [{"key": k, "name": names[k], "draws": c} for k, c in picked.most_common()],
+        "top_roi_latest": selections[-1] if selections else [],
         "rows": rows,
     }
     simulation = {
@@ -824,7 +923,14 @@ def simulate_and_compare(
         "strategies": sim_rows,
     }
     next_draw = predict_next_draw(
-        df, game, strategies, tickets_per_draw, seed, models=models, best_key=comparison["best_key"]
+        df,
+        game,
+        strategies,
+        tickets_per_draw,
+        seed,
+        models=models,
+        best_key=comparison["best_key"],
+        top_roi_keys=top_roi_keys,
     )
     by_key = {r["key"]: r for r in next_draw["strategies"]}
     for row in simulation["strategies"]:
@@ -839,9 +945,9 @@ def analyse_game(
     seed: int = 42,
     strategies: Optional[Sequence[Tuple[str, str, StrategyFactory]]] = None,
     ml_models: Sequence[str] = ("logistic", "random_forest", "gbm"),
-    simulation_start: date = date(2026, 1, 1),
+    simulation_start: date = date(2025, 1, 1),
     simulation_tickets: int = 10,
-    n_runs: int = 10,
+    n_runs: int = 5,
     sources: Optional[Sources] = None,
     ledger: Optional[List[dict]] = None,
 ) -> dict:
@@ -950,6 +1056,8 @@ def homepage_picks(next_draw: dict, comparison: dict, ledger: Optional[List[dict
         },
         "validation": validation,
         "summary": [a for a in scored.get("summary", []) if a["key"] in (PICK_TOP_KEY, PICK_BEST_KEY)],
+        "window_start": comparison.get("start_date"),
+        "window_end": comparison.get("end_date"),
     }
 
 

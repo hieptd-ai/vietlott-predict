@@ -384,3 +384,52 @@ def test_validation_markdown_lists_picks_first():
     assert "kỳ #01419" in text and text.index("Top 20") < text.index("Random")
     assert "Chưa có" in validation_markdown("Mega", {"n_recorded": 0, "scored": []})
     print("validation report is readable")
+
+
+def _random_variants(n: int):
+    """``n`` independent random strategies (distinct seeds via the strategy index)."""
+    return [
+        (f"rand{i}", f"Random {i}", lambda d, g: RandomModel(d, min_val=g.min_val, max_val=g.max_val)) for i in range(n)
+    ]
+
+
+def test_top_roi_selection_and_ticket_combination():
+    from machine_learning.analysis import combine_top_tickets, top_roi_selection
+
+    order = ["a", "b", "c", "d", "e", "f"]
+    profits = {"a": -10, "b": 5, "c": 5, "d": 0, "e": -3, "f": 7}
+    matches = {"b": 1, "c": 9}
+    assert top_roi_selection(profits, matches, order) == ["f", "c", "b", "d", "e"]
+    assert top_roi_selection({}, {}, order) == ["a", "b", "c", "d", "e"]
+    tickets = {k: [[i, i + 1, i + 2, i + 3, i + 4, i + 5] for i in range(1, 11)] for k in order}
+    combined = combine_top_tickets(tickets, ["f", "c", "b", "d", "e"], 10)
+    assert len(combined) == 10 and combined[0] == tickets["f"][0] and combined[1] == tickets["f"][1]
+    assert combined[2] == tickets["c"][0]
+    print("top-5 ROI ranking and 2-tickets-each combination behave as specified")
+
+
+def test_top5_roi_strategy_is_walk_forward():
+    df = prepare_draws(_raw_draws(70), POWER_655)
+    start = df["date"].iloc[40]
+    strategies = _random_variants(6)
+    sim, comparison, next_draw = simulate_and_compare(
+        df, POWER_655, strategies, start, 10, n_runs=2, seed=3, warmup_draws=10
+    )
+    assert comparison["warmup_draws"] == 10 and comparison["n_draws"] == 30
+    rows = {r["key"]: r for r in comparison["rows"]}
+    assert "top5_roi" in rows and rows["top5_roi"]["tickets_per_run"] == 300
+    assert len(comparison["top_roi_keys"]) == 5 and len(comparison["top_roi_latest"]) == 5
+    assert sum(u["draws"] for u in comparison["top_roi_usage"]) == 30 * 5
+    by_key = {r["key"]: r for r in sim["strategies"]}
+    for j in range(30):
+        base_tickets = {tuple(t) for k in by_key if k != "top5_roi" for t in decode_tickets(by_key[k]["tickets"][j], 6)}
+        assert all(tuple(t) in base_tickets for t in decode_tickets(by_key["top5_roi"]["tickets"][j], 6))
+    # changing the last result must not change any top5_roi ticket (rankings only use earlier draws)
+    altered = df.copy()
+    altered.at[altered.index[-1], "result"] = [1, 2, 3, 4, 5, 6]
+    sim2, _, _ = simulate_and_compare(altered, POWER_655, strategies, start, 10, n_runs=2, seed=3, warmup_draws=10)
+    assert {r["key"]: r["tickets"] for r in sim2["strategies"]}["top5_roi"] == by_key["top5_roi"]["tickets"]
+    top_row = next(r for r in next_draw["strategies"] if r["key"] == "top5_roi")
+    assert top_row["selected"] == comparison["top_roi_keys"] and len(top_row["tickets"]) == 10
+    assert decode_tickets(by_key["top5_roi"]["next"], 6) == top_row["tickets"]
+    print("top-5 ROI method only uses earlier draws and combines the chosen methods' tickets")

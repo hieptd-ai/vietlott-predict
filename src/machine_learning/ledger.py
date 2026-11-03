@@ -48,7 +48,12 @@ def append_prediction(prediction: dict, generated_at: str, ledger_dir: Optional[
         "generated_at": generated_at,
         "seed": prediction["seed"],
         "strategies": [
-            {"key": r["key"], "name": r["name"], "tickets": [list(map(int, t)) for t in r["tickets"]]}
+            {
+                "key": r["key"],
+                "name": r["name"],
+                "tickets": [list(map(int, t)) for t in r["tickets"]],
+                **({"selected": list(r["selected"])} if r.get("selected") else {}),
+            }
             for r in prediction["strategies"]
         ],
         "picks": {

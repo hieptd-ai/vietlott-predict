@@ -17,7 +17,9 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from machine_learning.analysis import build_analysis
+from machine_learning.analysis import build_analysis, homepage_picks, load_draws
+from machine_learning.games import get_game
+from machine_learning.ledger import load_ledger, score_ledger
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "docs" / "analysis"
@@ -63,21 +65,39 @@ def write_analysis(payload: dict, out_dir: Path) -> None:
     logger.info(f"wrote {out_dir / 'analysis.json'} and analysis-data.js ({len(text) / 1024:.0f} KiB)")
 
 
+def refresh_picks(out_dir: Path) -> None:
+    """Re-score the ledger and rebuild the homepage picks inside an existing ``analysis.json`` (fast)."""
+    payload = json.loads((out_dir / "analysis.json").read_text(encoding="utf-8"))
+    for key, product in payload["products"].items():
+        game = get_game(key)
+        ledger = load_ledger(key)
+        scored = score_ledger(ledger, load_draws(game), game)
+        product["ledger"] = scored
+        product["picks"] = homepage_picks(product["next_draw"], product["comparison"], ledger, scored)
+    write_analysis(payload, out_dir)
+
+
 @click.command()
 @click.option("--out", "out_dir", type=click.Path(path_type=Path), default=DEFAULT_OUT, show_default=True)
 @click.option("--tickets", default=10, show_default=True, help="Tickets per draw for every method.")
-@click.option("--runs", default=10, show_default=True, help="Random replays per method in the comparison.")
+@click.option("--runs", default=5, show_default=True, help="Random replays per method in the comparison.")
 @click.option("--ml-eval", default=300, show_default=True, help="Draws in the walk-forward ML evaluation.")
 @click.option("--seed", default=42, show_default=True)
 @click.option(
     "--play-from",
-    default="2026-01-01",
+    default="2025-01-01",
     show_default=True,
     type=click.DateTime(formats=["%Y-%m-%d"]),
     help="First draw date of the comparison and the profit simulator.",
 )
-def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_from) -> None:
+@click.option(
+    "--refresh-picks", "picks_only", is_flag=True, help="Only re-score the ledger and rebuild the homepage picks."
+)
+def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_from, picks_only: bool) -> None:
     """Build the analysis payload for Power 6/55 and Mega 6/45 and write it for the dashboard."""
+    if picks_only:
+        refresh_picks(out_dir)
+        return
     payload = build_analysis(
         ml_eval_draws=ml_eval,
         seed=seed,
