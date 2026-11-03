@@ -180,6 +180,7 @@ func pageHeaderHTML(title, description, canonicalPath, lang, altHrefVi, altHrefE
                     <ul class="nav-menu">
                         <li><a href="../" class="nav-link">Home (VI)</a></li>
                         <li><a href="../en/" class="nav-link">Home (EN)</a></li>
+                        <li><a href="../analysis/" class="nav-link">Predictions &amp; ML</a></li>
                         <li><a href="../power-6-55/" class="nav-link">Power 6/55</a></li>
                         <li><a href="../mega-6-45/" class="nav-link">Mega 6/45</a></li>
                         <li><a href="../power-5-35/" class="nav-link">Power 5/35</a></li>
@@ -461,7 +462,9 @@ func renderEnglishHomePage(stats []productStat, latestDate string, power655Draws
                     <a href="../" class="badge"><span>Tiếng Việt (Vietnamese) →</span></a>
                 </div>
                 <div class="hero-actions">
-                    <a href="#statistics" class="btn btn-primary"><span>Explore Dataset Statistics</span></a>
+                    <a href="../analysis/" class="btn btn-primary"><span>Predictions &amp; ML analysis</span></a>
+                    <a href="../#predictions" class="btn btn-secondary"><span>Next-draw tickets</span></a>
+                    <a href="#statistics" class="btn btn-secondary"><span>Explore Dataset Statistics</span></a>
                     <a href="../data-schema/" class="btn btn-secondary"><span>Data Schema Reference</span></a>
                     <a href="../python-examples/" class="btn btn-secondary"><span>Python &amp; Polars Examples</span></a>
                 </div>

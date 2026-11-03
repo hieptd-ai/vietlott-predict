@@ -99,7 +99,7 @@ uv run ruff check --select I --fix ./src && uv run ruff format ./src
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | every push / pull request | ruff lint + pytest (Python), `go vet` / `go test` / `go build` (Go) |
-| `sync-data.yml` | 00:41 and 12:41 UTC, manual | copies `data/*.jsonl` from the upstream project (crawled in Vietnam), re-renders README/docs, commits to `main`, dispatches the deploy |
+| `sync-data.yml` | hourly (minute 11), manual | crawls vietlott.vn directly when reachable (see below), otherwise copies `data/*.jsonl` from the upstream project; on a new draw it validates the recorded predictions, re-trains every method, records the next-draw tickets (`predictions/`), re-renders README/docs, commits to `main` and dispatches the deploy |
 | `deploy-pages.yml` | push to `main`, daily, dispatched by the sync | builds and deploys the site to GitHub Pages |
 
 One-time setup in the GitHub repository:
@@ -111,6 +111,18 @@ One-time setup in the GitHub repository:
    - `VIETLOTT_SITE_URL`: the public site URL when you use a custom domain (default `https://<owner>.github.io/<repo>/`).
    - `VIETLOTT_GA_ID`: your Google Analytics measurement id (`G-…`). Without it, no analytics tag is rendered.
    - `UPSTREAM_REPO`: the data source for the sync (default `vietvudanh/vietlott-data`).
+
+### Periodic crawling & prediction validation
+- Vietlott blocks non-Vietnam IPs, so the GitHub-hosted runner normally takes the data from the upstream project, which publishes about an hour after each 18:00 (VN) draw. The hourly schedule picks it up within the next hour.
+- **Direct crawl.** To crawl vietlott.vn yourself, use one of these options:
+  1. Add a **Vietnam HTTP(S) proxy** as the repository secret `VIETLOTT_PROXY`, for example `http://user:pass@host:port`. The Go crawler (`sync --all`) then runs through it.
+  2. Register a **self-hosted runner** located in Vietnam, set the repository variable `SYNC_RUNNER` to its label (for example `self-hosted`), and set `DIRECT_CRAWL=true`.
+  If the direct crawl fails, the workflow still falls back to the upstream data.
+- **Validation.** On every new draw, `predict_next.py` does the following:
+  - scores the tickets recorded before that draw (every method, plus the homepage's 20 most-probable and 10 easiest-to-hit tickets);
+  - writes `predictions/scorecard.json` and a report in the job summary;
+  - re-trains all models and appends the next-draw prediction to `predictions/<product>.jsonl`. This file is append-only, one entry per draw.
+- When no new draw has arrived, a run finishes in seconds without installing Python.
 
 ### Site URLs & SEO
 Templates keep the upstream URLs so the fork merges cleanly with upstream. `crawler/internal/render/site.go` rewrites every rendered page so that canonical/hreflang links, Open Graph and Twitter tags, JSON-LD, the sitemap, robots.txt, llms.txt and raw-data download links point to this repository and its Pages site. The site comes from `VIETLOTT_REPO` / `VIETLOTT_SITE_URL` and defaults to `hieptd-ai/vietlott-predict`. The upstream author stays credited as the dataset `creator`, and links to upstream issues are kept.

@@ -39,7 +39,7 @@ const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
                         </div>
                         <div class="ml-card-text">
                             <h3 data-vi="Phân tích &amp; Dự đoán (Machine Learning) →" data-en="Analysis &amp; Prediction (Machine Learning) →">Phân tích &amp; Dự đoán (Machine Learning) →</h3>
-                            <p data-vi="Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45" data-en="ML-picked tickets, a play-since-2026 profit simulator, randomness tests and strategy backtests for Power 6/55 and Mega 6/45">Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2026, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45</p>
+                            <p data-vi="Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2025, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45" data-en="ML-picked tickets, a play-since-2025 profit simulator, randomness tests and strategy backtests for Power 6/55 and Mega 6/45">Chọn số bằng ML, mô phỏng lãi/lỗ nếu chơi từ 2025, kiểm định ngẫu nhiên và backtest chiến lược cho Power 6/55, Mega 6/45</p>
                         </div>
                     </div>
                     <div class="ml-card-arrow">

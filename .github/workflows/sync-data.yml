@@ -1,14 +1,17 @@
-name: Sync data from upstream
+name: Sync data, validate & predict
 
-# Vietlott blocks non-Vietnam IPs, so GitHub runners cannot crawl vietlott.vn themselves.
-# Instead this pulls the daily-updated NDJSON files from the upstream project
-# (vietvudanh/vietlott-data, crawled from Vietnam), re-renders README/docs, commits the
-# result to main and triggers a Pages deploy.
+# Runs every hour and, when a new draw result is available:
+#   1. crawls vietlott.vn directly with the Go crawler when this job can reach it (a Vietnam HTTP proxy
+#      in the VIETLOTT_PROXY secret, or a self-hosted runner in Vietnam selected with the SYNC_RUNNER
+#      variable) - GitHub-hosted runners are geo-blocked by Vietlott;
+#   2. otherwise (and as a fallback) copies the NDJSON files crawled in Vietnam by the upstream project
+#      (vietvudanh/vietlott-data);
+#   3. validates the predictions recorded before the new draw, re-trains every method on all draws,
+#      records the next-draw tickets (predictions/<product>.jsonl) and the scorecard;
+#   4. re-renders README/docs, commits to main and triggers a Pages deploy.
 on:
   schedule:
-    # upstream commits at ~00:01 and ~12:01 UTC
-    - cron: "41 0 * * *"
-    - cron: "41 12 * * *"
+    - cron: "11 * * * *" # hourly; results appear upstream ~1 h after the 18:00 (VN) draws
   workflow_dispatch:
     inputs:
       upstream:
@@ -29,70 +32,119 @@ env:
   VIETLOTT_REPO: ${{ github.repository }}
   VIETLOTT_SITE_URL: ${{ vars.VIETLOTT_SITE_URL }}
   VIETLOTT_GA_ID: ${{ vars.VIETLOTT_GA_ID }}
+  HAS_CRAWL_PROXY: ${{ secrets.VIETLOTT_PROXY != '' }}
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.SYNC_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Fetch upstream data
-        run: |
-          git clone --depth 1 --filter=blob:none --sparse "https://github.com/${UPSTREAM_REPO}.git" "$RUNNER_TEMP/upstream"
-          git -C "$RUNNER_TEMP/upstream" sparse-checkout set data
-          ls -la "$RUNNER_TEMP/upstream/data"
-
-      - name: Merge upstream draws into data/
-        id: merge
-        run: |
-          set -euo pipefail
-          for src in "$RUNNER_TEMP"/upstream/data/*.jsonl; do
-            name=$(basename "$src")
-            dst="data/$name"
-            # never shrink a dataset: only accept upstream files that hold at least as many draws
-            if [ ! -f "$dst" ] || [ "$(wc -l < "$src")" -ge "$(wc -l < "$dst")" ]; then
-              cp "$src" "$dst"
-            else
-              echo "::warning::skip $name: upstream has fewer rows ($(wc -l < "$src")) than local ($(wc -l < "$dst"))"
-            fi
-          done
-          if git diff --quiet -- data; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No new draws."
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            git diff --stat -- data
-          fi
-
       - name: Setup Go
-        if: steps.merge.outputs.changed == 'true'
         uses: actions/setup-go@v5
         with:
           go-version-file: "crawler/go.mod"
           cache-dependency-path: crawler/go.sum
 
+      - name: Crawl vietlott.vn directly
+        id: crawl
+        if: env.HAS_CRAWL_PROXY == 'true' || vars.DIRECT_CRAWL == 'true'
+        continue-on-error: true
+        env:
+          CRAWL_PROXY: ${{ secrets.VIETLOTT_PROXY }}
+        run: |
+          if [ -n "$CRAWL_PROXY" ]; then export HTTPS_PROXY="$CRAWL_PROXY" HTTP_PROXY="$CRAWL_PROXY"; fi
+          cd crawler
+          go run ./cmd/vietlott sync --all --max-draws 500
+
+      - name: Fetch upstream data
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse "https://github.com/${UPSTREAM_REPO}.git" "$RUNNER_TEMP/upstream"
+          git -C "$RUNNER_TEMP/upstream" sparse-checkout set data
+
+      - name: Merge upstream draws into data/
+        run: |
+          set -euo pipefail
+          for src in "$RUNNER_TEMP"/upstream/data/*.jsonl; do
+            name=$(basename "$src")
+            dst="data/$name"
+            # never shrink a dataset: only accept upstream files holding more draws than the local ones
+            # (equal counts keep the local file, which may come from the direct crawl)
+            if [ ! -f "$dst" ] || [ "$(wc -l < "$src")" -gt "$(wc -l < "$dst")" ]; then
+              cp "$src" "$dst"
+            fi
+          done
+
+      - name: Detect new results
+        id: detect
+        run: |
+          if git diff --quiet -- data; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- data
+          fi
+          # predict when there are new draws or no prediction was recorded after the latest draw yet
+          need=$(python3 - <<'EOF'
+          import json, pathlib
+          need = False
+          for key, data in (("power_655", "power655"), ("power_645", "power645")):
+              last = json.loads(pathlib.Path(f"data/{data}.jsonl").read_text().splitlines()[-1])["id"]
+              ledger = pathlib.Path(f"predictions/{key}.jsonl")
+              lines = ledger.read_text().splitlines() if ledger.exists() else []
+              need |= not lines or json.loads(lines[-1])["after_id"] != last
+          print("true" if need else "false")
+          EOF
+          )
+          echo "predict=$need" >> "$GITHUB_OUTPUT"
+          echo "new data: $(git diff --quiet -- data && echo no || echo yes), prediction needed: $need"
+
       - name: Render README & docs
-        if: steps.merge.outputs.changed == 'true'
+        if: steps.detect.outputs.changed == 'true'
         run: |
           cd crawler
           go run ./cmd/vietlott render-readme
           go run ./cmd/vietlott render-docs
 
+      - name: Install uv
+        if: steps.detect.outputs.predict == 'true'
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      # validate the predictions recorded before the new draw, then re-train every method on all draws
+      # and record its tickets for the next draw (idempotent per draw)
+      - name: Validate & predict the next draw
+        if: steps.detect.outputs.predict == 'true'
+        run: |
+          uv python install 3.11
+          uv sync --extra ml
+          uv run python src/machine_learning/predict_next.py
+
       - name: Commit & push
-        if: steps.merge.outputs.changed == 'true'
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data readme.md docs index.html
-          git commit -m "sync data from ${UPSTREAM_REPO} @ $(date -u +'%Y-%m-%d %H:%M:%S')"
+          [ -d predictions ] && git add predictions
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing new."
+            exit 0
+          fi
+          source="${UPSTREAM_REPO}"
+          [ "${{ steps.crawl.outcome }}" = "success" ] && source="vietlott.vn"
+          git commit -m "sync data from ${source}, validate & record next-draw predictions @ $(date -u +'%Y-%m-%d %H:%M:%S')"
           git push origin HEAD:main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
 
       # pushes made with GITHUB_TOKEN do not start other workflows, so dispatch the deploy explicitly
       - name: Trigger Pages deploy
-        if: steps.merge.outputs.changed == 'true'
+        if: steps.commit.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy-pages.yml --ref main --repo "${{ github.repository }}"

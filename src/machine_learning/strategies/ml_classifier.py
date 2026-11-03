@@ -15,7 +15,7 @@ that, which makes this strategy a *test of predictability* rather than an edge.
 
 from bisect import bisect_left
 from datetime import date as date_type
-from typing import Dict, Optional
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -24,6 +24,9 @@ from machine_learning.features import DEFAULT_WINDOWS, build_features, feature_n
 from machine_learning.strategies.base import PredictModel
 
 MODEL_TYPES = ("logistic", "random_forest", "gbm")
+
+# (sorted draw dates, occurrence matrix) -> extra (T + 1, N, F) features and their names
+FeatureBuilder = Callable[[Sequence[date_type], np.ndarray], Tuple[np.ndarray, List[str]]]
 
 
 def make_classifier(model_type: str, random_state: Optional[int] = None):
@@ -61,11 +64,12 @@ class MLClassifierStrategy(PredictModel):
         min_val: int = PredictModel.POWER_655_MIN_VAL,
         max_val: int = PredictModel.POWER_655_MAX_VAL,
         model_type: str = "logistic",
-        refit_every: int = 25,
+        refit_every: int = 1,
         min_train_draws: int = 60,
         selection: str = "sample",
         temperature: float = 1.0,
         seed: Optional[int] = None,
+        extra_features: Sequence[FeatureBuilder] = (),
     ):
         """
         Args:
@@ -73,11 +77,14 @@ class MLClassifierStrategy(PredictModel):
             time_predict: Tickets per draw during backtests.
             min_val / max_val: Inclusive number range.
             model_type: ``"logistic"``, ``"random_forest"`` or ``"gbm"``.
-            refit_every: Re-train the classifier every this many draws (walk-forward).
+            refit_every: Re-train the classifier every this many draws (walk-forward). The default 1
+                re-trains after every new draw.
             min_train_draws: Below this many past draws the strategy falls back to uniform picks.
             selection: ``"sample"`` (weighted sampling) or ``"top"`` (highest probabilities).
             temperature: Sharpening (<1) or flattening (>1) of probabilities before sampling.
             seed: Seed for ticket sampling and model randomness.
+            extra_features: Builders of additional causal features from other data sources (another
+                game's draws, the calendar, ...), concatenated to the per-number features.
         """
         super().__init__(df, time_predict, min_val, max_val)
         if model_type not in MODEL_TYPES:
@@ -92,7 +99,12 @@ class MLClassifierStrategy(PredictModel):
         self.seed = seed
         self._rng = np.random.default_rng(seed)
         self._models: Dict[int, object] = {}
+        self.extra_features = list(extra_features)
         self._prepare_historical_data()
+
+    def reseed(self, seed: int) -> None:
+        super().reseed(seed)
+        self._rng = np.random.default_rng(seed)
 
     def _prepare_historical_data(self) -> None:
         df_sorted = self.df.sort_values("date").reset_index(drop=True)
@@ -100,6 +112,12 @@ class MLClassifierStrategy(PredictModel):
         self._occ = occurrence_matrix(df_sorted["result"].tolist(), self.min_val, self.max_val)
         self._features = build_features(self._occ, DEFAULT_WINDOWS)
         self.feature_names = feature_names(DEFAULT_WINDOWS)
+        for builder in getattr(self, "extra_features", []):
+            extra, names = builder(self._dates, self._occ)
+            if extra.shape[:2] != self._features.shape[:2]:
+                raise ValueError(f"extra features shape {extra.shape} does not match {self._features.shape}")
+            self._features = np.concatenate([self._features, extra], axis=-1)
+            self.feature_names = self.feature_names + list(names)
 
     def _draw_index(self, target_date) -> int:
         """Number of stored draws strictly before ``target_date`` (``len`` for future dates/None)."""

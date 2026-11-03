@@ -39,6 +39,8 @@ MarkovChainStrategy
 PositionalStrategy
     Samples each sorted position (order statistic) from its own historical histogram
     (adapted from thanhnhu/vietlott).
+ConsensusStrategy
+    Ensemble that lets several strategies vote for numbers and samples tickets from the votes.
 MLClassifierStrategy
     Walk-forward scikit-learn classifier (logistic regression, random forest or gradient
     boosting) estimating, per number, the probability it appears in the next draw from causal
@@ -46,6 +48,7 @@ MLClassifierStrategy
 """
 
 from .base import PredictModel
+from .consensus import ConsensusStrategy
 from .exponential_decay import ExponentialDecayStrategy
 from .frequency import ColdNumbersStrategy, FrequencyStrategy, HotNumbersStrategy
 from .long_absence import LongAbsenceStrategy
@@ -71,4 +74,5 @@ __all__ = [
     "MarkovChainStrategy",
     "PositionalStrategy",
     "MLClassifierStrategy",
+    "ConsensusStrategy",
 ]

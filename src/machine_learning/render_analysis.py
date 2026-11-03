@@ -17,7 +17,9 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from machine_learning.analysis import build_analysis
+from machine_learning.analysis import build_analysis, homepage_picks, load_draws
+from machine_learning.games import get_game
+from machine_learning.ledger import load_ledger, score_ledger
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "docs" / "analysis"
@@ -39,37 +41,69 @@ def _compact(value, digits: int = 6):
 
 
 def write_analysis(payload: dict, out_dir: Path) -> None:
-    """Write ``analysis.json`` and ``analysis-data.js`` into ``out_dir``."""
+    """Write ``analysis.json`` / ``analysis-data.js`` and the homepage's ``picks.json`` / ``picks.js``."""
     out_dir.mkdir(parents=True, exist_ok=True)
     text = json.dumps(_compact(payload), ensure_ascii=False, separators=(",", ":"))
     (out_dir / "analysis.json").write_text(text + "\n", encoding="utf-8")
     (out_dir / "analysis-data.js").write_text(f"window.VIETLOTT_ANALYSIS = {text};\n", encoding="utf-8")
+    picks = {
+        "generated_at": payload.get("generated_at"),
+        "products": {
+            key: {
+                "title": product["title"],
+                "pick": product["pick"],
+                "has_bonus": product["has_bonus"],
+                **product["picks"],
+            }
+            for key, product in payload.get("products", {}).items()
+            if "picks" in product
+        },
+    }
+    picks_text = json.dumps(_compact(picks), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "picks.json").write_text(picks_text + "\n", encoding="utf-8")
+    (out_dir / "picks.js").write_text(f"window.VIETLOTT_PICKS = {picks_text};\n", encoding="utf-8")
     logger.info(f"wrote {out_dir / 'analysis.json'} and analysis-data.js ({len(text) / 1024:.0f} KiB)")
+
+
+def refresh_picks(out_dir: Path) -> None:
+    """Re-score the ledger and rebuild the homepage picks inside an existing ``analysis.json`` (fast)."""
+    payload = json.loads((out_dir / "analysis.json").read_text(encoding="utf-8"))
+    for key, product in payload["products"].items():
+        game = get_game(key)
+        ledger = load_ledger(key)
+        scored = score_ledger(ledger, load_draws(game), game)
+        product["ledger"] = scored
+        product["picks"] = homepage_picks(product["next_draw"], product["comparison"], ledger, scored)
+    write_analysis(payload, out_dir)
 
 
 @click.command()
 @click.option("--out", "out_dir", type=click.Path(path_type=Path), default=DEFAULT_OUT, show_default=True)
-@click.option("--window", default=150, show_default=True, help="Draws in the walk-forward strategy backtest.")
-@click.option("--tickets", default=10, show_default=True, help="Tickets per draw per strategy in the backtest.")
+@click.option("--tickets", default=10, show_default=True, help="Tickets per draw for every method.")
+@click.option("--runs", default=5, show_default=True, help="Random replays per method in the comparison.")
 @click.option("--ml-eval", default=300, show_default=True, help="Draws in the walk-forward ML evaluation.")
 @click.option("--seed", default=42, show_default=True)
 @click.option(
     "--play-from",
-    default="2026-01-01",
+    default="2025-01-01",
     show_default=True,
     type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="First draw date of the 'play since' profit simulator.",
+    help="First draw date of the comparison and the profit simulator.",
 )
-@click.option("--play-tickets", default=10, show_default=True, help="Max tickets per draw in the simulator.")
-def main(out_dir: Path, window: int, tickets: int, ml_eval: int, seed: int, play_from, play_tickets: int) -> None:
+@click.option(
+    "--refresh-picks", "picks_only", is_flag=True, help="Only re-score the ledger and rebuild the homepage picks."
+)
+def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_from, picks_only: bool) -> None:
     """Build the analysis payload for Power 6/55 and Mega 6/45 and write it for the dashboard."""
+    if picks_only:
+        refresh_picks(out_dir)
+        return
     payload = build_analysis(
-        backtest_window=window,
-        tickets_per_draw=tickets,
         ml_eval_draws=ml_eval,
         seed=seed,
         simulation_start=play_from.date(),
-        simulation_tickets=play_tickets,
+        simulation_tickets=tickets,
+        n_runs=runs,
     )
     write_analysis(payload, out_dir)
 

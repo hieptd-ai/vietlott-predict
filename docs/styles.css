@@ -1320,3 +1320,115 @@ td:nth-child(5) {
 .faq-item:first-of-type { border-top: 0; }
 .faq-item summary { cursor: pointer; font-weight: 600; }
 .faq-item p { margin: 0.5rem 0 0; line-height: 1.6; }
+
+/* ==========================================================================
+   Homepage prediction picks (rendered from analysis/picks.js)
+   ========================================================================== */
+
+.picks-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.picks-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.picks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+    .picks-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.picks-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.picks-card .picks-sub {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    margin-bottom: 0.9rem;
+}
+
+.pick-list {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.pick-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pick-row .pick-index {
+    width: 1.6rem;
+    font-family: var(--font-mono);
+}
+
+.pick-balls {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.pick-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.78rem;
+    background: var(--color-brand-subtle);
+    border: 1px solid var(--color-brand-border);
+    color: var(--text-primary);
+}
+
+.pick-ball.hit {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+}
+
+.pick-ball.bonus {
+    background: transparent;
+    border: 2px dashed var(--cat-orange);
+}
+
+.pick-ratio {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.picks-validation {
+    margin-top: 1.25rem;
+}
+
+.picks-validation table {
+    min-width: 560px;
+}
+
+.picks-validation td:nth-child(2),
+.picks-validation td:nth-child(3),
+.picks-validation td:nth-child(4) {
+    font-family: var(--font-mono);
+}

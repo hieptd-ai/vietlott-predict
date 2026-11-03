@@ -15,10 +15,13 @@ import pytest
 from machine_learning.analysis import (
     analyse_game,
     decode_tickets,
+    default_strategies,
     encode_tickets,
     hypergeom_pmf,
-    play_simulation,
+    multi_source_builders,
+    predict_next_draw,
     prepare_draws,
+    simulate_and_compare,
     sum_distribution,
 )
 from machine_learning.features import build_features, feature_names, occurrence_matrix
@@ -179,27 +182,39 @@ def test_analyse_game_payload(tmp_path):
     payload = analyse_game(
         df,
         POWER_655,
-        backtest_window=20,
-        tickets_per_draw=3,
         ml_eval_draws=40,
         strategies=strategies,
         ml_models=("logistic",),
+        simulation_start=df["date"].iloc[100],
+        simulation_tickets=3,
+        n_runs=2,
     )
     assert payload["n_draws"] == 120
     assert len(payload["frequency"]["counts"]) == 55
     assert sum(payload["frequency"]["counts"]) == 120 * 6
     assert payload["frequency"]["uniformity"]["dof"] == 54
     assert math.isclose(sum(payload["shape"]["odd"]["expected"]), 120)
-    bt = payload["backtest"]
-    assert [s["key"] for s in bt["strategies"]] == ["random", "ml_logistic"]
-    assert all(s["tickets"] == 60 for s in bt["strategies"])
-    assert all(sum(s["match_dist"]) == 60 for s in bt["strategies"])
-    assert 0 <= payload["ml"]["models"][0]["auc"] <= 1
-    assert len(payload["ml"]["models"][0]["next_draw_probs"]) == 55
-    assert len(payload["suggestions"]) == 2
+    comparison = payload["comparison"]
+    assert sorted(r["key"] for r in comparison["rows"]) == ["ml_logistic", "random"]
+    assert all(r["tickets_per_run"] == 20 * 3 and r["runs"] == 2 for r in comparison["rows"])
+    assert [r["rank"] for r in comparison["rows"]] == [1, 2]
+    assert comparison["best_key"] == comparison["rows"][0]["key"]
+    models = {m["model"]: m for m in payload["ml"]["models"]}
+    assert set(models) == {"logistic", "gbm_multi"}
+    assert models["gbm_multi"]["n_features"] == 6 + 3  # base features + calendar (no other sources)
+    assert 0 <= models["logistic"]["auc"] <= 1
+    assert len(models["logistic"]["next_draw_probs"]) == 55
+    keys = [r["key"] for r in payload["next_draw"]["strategies"]]
+    assert keys == ["random", "ml_logistic", "picks_top20", "picks_best10"]
+    picks = payload["picks"]
+    assert len(picks["top"]["tickets"]) == 20 and len(picks["top"]["ratios"]) == 20
+    assert picks["top"]["ratios"] == sorted(picks["top"]["ratios"], reverse=True)
+    assert picks["best"]["method_key"] == payload["comparison"]["best_key"] and len(picks["best"]["tickets"]) == 3
+    assert picks["recorded"] is False and picks["validation"] is None
+    assert payload["ledger"]["n_recorded"] == 0
     assert payload["latest"]["bonus"] is not None
     assert payload["tiers"][1]["needs_bonus"] is True and payload["tiers"][1]["matches"] == 5
-    assert payload["simulation"]["start_date"] == "2026-01-01"
+    assert payload["simulation"]["start_date"] == str(df["date"].iloc[100])
 
     write_analysis({"generated_at": "now", "products": {"power_655": payload}}, tmp_path)
     data = json.loads((tmp_path / "analysis.json").read_text(encoding="utf-8"))
@@ -216,21 +231,205 @@ def test_ticket_encoding_roundtrip():
     print("tickets pack into 2-digit strings and back")
 
 
-def test_play_simulation_is_walk_forward_and_deterministic():
+def _random_strategy():
+    return [("random", "Random", lambda d, g: RandomModel(d, min_val=g.min_val, max_val=g.max_val))]
+
+
+def test_simulation_and_comparison_are_walk_forward_and_reproducible():
     df = prepare_draws(_raw_draws(90), POWER_655)
     start = df["date"].iloc[60]
-    strategies = [("random", "Random", lambda d, g: RandomModel(d, min_val=g.min_val, max_val=g.max_val))]
-    sim = play_simulation(df, POWER_655, strategies, start_date=start, max_tickets=4, seed=5)
+    sim, comparison, next_draw = simulate_and_compare(df, POWER_655, _random_strategy(), start, 4, n_runs=3, seed=5)
     assert sim["start_date"] == str(start)
-    assert len(sim["draws"]) == 30
-    assert sim["draws"][0]["date"] == str(start)
-    assert all(d["bonus"] is not None for d in sim["draws"])
+    assert len(sim["draws"]) == 30 and sim["draws"][0]["date"] == str(start)
     row = sim["strategies"][0]
     assert len(row["tickets"]) == 30
     for packed in row["tickets"] + [row["next"]]:
         tickets = decode_tickets(packed, 6)
         assert len(tickets) == 4
         assert all(len(set(t)) == 6 and all(1 <= n <= 55 for n in t) for t in tickets)
-    again = play_simulation(df, POWER_655, strategies, start_date=start, max_tickets=4, seed=5)
-    assert again == sim
-    print("simulation covers every draw since the start date and is reproducible")
+    table = comparison["rows"][0]
+    assert table["runs"] == 3 and table["tickets_per_run"] == 120
+    assert table["cost"] == 120 * 10_000
+    assert table["roi_min"] <= table["mean_roi"] <= table["roi_max"]
+    assert 0 <= table["p_profit"] <= 1 and table["p_adjusted"] >= table["p_value"]
+    assert comparison["n_draws"] == 30 and comparison["tickets_per_draw"] == 4
+    assert decode_tickets(row["next"], 6) == next_draw["strategies"][0]["tickets"]
+    again = simulate_and_compare(df, POWER_655, _random_strategy(), start, 4, n_runs=3, seed=5)
+    assert again[0] == sim and again[1]["rows"][0]["avg_matches"] == table["avg_matches"]
+    print("comparison replays every draw since the start date reproducibly")
+
+
+def test_predict_next_draw_matches_simulation_next_tickets():
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    sim, _, _ = simulate_and_compare(df, POWER_655, _random_strategy(), df["date"].iloc[80], 5, n_runs=1, seed=9)
+    standalone = predict_next_draw(df, POWER_655, _random_strategy(), 5, seed=9)
+    assert decode_tickets(sim["strategies"][0]["next"], 6) == standalone["strategies"][0]["tickets"]
+    assert standalone["after_id"] == df["id"].iloc[-1]
+    print("ledger predictions equal the dashboard's next-draw tickets")
+
+
+def test_cross_game_features_only_use_earlier_draws():
+    from machine_learning.features import cross_game_features
+
+    dates = [date(2026, 1, d) for d in (2, 4, 6)]
+    other_dates = [date(2026, 1, d) for d in (1, 3, 5, 7)]
+    other_results = [[1, 2, 3, 4, 5, 6], [1, 7, 8, 9, 10, 11], [12, 13, 14, 15, 16, 17], [1, 2, 3, 4, 5, 6]]
+    feats, names = cross_game_features(dates, other_dates, other_results, 1, 55, windows=(2,))
+    assert feats.shape == (4, 55, 2) and names == ["other_freq_last_2", "other_in_last_draw"]
+    assert feats[0, 0, 0] == 1.0 and feats[0, 6, 0] == 0.0  # only the 01-01 draw precedes 01-02
+    assert feats[1, 0, 0] == 1.0 and feats[1, 6, 0] == 0.5  # 01-01 and 01-03 precede 01-04
+    assert feats[2, 0, 1] == 0.0 and feats[2, 11, 1] == 1.0  # latest earlier draw is 01-05
+    print("cross-game features never look at same-day or later draws")
+
+
+def test_multi_source_ml_and_consensus_strategies():
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    other = prepare_draws(_raw_draws(90, pool=45, bonus=False, seed=3), MEGA_645)[["date", "result"]]
+    builders, used = multi_source_builders(POWER_655, {"power_645": other})
+    assert used == ["6/45", "lịch quay"]
+    strategies = {k: f for k, _, f in default_strategies(seed=1, sources={"power_645": other})}
+    multi = strategies["ml_multi"](df, POWER_655)
+    assert multi.feature_names[-3:] == ["weekday", "month", "number_position"]
+    assert len(multi.feature_names) == 6 + 3 + 3
+    consensus = strategies["consensus"](df, POWER_655)
+    for model in (multi, consensus):
+        model.reseed(4)
+        first = model.predict(df["date"].iloc[-1])
+        model.reseed(4)
+        assert model.predict(df["date"].iloc[-1]) == first
+        assert len(set(first)) == 6 and all(1 <= n <= 55 for n in first)
+    assert sum(consensus.votes(df["date"].iloc[-1]).values()) == 6 * 10 * len(consensus.bases)
+    print("multi-source ML and the consensus ensemble give valid, reproducible tickets")
+
+
+def test_ledger_records_once_and_scores_after_the_draw(tmp_path):
+    from machine_learning.ledger import append_prediction, load_ledger, score_ledger
+
+    df = prepare_draws(_raw_draws(40), POWER_655)
+    known = df.iloc[:-1]
+    prediction = predict_next_draw(known, POWER_655, _random_strategy(), 3, seed=2)
+    assert append_prediction(prediction, "2026-11-03T00:00:00+07:00", tmp_path)
+    assert not append_prediction(prediction, "later", tmp_path)
+    entries = load_ledger("power_655", tmp_path)
+    assert len(entries) == 1 and entries[0]["after_id"] == known["id"].iloc[-1]
+    pending = score_ledger(entries, known, POWER_655)
+    assert pending["n_scored"] == 0 and len(pending["pending"]) == 1
+    scored = score_ledger(entries, df, POWER_655)
+    assert scored["n_scored"] == 1 and scored["scored"][0]["draw_id"] == df["id"].iloc[-1]
+    summary = scored["summary"][0]
+    assert summary["draws"] == 1 and summary["tickets"] == 3 and summary["cost"] == 30_000
+    print("ledger entries are append-only and scored once their draw is known")
+
+
+def test_top_probability_tickets_rank_by_joint_model_probability():
+    from machine_learning.analysis import top_probability_tickets
+
+    probs = np.full(45, 6 / 45)
+    probs[[0, 1, 2, 3, 4, 5, 6]] = [0.2, 0.19, 0.18, 0.17, 0.16, 0.15, 0.14]
+    top = top_probability_tickets(probs, MEGA_645, n_tickets=5, pool_size=10)
+    assert top[0]["ticket"] == [1, 2, 3, 4, 5, 6]
+    assert top[1]["ticket"] == [1, 2, 3, 4, 5, 7]
+    assert all(a["ratio"] >= b["ratio"] for a, b in zip(top, top[1:]))
+    assert len({tuple(t["ticket"]) for t in top}) == 5
+    print("top tickets follow the model's joint probability")
+
+
+def test_ledger_keeps_picks_and_homepage_shows_recorded_tickets(tmp_path):
+    from machine_learning.analysis import homepage_picks
+    from machine_learning.ledger import append_prediction, load_ledger, score_ledger
+
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    strategies = _random_strategy() + [
+        ("ml_logistic", "ML", lambda d, g: MLClassifierStrategy(d, refit_every=20, min_train_draws=30, seed=1))
+    ]
+    known = df.iloc[:-1]
+    prediction = predict_next_draw(known, POWER_655, strategies, 4, seed=3, best_key="random", n_top=20)
+    assert append_prediction(prediction, "2026-11-03T11:00:00+07:00", tmp_path)
+    entry = load_ledger("power_655", tmp_path)[0]
+    assert entry["picks"]["best"]["method_key"] == "random" and "number_probabilities" not in entry["picks"]["top"]
+    comparison = {"rows": [{"key": "random", "avg_matches": 0.7, "z": 1.0, "mean_roi": -90.0}]}
+
+    pending = homepage_picks(prediction, comparison, [entry], score_ledger([entry], known, POWER_655))
+    assert pending["recorded"] and pending["recorded_at"] == "2026-11-03T11:00:00+07:00"
+    assert pending["best"]["tickets"] == next(r for r in prediction["strategies"] if r["key"] == "random")["tickets"]
+    assert len(pending["top"]["tickets"]) == 20 and pending["validation"] is None
+
+    nxt = predict_next_draw(df, POWER_655, strategies, 4, seed=3, best_key="random")
+    validated = homepage_picks(nxt, comparison, [entry], score_ledger([entry], df, POWER_655))
+    assert validated["validation"]["draw_id"] == df["id"].iloc[-1]
+    assert {p["key"] for p in validated["validation"]["picks"]} == {"picks_top20", "picks_best10"}
+    assert {a["key"] for a in validated["summary"]} == {"picks_top20", "picks_best10"}
+    print("homepage shows the recorded picks and validates them after the draw")
+
+
+def test_validation_markdown_lists_picks_first():
+    from machine_learning.predict_next import validation_markdown
+
+    scored = {
+        "n_recorded": 1,
+        "scored": [
+            {
+                "draw_id": "01419",
+                "draw_date": "2026-11-03",
+                "main": [1, 2, 3, 4, 5, 6],
+                "bonus": 7,
+                "strategies": [
+                    {"key": "random", "name": "Random", "best": 3, "winners": 1, "gain": 50000},
+                    {"key": "picks_top20", "name": "Top 20", "best": 2, "winners": 0, "gain": 0},
+                ],
+            }
+        ],
+    }
+    text = validation_markdown("Power 6/55", scored)
+    assert "kỳ #01419" in text and text.index("Top 20") < text.index("Random")
+    assert "Chưa có" in validation_markdown("Mega", {"n_recorded": 0, "scored": []})
+    print("validation report is readable")
+
+
+def _random_variants(n: int):
+    """``n`` independent random strategies (distinct seeds via the strategy index)."""
+    return [
+        (f"rand{i}", f"Random {i}", lambda d, g: RandomModel(d, min_val=g.min_val, max_val=g.max_val)) for i in range(n)
+    ]
+
+
+def test_top_roi_selection_and_ticket_combination():
+    from machine_learning.analysis import combine_top_tickets, top_roi_selection
+
+    order = ["a", "b", "c", "d", "e", "f"]
+    profits = {"a": -10, "b": 5, "c": 5, "d": 0, "e": -3, "f": 7}
+    matches = {"b": 1, "c": 9}
+    assert top_roi_selection(profits, matches, order) == ["f", "c", "b", "d", "e"]
+    assert top_roi_selection({}, {}, order) == ["a", "b", "c", "d", "e"]
+    tickets = {k: [[i, i + 1, i + 2, i + 3, i + 4, i + 5] for i in range(1, 11)] for k in order}
+    combined = combine_top_tickets(tickets, ["f", "c", "b", "d", "e"], 10)
+    assert len(combined) == 10 and combined[0] == tickets["f"][0] and combined[1] == tickets["f"][1]
+    assert combined[2] == tickets["c"][0]
+    print("top-5 ROI ranking and 2-tickets-each combination behave as specified")
+
+
+def test_top5_roi_strategy_is_walk_forward():
+    df = prepare_draws(_raw_draws(70), POWER_655)
+    start = df["date"].iloc[40]
+    strategies = _random_variants(6)
+    sim, comparison, next_draw = simulate_and_compare(
+        df, POWER_655, strategies, start, 10, n_runs=2, seed=3, warmup_draws=10
+    )
+    assert comparison["warmup_draws"] == 10 and comparison["n_draws"] == 30
+    rows = {r["key"]: r for r in comparison["rows"]}
+    assert "top5_roi" in rows and rows["top5_roi"]["tickets_per_run"] == 300
+    assert len(comparison["top_roi_keys"]) == 5 and len(comparison["top_roi_latest"]) == 5
+    assert sum(u["draws"] for u in comparison["top_roi_usage"]) == 30 * 5
+    by_key = {r["key"]: r for r in sim["strategies"]}
+    for j in range(30):
+        base_tickets = {tuple(t) for k in by_key if k != "top5_roi" for t in decode_tickets(by_key[k]["tickets"][j], 6)}
+        assert all(tuple(t) in base_tickets for t in decode_tickets(by_key["top5_roi"]["tickets"][j], 6))
+    # changing the last result must not change any top5_roi ticket (rankings only use earlier draws)
+    altered = df.copy()
+    altered.at[altered.index[-1], "result"] = [1, 2, 3, 4, 5, 6]
+    sim2, _, _ = simulate_and_compare(altered, POWER_655, strategies, start, 10, n_runs=2, seed=3, warmup_draws=10)
+    assert {r["key"]: r["tickets"] for r in sim2["strategies"]}["top5_roi"] == by_key["top5_roi"]["tickets"]
+    top_row = next(r for r in next_draw["strategies"] if r["key"] == "top5_roi")
+    assert top_row["selected"] == comparison["top_roi_keys"] and len(top_row["tickets"]) == 10
+    assert decode_tickets(by_key["top5_roi"]["next"], 6) == top_row["tickets"]
+    print("top-5 ROI method only uses earlier draws and combines the chosen methods' tickets")
