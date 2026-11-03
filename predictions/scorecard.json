@@ -2,10 +2,384 @@
  "products": {
   "power_655": {
    "title": "Power 6/55",
-   "n_recorded": 1,
-   "n_scored": 0,
-   "summary": [],
-   "last": null
+   "n_recorded": 2,
+   "n_scored": 1,
+   "summary": [
+    {
+     "key": "picks_top20",
+     "name": "20 bộ xác suất cao nhất (trung bình 3 mô hình ML)",
+     "draws": 1,
+     "cost": 200000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 22,
+     "tickets": 20,
+     "profit": -200000,
+     "roi": -100.0,
+     "avg_matches": 1.1
+    },
+    {
+     "key": "exp_decay",
+     "name": "Suy giảm mũ",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 50000,
+     "winners": 1,
+     "matches": 10,
+     "tickets": 10,
+     "profit": -50000,
+     "roi": -50.0,
+     "avg_matches": 1.0
+    },
+    {
+     "key": "not_repeat",
+     "name": "Tránh số vừa ra",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 9,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.9
+    },
+    {
+     "key": "positional",
+     "name": "Theo vị trí (order statistic)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 9,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.9
+    },
+    {
+     "key": "picks_best10",
+     "name": "10 bộ dễ trúng nhất (Tránh số vừa ra)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 9,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.9
+    },
+    {
+     "key": "hot",
+     "name": "Số nóng (tần suất cao)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 8,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.8
+    },
+    {
+     "key": "pair",
+     "name": "Cặp số đi cùng",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 8,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.8
+    },
+    {
+     "key": "ml_gbm",
+     "name": "ML: Gradient Boosting",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 8,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.8
+    },
+    {
+     "key": "top5_roi",
+     "name": "Kết hợp 5 chiến lược ROI cao nhất (xếp lại sau mỗi kỳ)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 8,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.8
+    },
+    {
+     "key": "ml_logistic",
+     "name": "ML: Logistic Regression",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 7,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.7
+    },
+    {
+     "key": "consensus",
+     "name": "Đồng thuận nhiều phương pháp (ensemble)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 7,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.7
+    },
+    {
+     "key": "cold",
+     "name": "Số lạnh (tần suất thấp)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 6,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.6
+    },
+    {
+     "key": "long_absence",
+     "name": "Lâu chưa về",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 6,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.6
+    },
+    {
+     "key": "markov",
+     "name": "Chuỗi Markov",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 6,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.6
+    },
+    {
+     "key": "ml_multi",
+     "name": "ML đa nguồn (sản phẩm khác + lịch quay)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 6,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.6
+    },
+    {
+     "key": "random",
+     "name": "Ngẫu nhiên (baseline)",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 5,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.5
+    },
+    {
+     "key": "pattern",
+     "name": "Mẫu khoảng cách",
+     "draws": 1,
+     "cost": 100000,
+     "gain": 0,
+     "winners": 0,
+     "matches": 5,
+     "tickets": 10,
+     "profit": -100000,
+     "roi": -100.0,
+     "avg_matches": 0.5
+    }
+   ],
+   "last": {
+    "after_id": "01418",
+    "draw_id": "01419",
+    "draw_date": "2026-11-03",
+    "generated_at": "2026-11-03T11:55:08+07:00",
+    "main": [
+     10,
+     22,
+     31,
+     39,
+     43,
+     54
+    ],
+    "bonus": 14,
+    "strategies": [
+     {
+      "key": "random",
+      "name": "Ngẫu nhiên (baseline)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "hot",
+      "name": "Số nóng (tần suất cao)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "cold",
+      "name": "Số lạnh (tần suất thấp)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "long_absence",
+      "name": "Lâu chưa về",
+      "best": 1,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "not_repeat",
+      "name": "Tránh số vừa ra",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "pattern",
+      "name": "Mẫu khoảng cách",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "exp_decay",
+      "name": "Suy giảm mũ",
+      "best": 3,
+      "winners": 1,
+      "gain": 50000,
+      "cost": 100000
+     },
+     {
+      "key": "pair",
+      "name": "Cặp số đi cùng",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "markov",
+      "name": "Chuỗi Markov",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "positional",
+      "name": "Theo vị trí (order statistic)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "ml_logistic",
+      "name": "ML: Logistic Regression",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "ml_gbm",
+      "name": "ML: Gradient Boosting",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "ml_multi",
+      "name": "ML đa nguồn (sản phẩm khác + lịch quay)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "consensus",
+      "name": "Đồng thuận nhiều phương pháp (ensemble)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "top5_roi",
+      "name": "Kết hợp 5 chiến lược ROI cao nhất (xếp lại sau mỗi kỳ)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     },
+     {
+      "key": "picks_top20",
+      "name": "20 bộ xác suất cao nhất (trung bình 3 mô hình ML)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 200000
+     },
+     {
+      "key": "picks_best10",
+      "name": "10 bộ dễ trúng nhất (Tránh số vừa ra)",
+      "best": 2,
+      "winners": 0,
+      "gain": 0,
+      "cost": 100000
+     }
+    ]
+   }
   },
   "power_645": {
    "title": "Mega 6/45",
