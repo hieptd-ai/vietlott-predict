@@ -275,7 +275,9 @@ For background on these models, see the [Machine Learning README](./src/machine_
 
 ## How It Works
 
-Vietlott blocks non-Vietnam IPs ([issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)), so crawling runs on a scheduled local runner (`bin/github_data.sh`) and commits updated data back to GitHub.
+Vietlott blocks non-Vietnam IPs ([upstream issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)), so GitHub-hosted runners cannot crawl it. This repository (a fork of [vietvudanh/vietlott-data](https://github.com/vietvudanh/vietlott-data)) keeps its data fresh with the `sync-data.yml` workflow, which copies the NDJSON files crawled in Vietnam by the upstream project twice a day, re-renders this README and the website, and deploys GitHub Pages. A local runner in Vietnam (`bin/github_data.sh`) can crawl vietlott.vn directly instead.
+
+The [analysis & ML dashboard](https://hieptd-ai.github.io/vietlott-predict/analysis/) adds randomness tests, strategy backtests and a "play since 2026" profit simulator; see [docs/ML_RESEARCH.md](docs/ML_RESEARCH.md).
 
 For architecture and runner setup, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For performance and speed metrics comparing Go vs Python, see [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
@@ -315,7 +317,7 @@ uv run vietlott-missing power_655
 
 ```bash
 git clone https://github.com/hieptd-ai/vietlott-predict.git
-cd vietlott-data
+cd vietlott-predict
 uv sync --dev
 uv run pytest
 ```
@@ -326,11 +328,11 @@ If you use this dataset in research, articles, or applications, please cite it a
 
 ```bibtex
 @misc{vietlott_data,
-  author       = {Viet Vu Danh},
+  author       = {Viet Vu Danh and hieptd-ai},
   title        = {Vietlott Data: Open Historical Vietnamese Lottery Dataset (NDJSON)},
   year         = {2026},
   url          = {https://github.com/hieptd-ai/vietlott-predict},
-  note         = {MIT License. Source data from vietlott.vn, updated daily.}
+  note         = {MIT License. Fork of https://github.com/vietvudanh/vietlott-data. Source data from vietlott.vn, updated daily.}
 }
 ```
 
