@@ -49,8 +49,8 @@ def write_analysis(payload: dict, out_dir: Path) -> None:
 
 @click.command()
 @click.option("--out", "out_dir", type=click.Path(path_type=Path), default=DEFAULT_OUT, show_default=True)
-@click.option("--window", default=150, show_default=True, help="Draws in the walk-forward strategy backtest.")
-@click.option("--tickets", default=10, show_default=True, help="Tickets per draw per strategy in the backtest.")
+@click.option("--tickets", default=10, show_default=True, help="Tickets per draw for every method.")
+@click.option("--runs", default=10, show_default=True, help="Random replays per method in the comparison.")
 @click.option("--ml-eval", default=300, show_default=True, help="Draws in the walk-forward ML evaluation.")
 @click.option("--seed", default=42, show_default=True)
 @click.option(
@@ -58,18 +58,16 @@ def write_analysis(payload: dict, out_dir: Path) -> None:
     default="2026-01-01",
     show_default=True,
     type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="First draw date of the 'play since' profit simulator.",
+    help="First draw date of the comparison and the profit simulator.",
 )
-@click.option("--play-tickets", default=10, show_default=True, help="Max tickets per draw in the simulator.")
-def main(out_dir: Path, window: int, tickets: int, ml_eval: int, seed: int, play_from, play_tickets: int) -> None:
+def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_from) -> None:
     """Build the analysis payload for Power 6/55 and Mega 6/45 and write it for the dashboard."""
     payload = build_analysis(
-        backtest_window=window,
-        tickets_per_draw=tickets,
         ml_eval_draws=ml_eval,
         seed=seed,
         simulation_start=play_from.date(),
-        simulation_tickets=play_tickets,
+        simulation_tickets=tickets,
+        n_runs=runs,
     )
     write_analysis(payload, out_dir)
 
