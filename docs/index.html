@@ -1640,6 +1640,34 @@
                             val.appendChild(tx("p", "picks-sub", "Lũy kế: " + sum, "Cumulative: " + sum));
                         }
                     }
+                    replayBlock(p, val);
+                }
+
+                function replayBlock(p, val) {
+                    const rp = p.replay;
+                    if (!rp || !rp.rows.length) return;
+                    const box = el("div", "stats-table");
+                    box.style.marginTop = "0.75rem";
+                    const table = el("table");
+                    const head = el("tr");
+                    [["Chạy lại " + rp.validate_from + " → " + rp.validate_to, "Replay " + rp.validate_from + " → " + rp.validate_to], ["Trúng TB/vé", "Matches/ticket"], ["Vé trúng", "Winning tickets"], ["ROI", "ROI"]].forEach(function (h) { head.appendChild(tx("th", "", h[0], h[1])); });
+                    const thead = el("thead");
+                    thead.appendChild(head);
+                    const tbody = el("tbody");
+                    rp.rows.forEach(function (r) {
+                        const row = el("tr");
+                        row.append(el("td", "", r.name), el("td", "", r.avg_matches.toFixed(3) + " / " + rp.expected_avg_matches.toFixed(3)), el("td", "", nf.format(r.winners) + "/" + nf.format(r.tickets)), el("td", "", r.roi.toFixed(1) + "%"));
+                        tbody.appendChild(row);
+                    });
+                    table.append(thead, tbody);
+                    box.appendChild(table);
+                    const title = tx("h3", "", "Thẩm định chạy lại " + rp.n_draws + " kỳ", "Replayed validation of " + rp.n_draws + " draws");
+                    title.style.marginTop = "1.25rem";
+                    val.append(
+                        title,
+                        tx("p", "picks-sub", "Mỗi kỳ được dự đoán chỉ từ dữ liệu trước ngày quay, rồi chấm với kết quả thật. Cột 2 so với vé ngẫu nhiên.", "Each draw predicted from earlier draws only, then scored against the real result. Column 2 compares with a random ticket."),
+                        box,
+                    );
                 }
 
                 const sw = document.getElementById("picksSwitch");

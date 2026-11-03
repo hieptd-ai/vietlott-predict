@@ -38,7 +38,7 @@ from machine_learning.features import (
     occurrence_matrix,
 )
 from machine_learning.games import GameSpec, get_game
-from machine_learning.ledger import score_ledger
+from machine_learning.ledger import load_replay_summary, score_ledger
 from machine_learning.strategies import (
     ColdNumbersStrategy,
     ConsensusStrategy,
@@ -950,6 +950,7 @@ def analyse_game(
     n_runs: int = 5,
     sources: Optional[Sources] = None,
     ledger: Optional[List[dict]] = None,
+    replay: Optional[dict] = None,
 ) -> dict:
     """Full analysis block for one game."""
     random.seed(seed)
@@ -1001,7 +1002,8 @@ def analyse_game(
         "next_draw": next_draw,
         "simulation": simulation,
         "ledger": scored,
-        "picks": homepage_picks(next_draw, comparison, ledger, scored),
+        "picks": {**homepage_picks(next_draw, comparison, ledger, scored), "replay": replay_picks_summary(replay)},
+        "replay": replay,
     }
 
 
@@ -1061,6 +1063,40 @@ def homepage_picks(next_draw: dict, comparison: dict, ledger: Optional[List[dict
     }
 
 
+def replay_picks_summary(replay: Optional[dict]) -> Optional[dict]:
+    """Homepage view of the replay: totals of the 20 + 10 picks and top5_roi over the replayed draws."""
+    if not replay:
+        return None
+    keys = (PICK_TOP_KEY, PICK_BEST_KEY, TOP_ROI_KEY)
+    return {
+        "validate_from": replay["validate_from"],
+        "validate_to": replay["validate_to"],
+        "n_draws": replay["n_draws"],
+        "expected_avg_matches": replay["expected_avg_matches"],
+        "rows": [
+            {
+                k: r[k]
+                for k in (
+                    "key",
+                    "name",
+                    "draws",
+                    "tickets",
+                    "avg_matches",
+                    "z",
+                    "winners",
+                    "tiers",
+                    "cost",
+                    "gain",
+                    "roi",
+                    "best_match",
+                )
+            }
+            for r in replay["rows"]
+            if r["key"] in keys
+        ],
+    }
+
+
 def _int(value) -> Optional[int]:
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return None
@@ -1076,7 +1112,9 @@ def build_analysis(games: Sequence[str] = ("power_655", "power_645"), **kwargs) 
     for key in games:
         game = get_game(key)
         logger.info(f"analysing {game.title}...")
-        products[key] = analyse_game(load_draws(game), game, sources=sources, ledger=load_ledger(key), **kwargs)
+        products[key] = analyse_game(
+            load_draws(game), game, sources=sources, ledger=load_ledger(key), replay=load_replay_summary(key), **kwargs
+        )
     return {
         "generated_at": pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").isoformat(timespec="seconds"),
         "generated_date": str(date.today()),

@@ -140,3 +140,9 @@ def score_ledger(entries: List[dict], df: pd.DataFrame, game: GameSpec) -> dict:
         "scored": scored[-20:],
         "summary": sorted(summary.values(), key=lambda a: -a["avg_matches"]),
     }
+
+
+def load_replay_summary(product: str, replay_dir: Optional[Path] = None) -> Optional[dict]:
+    """Summary written by ``replay.py`` for ``product`` (None when the replay has not been run)."""
+    path = (replay_dir or LEDGER_DIR / "replay") / f"{product}-summary.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None

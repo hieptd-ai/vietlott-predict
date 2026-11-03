@@ -433,3 +433,69 @@ def test_top5_roi_strategy_is_walk_forward():
     assert top_row["selected"] == comparison["top_roi_keys"] and len(top_row["tickets"]) == 10
     assert decode_tickets(by_key["top5_roi"]["next"], 6) == top_row["tickets"]
     print("top-5 ROI method only uses earlier draws and combines the chosen methods' tickets")
+
+
+def test_truncated_history_gives_the_same_ml_probabilities_as_walk_forward():
+    """No look-ahead: a model built only on draws before t predicts draw t exactly like the walk-forward model."""
+    df = prepare_draws(_raw_draws(90), POWER_655)
+    for model_type in ("logistic", "gbm"):
+        full = MLClassifierStrategy(df, model_type=model_type, min_train_draws=30, seed=5)
+        for t in (60, 75, 89):
+            target = df["date"].iloc[t]
+            truncated = MLClassifierStrategy(df.iloc[:t], model_type=model_type, min_train_draws=30, seed=5)
+            np.testing.assert_allclose(
+                full.number_probabilities(target), truncated.number_probabilities(None), rtol=1e-9
+            )
+    print("walk-forward ML predictions equal models trained only on earlier draws")
+
+
+def test_replay_trains_only_on_earlier_draws_and_validates_each_draw():
+    from machine_learning.replay import replay_game, summarise
+
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    other = prepare_draws(_raw_draws(75, pool=45, bonus=False, seed=8), MEGA_645)[["date", "result"]]
+    start = df["date"].iloc[60]
+    entries = replay_game(df, POWER_655, {"power_645": other}, start, n_tickets=4, seed=1)
+    assert len(entries) == 15
+    for entry in entries:
+        assert entry["trained_until_date"] < entry["draw_date"]
+        assert int(entry["trained_until_id"]) == int(entry["draw_id"]) - 1
+        keys = {r["key"] for r in entry["rows"]}
+        assert {"random", "ml_logistic", "ml_multi", "consensus", "picks_top20"} <= keys
+        for row in entry["rows"]:
+            assert len(row["matches"]) == len(row["tickets"]) == len(row["tiers"])
+    assert entries[0]["best_key"] is not None  # falls back to consensus before any validation exists
+    assert entries[0]["top_roi_keys"] is None and "top5_roi" not in {r["key"] for r in entries[0]["rows"]}
+    assert len(entries[1]["top_roi_keys"]) == 5 and "top5_roi" in {r["key"] for r in entries[1]["rows"]}
+    # the prediction for a draw cannot depend on its result or any later one
+    altered = df.copy()
+    for i in range(65, 75):
+        altered.at[altered.index[i], "result"] = [1, 2, 3, 4, 5, 6]
+    again = replay_game(altered, POWER_655, {"power_645": other}, start, n_tickets=4, seed=1)
+    for a, b in zip(entries[:6], again[:6]):
+        assert [r["tickets"] for r in a["rows"]] == [r["tickets"] for r in b["rows"]]
+    summary = summarise(entries, POWER_655, df["date"].iloc[65])
+    assert summary["n_draws"] == 10 and summary["warmup_draws"] == 5
+    row = next(r for r in summary["rows"] if r["key"] == "picks_top20")
+    assert row["draws"] == 10 and row["tickets"] == 200 and row["cost"] == 2_000_000
+    print("replay predicts each draw from earlier draws only and validates it")
+
+
+def test_every_strategy_predicts_identically_from_truncated_history():
+    """No look-ahead in any method: same seed -> same tickets whether later draws exist or not.
+
+    ``ml_multi`` is excluded only because its calendar feature for the *next* draw uses an estimated draw
+    date when the history is truncated; it is still trained on earlier draws only (see the replay test).
+    """
+    df = prepare_draws(_raw_draws(80), POWER_655)
+    strategies = [s for s in default_strategies(seed=2) if s[0] != "ml_multi"]
+    for t in (70, 79):
+        target = df["date"].iloc[t]
+        for index, (key, _, factory) in enumerate(strategies):
+            full, truncated = factory(df, POWER_655), factory(df.iloc[:t], POWER_655)
+            full.reseed(100 + index)
+            a = [full.predict(target) for _ in range(5)]
+            truncated.reseed(100 + index)
+            b = [truncated.predict(target) for _ in range(5)]
+            assert a == b, f"{key} differs between full and truncated history at draw {t}"
+    print("every method gives the same tickets with or without later draws")

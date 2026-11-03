@@ -1,0 +1,5394 @@
+{
+ "validate_from": "2026-01-01",
+ "validate_to": "2026-11-01",
+ "n_draws": 131,
+ "warmup_draws": 79,
+ "expected_avg_matches": 0.8,
+ "expected_roi": -71.56816524371827,
+ "bonferroni_z": 2.973819901220312,
+ "best_key_usage": [
+  [
+   "long_absence",
+   102
+  ],
+  [
+   "markov",
+   25
+  ],
+  [
+   "positional",
+   4
+  ]
+ ],
+ "top_roi_usage": [
+  [
+   "not_repeat",
+   131
+  ],
+  [
+   "pair",
+   131
+  ],
+  [
+   "long_absence",
+   118
+  ],
+  [
+   "ml_gbm",
+   79
+  ],
+  [
+   "markov",
+   77
+  ],
+  [
+   "positional",
+   69
+  ],
+  [
+   "pattern",
+   50
+  ]
+ ],
+ "picks_keys": [
+  "picks_top20",
+  "picks_best10",
+  "top5_roi"
+ ],
+ "rows": [
+  {
+   "key": "long_absence",
+   "name": "Lâu chưa về",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1142,
+   "cost": 13100000,
+   "gain": 2070000,
+   "tiers": {
+    "third": 39,
+    "second": 3
+   },
+   "best_match": 4,
+   "winners": 42,
+   "avg_matches": 0.8717557251908397,
+   "z": 1.7423041292056125,
+   "p_value": 0.08145524128288435,
+   "profit": -11030000,
+   "roi": -84.19847328244275,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "picks_best10",
+   "name": "10 bộ dễ trúng nhất (Lâu chưa về)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1094,
+   "cost": 13100000,
+   "gain": 1650000,
+   "tiers": {
+    "third": 35,
+    "second": 2
+   },
+   "best_match": 4,
+   "winners": 37,
+   "avg_matches": 0.8351145038167939,
+   "z": 0.9389379650683175,
+   "p_value": 0.34776259553450384,
+   "profit": -11450000,
+   "roi": -87.40458015267176,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "random",
+   "name": "Ngẫu nhiên (baseline)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1081,
+   "cost": 13100000,
+   "gain": 1380000,
+   "tiers": {
+    "third": 36,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 37,
+   "avg_matches": 0.8251908396946565,
+   "z": 1.1102676328719556,
+   "p_value": 0.26688371624222795,
+   "profit": -11720000,
+   "roi": -89.46564885496183,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "pair",
+   "name": "Cặp số đi cùng",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1081,
+   "cost": 13100000,
+   "gain": 900000,
+   "tiers": {
+    "third": 30
+   },
+   "best_match": 3,
+   "winners": 30,
+   "avg_matches": 0.8251908396946565,
+   "z": 1.1433505580675452,
+   "p_value": 0.25289307155087115,
+   "profit": -12200000,
+   "roi": -93.12977099236642,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "ml_logistic",
+   "name": "ML: Logistic Regression",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1060,
+   "cost": 13100000,
+   "gain": 1470000,
+   "tiers": {
+    "third": 29,
+    "second": 2
+   },
+   "best_match": 4,
+   "winners": 31,
+   "avg_matches": 0.8091603053435115,
+   "z": 0.4229300978345765,
+   "p_value": 0.6723462625844534,
+   "profit": -11630000,
+   "roi": -88.77862595419847,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "exp_decay",
+   "name": "Suy giảm mũ",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1057,
+   "cost": 13100000,
+   "gain": 1260000,
+   "tiers": {
+    "third": 32,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 33,
+   "avg_matches": 0.8068702290076336,
+   "z": 0.3171975733759324,
+   "p_value": 0.7510936910919568,
+   "profit": -11840000,
+   "roi": -90.38167938931298,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "ml_multi",
+   "name": "ML đa nguồn (sản phẩm khác + lịch quay)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1054,
+   "cost": 13100000,
+   "gain": 1170000,
+   "tiers": {
+    "third": 29,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 30,
+   "avg_matches": 0.8045801526717558,
+   "z": 0.21146504891728826,
+   "p_value": 0.8325244024421868,
+   "profit": -11930000,
+   "roi": -91.06870229007633,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "not_repeat",
+   "name": "Tránh số vừa ra",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1046,
+   "cost": 13100000,
+   "gain": 390000,
+   "tiers": {
+    "third": 13
+   },
+   "best_match": 3,
+   "winners": 13,
+   "avg_matches": 0.7984732824427481,
+   "z": -0.027865824556073338,
+   "p_value": 0.9777691659058207,
+   "profit": -12710000,
+   "roi": -97.02290076335878,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "positional",
+   "name": "Theo vị trí (order statistic)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1039,
+   "cost": 13100000,
+   "gain": 1710000,
+   "tiers": {
+    "third": 27,
+    "second": 3
+   },
+   "best_match": 4,
+   "winners": 30,
+   "avg_matches": 0.7931297709923664,
+   "z": -0.3171975733759375,
+   "p_value": 0.7510936910919528,
+   "profit": -11390000,
+   "roi": -86.94656488549619,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "markov",
+   "name": "Chuỗi Markov",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1039,
+   "cost": 13100000,
+   "gain": 1110000,
+   "tiers": {
+    "third": 27,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 28,
+   "avg_matches": 0.7931297709923664,
+   "z": -0.31611670937809555,
+   "p_value": 0.7519139243240955,
+   "profit": -11990000,
+   "roi": -91.52671755725191,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "ml_gbm",
+   "name": "ML: Gradient Boosting",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1031,
+   "cost": 13100000,
+   "gain": 2070000,
+   "tiers": {
+    "second": 4,
+    "third": 29
+   },
+   "best_match": 4,
+   "winners": 33,
+   "avg_matches": 0.7870229007633588,
+   "z": -0.5792342641623118,
+   "p_value": 0.5624311139665306,
+   "profit": -11030000,
+   "roi": -84.19847328244275,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "hot",
+   "name": "Số nóng (tần suất cao)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1027,
+   "cost": 13100000,
+   "gain": 1650000,
+   "tiers": {
+    "third": 25,
+    "second": 3
+   },
+   "best_match": 4,
+   "winners": 28,
+   "avg_matches": 0.783969465648855,
+   "z": -0.6913444255577161,
+   "p_value": 0.4893491197171572,
+   "profit": -11450000,
+   "roi": -87.40458015267176,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "consensus",
+   "name": "Đồng thuận nhiều phương pháp (ensemble)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1021,
+   "cost": 13100000,
+   "gain": 1170000,
+   "tiers": {
+    "third": 29,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 30,
+   "avg_matches": 0.7793893129770992,
+   "z": -0.8665398845544585,
+   "p_value": 0.3861941639455617,
+   "profit": -11930000,
+   "roi": -91.06870229007633,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "pattern",
+   "name": "Mẫu khoảng cách",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1021,
+   "cost": 13100000,
+   "gain": 1020000,
+   "tiers": {
+    "third": 24,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 25,
+   "avg_matches": 0.7793893129770992,
+   "z": -0.9142869822345954,
+   "p_value": 0.3605660690208553,
+   "profit": -12080000,
+   "roi": -92.21374045801527,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "picks_top20",
+   "name": "20 bộ xác suất cao nhất (trung bình 3 mô hình ML)",
+   "draws": 131,
+   "tickets": 2620,
+   "matches": 2040,
+   "cost": 26200000,
+   "gain": 2160000,
+   "tiers": {
+    "third": 42,
+    "second": 3
+   },
+   "best_match": 4,
+   "winners": 45,
+   "avg_matches": 0.7786259541984732,
+   "z": -0.3893209564783474,
+   "p_value": 0.6970387357604269,
+   "profit": -24040000,
+   "roi": -91.7557251908397,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "cold",
+   "name": "Số lạnh (tần suất thấp)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1012,
+   "cost": 13100000,
+   "gain": 1020000,
+   "tiers": {
+    "third": 24,
+    "second": 1
+   },
+   "best_match": 4,
+   "winners": 25,
+   "avg_matches": 0.7725190839694657,
+   "z": -1.2687902935037347,
+   "p_value": 0.2045158679631538,
+   "profit": -12080000,
+   "roi": -92.21374045801527,
+   "p_adjusted": 1.0
+  },
+  {
+   "key": "top5_roi",
+   "name": "Kết hợp 5 chiến lược ROI cao nhất (xếp lại sau mỗi kỳ)",
+   "draws": 131,
+   "tickets": 1310,
+   "matches": 1003,
+   "cost": 13100000,
+   "gain": 600000,
+   "tiers": {
+    "third": 20
+   },
+   "best_match": 3,
+   "winners": 20,
+   "avg_matches": 0.7656488549618321,
+   "z": -1.2722364580510301,
+   "p_value": 0.20328911756632587,
+   "profit": -12500000,
+   "roi": -95.41984732824427,
+   "p_adjusted": 1.0
+  }
+ ],
+ "draws": [
+  {
+   "draw_id": "01453",
+   "draw_date": "2026-01-02",
+   "trained_until_id": "01452",
+   "main": [
+    7,
+    18,
+    22,
+    32,
+    37,
+    38
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01454",
+   "draw_date": "2026-01-04",
+   "trained_until_id": "01453",
+   "main": [
+    2,
+    12,
+    21,
+    29,
+    35,
+    44
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01455",
+   "draw_date": "2026-01-07",
+   "trained_until_id": "01454",
+   "main": [
+    1,
+    5,
+    7,
+    28,
+    31,
+    43
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 4,
+     "winners": 1,
+     "gain": 300000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01456",
+   "draw_date": "2026-01-09",
+   "trained_until_id": "01455",
+   "main": [
+    8,
+    9,
+    17,
+    21,
+    36,
+    45
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01457",
+   "draw_date": "2026-01-11",
+   "trained_until_id": "01456",
+   "main": [
+    8,
+    10,
+    21,
+    25,
+    31,
+    38
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01458",
+   "draw_date": "2026-01-14",
+   "trained_until_id": "01457",
+   "main": [
+    1,
+    22,
+    23,
+    28,
+    39,
+    45
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01459",
+   "draw_date": "2026-01-16",
+   "trained_until_id": "01458",
+   "main": [
+    2,
+    10,
+    21,
+    31,
+    34,
+    40
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01460",
+   "draw_date": "2026-01-18",
+   "trained_until_id": "01459",
+   "main": [
+    2,
+    5,
+    15,
+    26,
+    39,
+    42
+   ],
+   "bonus": null,
+   "best_key": "positional",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01461",
+   "draw_date": "2026-01-21",
+   "trained_until_id": "01460",
+   "main": [
+    1,
+    18,
+    23,
+    24,
+    29,
+    37
+   ],
+   "bonus": null,
+   "best_key": "positional",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01462",
+   "draw_date": "2026-01-23",
+   "trained_until_id": "01461",
+   "main": [
+    9,
+    15,
+    16,
+    20,
+    22,
+    31
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01463",
+   "draw_date": "2026-01-25",
+   "trained_until_id": "01462",
+   "main": [
+    2,
+    19,
+    20,
+    24,
+    33,
+    34
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01464",
+   "draw_date": "2026-01-28",
+   "trained_until_id": "01463",
+   "main": [
+    4,
+    10,
+    16,
+    19,
+    27,
+    40
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01465",
+   "draw_date": "2026-01-30",
+   "trained_until_id": "01464",
+   "main": [
+    16,
+    17,
+    30,
+    41,
+    42,
+    45
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01466",
+   "draw_date": "2026-02-01",
+   "trained_until_id": "01465",
+   "main": [
+    1,
+    18,
+    21,
+    23,
+    30,
+    36
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01467",
+   "draw_date": "2026-02-04",
+   "trained_until_id": "01466",
+   "main": [
+    2,
+    12,
+    14,
+    17,
+    39,
+    43
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01468",
+   "draw_date": "2026-02-06",
+   "trained_until_id": "01467",
+   "main": [
+    2,
+    7,
+    13,
+    17,
+    42,
+    45
+   ],
+   "bonus": null,
+   "best_key": "positional",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01469",
+   "draw_date": "2026-02-08",
+   "trained_until_id": "01468",
+   "main": [
+    6,
+    13,
+    16,
+    20,
+    23,
+    38
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01470",
+   "draw_date": "2026-02-11",
+   "trained_until_id": "01469",
+   "main": [
+    15,
+    20,
+    35,
+    40,
+    44,
+    45
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01471",
+   "draw_date": "2026-02-13",
+   "trained_until_id": "01470",
+   "main": [
+    8,
+    12,
+    31,
+    36,
+    42,
+    43
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01472",
+   "draw_date": "2026-02-15",
+   "trained_until_id": "01471",
+   "main": [
+    4,
+    6,
+    7,
+    20,
+    28,
+    43
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01473",
+   "draw_date": "2026-02-18",
+   "trained_until_id": "01472",
+   "main": [
+    1,
+    7,
+    19,
+    23,
+    26,
+    44
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01474",
+   "draw_date": "2026-02-20",
+   "trained_until_id": "01473",
+   "main": [
+    4,
+    25,
+    28,
+    33,
+    34,
+    45
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01475",
+   "draw_date": "2026-02-22",
+   "trained_until_id": "01474",
+   "main": [
+    7,
+    23,
+    24,
+    36,
+    38,
+    40
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01476",
+   "draw_date": "2026-02-25",
+   "trained_until_id": "01475",
+   "main": [
+    4,
+    13,
+    20,
+    22,
+    23,
+    29
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01477",
+   "draw_date": "2026-02-27",
+   "trained_until_id": "01476",
+   "main": [
+    2,
+    4,
+    8,
+    15,
+    17,
+    28
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01478",
+   "draw_date": "2026-03-01",
+   "trained_until_id": "01477",
+   "main": [
+    16,
+    22,
+    23,
+    35,
+    44,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01479",
+   "draw_date": "2026-03-04",
+   "trained_until_id": "01478",
+   "main": [
+    1,
+    4,
+    6,
+    9,
+    13,
+    44
+   ],
+   "bonus": null,
+   "best_key": "positional",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01480",
+   "draw_date": "2026-03-06",
+   "trained_until_id": "01479",
+   "main": [
+    2,
+    10,
+    12,
+    21,
+    32,
+    37
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01481",
+   "draw_date": "2026-03-08",
+   "trained_until_id": "01480",
+   "main": [
+    6,
+    12,
+    13,
+    25,
+    31,
+    32
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01482",
+   "draw_date": "2026-03-11",
+   "trained_until_id": "01481",
+   "main": [
+    16,
+    18,
+    19,
+    28,
+    31,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01483",
+   "draw_date": "2026-03-13",
+   "trained_until_id": "01482",
+   "main": [
+    11,
+    12,
+    20,
+    22,
+    31,
+    33
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01484",
+   "draw_date": "2026-03-15",
+   "trained_until_id": "01483",
+   "main": [
+    4,
+    7,
+    11,
+    26,
+    42,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01485",
+   "draw_date": "2026-03-18",
+   "trained_until_id": "01484",
+   "main": [
+    14,
+    20,
+    33,
+    35,
+    36,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01486",
+   "draw_date": "2026-03-20",
+   "trained_until_id": "01485",
+   "main": [
+    8,
+    11,
+    22,
+    23,
+    38,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01487",
+   "draw_date": "2026-03-22",
+   "trained_until_id": "01486",
+   "main": [
+    5,
+    10,
+    22,
+    26,
+    31,
+    36
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01488",
+   "draw_date": "2026-03-25",
+   "trained_until_id": "01487",
+   "main": [
+    16,
+    22,
+    24,
+    29,
+    35,
+    36
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01489",
+   "draw_date": "2026-03-27",
+   "trained_until_id": "01488",
+   "main": [
+    5,
+    7,
+    13,
+    19,
+    38,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 4,
+     "winners": 13,
+     "gain": 1200000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01490",
+   "draw_date": "2026-03-29",
+   "trained_until_id": "01489",
+   "main": [
+    5,
+    8,
+    18,
+    30,
+    37,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01491",
+   "draw_date": "2026-04-01",
+   "trained_until_id": "01490",
+   "main": [
+    6,
+    30,
+    34,
+    36,
+    37,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01492",
+   "draw_date": "2026-04-03",
+   "trained_until_id": "01491",
+   "main": [
+    2,
+    4,
+    23,
+    24,
+    35,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01493",
+   "draw_date": "2026-04-05",
+   "trained_until_id": "01492",
+   "main": [
+    2,
+    9,
+    23,
+    30,
+    32,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01494",
+   "draw_date": "2026-04-08",
+   "trained_until_id": "01493",
+   "main": [
+    5,
+    8,
+    23,
+    26,
+    38,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01495",
+   "draw_date": "2026-04-10",
+   "trained_until_id": "01494",
+   "main": [
+    7,
+    8,
+    10,
+    16,
+    28,
+    35
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01496",
+   "draw_date": "2026-04-12",
+   "trained_until_id": "01495",
+   "main": [
+    1,
+    10,
+    11,
+    32,
+    39,
+    42
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01497",
+   "draw_date": "2026-04-15",
+   "trained_until_id": "01496",
+   "main": [
+    21,
+    22,
+    33,
+    35,
+    36,
+    43
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01498",
+   "draw_date": "2026-04-17",
+   "trained_until_id": "01497",
+   "main": [
+    1,
+    10,
+    19,
+    31,
+    36,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01499",
+   "draw_date": "2026-04-19",
+   "trained_until_id": "01498",
+   "main": [
+    7,
+    10,
+    15,
+    27,
+    33,
+    35
+   ],
+   "bonus": null,
+   "best_key": "markov",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01500",
+   "draw_date": "2026-04-22",
+   "trained_until_id": "01499",
+   "main": [
+    2,
+    6,
+    15,
+    16,
+    17,
+    37
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01501",
+   "draw_date": "2026-04-24",
+   "trained_until_id": "01500",
+   "main": [
+    20,
+    29,
+    33,
+    36,
+    41,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01502",
+   "draw_date": "2026-04-26",
+   "trained_until_id": "01501",
+   "main": [
+    12,
+    18,
+    22,
+    25,
+    31,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01503",
+   "draw_date": "2026-04-29",
+   "trained_until_id": "01502",
+   "main": [
+    4,
+    14,
+    15,
+    16,
+    17,
+    25
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01504",
+   "draw_date": "2026-05-01",
+   "trained_until_id": "01503",
+   "main": [
+    4,
+    21,
+    25,
+    31,
+    41,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01505",
+   "draw_date": "2026-05-03",
+   "trained_until_id": "01504",
+   "main": [
+    7,
+    9,
+    14,
+    24,
+    38,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01506",
+   "draw_date": "2026-05-06",
+   "trained_until_id": "01505",
+   "main": [
+    9,
+    12,
+    28,
+    36,
+    37,
+    40
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01507",
+   "draw_date": "2026-05-08",
+   "trained_until_id": "01506",
+   "main": [
+    4,
+    16,
+    17,
+    26,
+    34,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01508",
+   "draw_date": "2026-05-10",
+   "trained_until_id": "01507",
+   "main": [
+    3,
+    4,
+    10,
+    11,
+    27,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 4,
+     "winners": 1,
+     "gain": 300000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01509",
+   "draw_date": "2026-05-13",
+   "trained_until_id": "01508",
+   "main": [
+    8,
+    10,
+    15,
+    32,
+    35,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01510",
+   "draw_date": "2026-05-15",
+   "trained_until_id": "01509",
+   "main": [
+    6,
+    14,
+    20,
+    22,
+    23,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 3,
+     "gain": 90000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01511",
+   "draw_date": "2026-05-17",
+   "trained_until_id": "01510",
+   "main": [
+    4,
+    8,
+    13,
+    15,
+    27,
+    31
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01512",
+   "draw_date": "2026-05-20",
+   "trained_until_id": "01511",
+   "main": [
+    16,
+    28,
+    29,
+    37,
+    40,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01513",
+   "draw_date": "2026-05-22",
+   "trained_until_id": "01512",
+   "main": [
+    2,
+    3,
+    14,
+    28,
+    41,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01514",
+   "draw_date": "2026-05-24",
+   "trained_until_id": "01513",
+   "main": [
+    4,
+    8,
+    9,
+    14,
+    25,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01515",
+   "draw_date": "2026-05-27",
+   "trained_until_id": "01514",
+   "main": [
+    2,
+    13,
+    17,
+    18,
+    31,
+    37
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01516",
+   "draw_date": "2026-05-29",
+   "trained_until_id": "01515",
+   "main": [
+    13,
+    14,
+    24,
+    28,
+    30,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01517",
+   "draw_date": "2026-05-31",
+   "trained_until_id": "01516",
+   "main": [
+    1,
+    12,
+    16,
+    21,
+    24,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01518",
+   "draw_date": "2026-06-03",
+   "trained_until_id": "01517",
+   "main": [
+    3,
+    11,
+    26,
+    33,
+    36,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 4,
+     "gain": 120000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01519",
+   "draw_date": "2026-06-05",
+   "trained_until_id": "01518",
+   "main": [
+    13,
+    16,
+    19,
+    32,
+    36,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01520",
+   "draw_date": "2026-06-07",
+   "trained_until_id": "01519",
+   "main": [
+    14,
+    21,
+    26,
+    30,
+    34,
+    35
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01521",
+   "draw_date": "2026-06-10",
+   "trained_until_id": "01520",
+   "main": [
+    3,
+    9,
+    17,
+    22,
+    27,
+    32
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01522",
+   "draw_date": "2026-06-12",
+   "trained_until_id": "01521",
+   "main": [
+    5,
+    15,
+    30,
+    34,
+    37,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01523",
+   "draw_date": "2026-06-14",
+   "trained_until_id": "01522",
+   "main": [
+    7,
+    16,
+    20,
+    22,
+    24,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01524",
+   "draw_date": "2026-06-17",
+   "trained_until_id": "01523",
+   "main": [
+    5,
+    6,
+    16,
+    28,
+    35,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01525",
+   "draw_date": "2026-06-19",
+   "trained_until_id": "01524",
+   "main": [
+    6,
+    9,
+    19,
+    29,
+    30,
+    36
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01526",
+   "draw_date": "2026-06-21",
+   "trained_until_id": "01525",
+   "main": [
+    3,
+    8,
+    19,
+    27,
+    41,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01527",
+   "draw_date": "2026-06-24",
+   "trained_until_id": "01526",
+   "main": [
+    3,
+    11,
+    17,
+    19,
+    30,
+    32
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01528",
+   "draw_date": "2026-06-26",
+   "trained_until_id": "01527",
+   "main": [
+    9,
+    14,
+    31,
+    36,
+    41,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 4,
+     "gain": 120000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01529",
+   "draw_date": "2026-06-28",
+   "trained_until_id": "01528",
+   "main": [
+    2,
+    11,
+    18,
+    33,
+    42,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01530",
+   "draw_date": "2026-07-01",
+   "trained_until_id": "01529",
+   "main": [
+    20,
+    24,
+    25,
+    29,
+    40,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01531",
+   "draw_date": "2026-07-03",
+   "trained_until_id": "01530",
+   "main": [
+    6,
+    20,
+    21,
+    28,
+    30,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01532",
+   "draw_date": "2026-07-05",
+   "trained_until_id": "01531",
+   "main": [
+    1,
+    5,
+    13,
+    29,
+    32,
+    35
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01533",
+   "draw_date": "2026-07-08",
+   "trained_until_id": "01532",
+   "main": [
+    13,
+    14,
+    22,
+    26,
+    37,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01534",
+   "draw_date": "2026-07-10",
+   "trained_until_id": "01533",
+   "main": [
+    9,
+    17,
+    23,
+    26,
+    42,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01535",
+   "draw_date": "2026-07-12",
+   "trained_until_id": "01534",
+   "main": [
+    6,
+    9,
+    11,
+    17,
+    35,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01536",
+   "draw_date": "2026-07-15",
+   "trained_until_id": "01535",
+   "main": [
+    7,
+    11,
+    29,
+    37,
+    43,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01537",
+   "draw_date": "2026-07-17",
+   "trained_until_id": "01536",
+   "main": [
+    9,
+    18,
+    30,
+    31,
+    39,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01538",
+   "draw_date": "2026-07-19",
+   "trained_until_id": "01537",
+   "main": [
+    12,
+    22,
+    24,
+    26,
+    31,
+    37
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01539",
+   "draw_date": "2026-07-22",
+   "trained_until_id": "01538",
+   "main": [
+    3,
+    32,
+    33,
+    34,
+    39,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01540",
+   "draw_date": "2026-07-24",
+   "trained_until_id": "01539",
+   "main": [
+    12,
+    16,
+    36,
+    38,
+    41,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01541",
+   "draw_date": "2026-07-26",
+   "trained_until_id": "01540",
+   "main": [
+    13,
+    16,
+    27,
+    33,
+    41,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01542",
+   "draw_date": "2026-07-29",
+   "trained_until_id": "01541",
+   "main": [
+    2,
+    6,
+    21,
+    31,
+    36,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01543",
+   "draw_date": "2026-07-31",
+   "trained_until_id": "01542",
+   "main": [
+    6,
+    16,
+    24,
+    25,
+    38,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 11,
+     "gain": 330000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01544",
+   "draw_date": "2026-08-02",
+   "trained_until_id": "01543",
+   "main": [
+    3,
+    12,
+    20,
+    25,
+    27,
+    37
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01545",
+   "draw_date": "2026-08-05",
+   "trained_until_id": "01544",
+   "main": [
+    2,
+    6,
+    11,
+    16,
+    28,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01546",
+   "draw_date": "2026-08-07",
+   "trained_until_id": "01545",
+   "main": [
+    2,
+    8,
+    19,
+    30,
+    36,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01547",
+   "draw_date": "2026-08-09",
+   "trained_until_id": "01546",
+   "main": [
+    3,
+    17,
+    20,
+    27,
+    31,
+    35
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01548",
+   "draw_date": "2026-08-12",
+   "trained_until_id": "01547",
+   "main": [
+    15,
+    17,
+    22,
+    29,
+    33,
+    40
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01549",
+   "draw_date": "2026-08-14",
+   "trained_until_id": "01548",
+   "main": [
+    7,
+    9,
+    13,
+    31,
+    35,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01550",
+   "draw_date": "2026-08-16",
+   "trained_until_id": "01549",
+   "main": [
+    6,
+    7,
+    15,
+    19,
+    36,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01551",
+   "draw_date": "2026-08-19",
+   "trained_until_id": "01550",
+   "main": [
+    6,
+    15,
+    18,
+    33,
+    40,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01552",
+   "draw_date": "2026-08-21",
+   "trained_until_id": "01551",
+   "main": [
+    7,
+    26,
+    31,
+    38,
+    43,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01553",
+   "draw_date": "2026-08-23",
+   "trained_until_id": "01552",
+   "main": [
+    4,
+    16,
+    17,
+    22,
+    32,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01554",
+   "draw_date": "2026-08-26",
+   "trained_until_id": "01553",
+   "main": [
+    3,
+    10,
+    11,
+    16,
+    33,
+    40
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01555",
+   "draw_date": "2026-08-28",
+   "trained_until_id": "01554",
+   "main": [
+    3,
+    13,
+    15,
+    22,
+    36,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01556",
+   "draw_date": "2026-08-30",
+   "trained_until_id": "01555",
+   "main": [
+    1,
+    3,
+    12,
+    15,
+    37,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01557",
+   "draw_date": "2026-09-02",
+   "trained_until_id": "01556",
+   "main": [
+    6,
+    9,
+    27,
+    29,
+    35,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01558",
+   "draw_date": "2026-09-04",
+   "trained_until_id": "01557",
+   "main": [
+    16,
+    21,
+    23,
+    29,
+    34,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01559",
+   "draw_date": "2026-09-06",
+   "trained_until_id": "01558",
+   "main": [
+    9,
+    14,
+    22,
+    26,
+    27,
+    40
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01560",
+   "draw_date": "2026-09-09",
+   "trained_until_id": "01559",
+   "main": [
+    12,
+    17,
+    20,
+    21,
+    36,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01561",
+   "draw_date": "2026-09-11",
+   "trained_until_id": "01560",
+   "main": [
+    14,
+    18,
+    20,
+    21,
+    26,
+    27
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01562",
+   "draw_date": "2026-09-13",
+   "trained_until_id": "01561",
+   "main": [
+    4,
+    12,
+    31,
+    34,
+    38,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 3,
+     "gain": 90000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01563",
+   "draw_date": "2026-09-16",
+   "trained_until_id": "01562",
+   "main": [
+    1,
+    3,
+    10,
+    11,
+    18,
+    23
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01564",
+   "draw_date": "2026-09-18",
+   "trained_until_id": "01563",
+   "main": [
+    7,
+    12,
+    26,
+    27,
+    41,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01565",
+   "draw_date": "2026-09-20",
+   "trained_until_id": "01564",
+   "main": [
+    10,
+    15,
+    16,
+    27,
+    33,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 3,
+     "winners": 11,
+     "gain": 330000,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01566",
+   "draw_date": "2026-09-23",
+   "trained_until_id": "01565",
+   "main": [
+    2,
+    6,
+    12,
+    15,
+    25,
+    26
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01567",
+   "draw_date": "2026-09-25",
+   "trained_until_id": "01566",
+   "main": [
+    3,
+    15,
+    18,
+    28,
+    33,
+    36
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01568",
+   "draw_date": "2026-09-27",
+   "trained_until_id": "01567",
+   "main": [
+    2,
+    4,
+    13,
+    25,
+    31,
+    39
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01569",
+   "draw_date": "2026-09-30",
+   "trained_until_id": "01568",
+   "main": [
+    2,
+    9,
+    24,
+    27,
+    30,
+    33
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01570",
+   "draw_date": "2026-10-02",
+   "trained_until_id": "01569",
+   "main": [
+    1,
+    6,
+    20,
+    27,
+    31,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01571",
+   "draw_date": "2026-10-04",
+   "trained_until_id": "01570",
+   "main": [
+    15,
+    20,
+    29,
+    37,
+    40,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01572",
+   "draw_date": "2026-10-07",
+   "trained_until_id": "01571",
+   "main": [
+    10,
+    14,
+    36,
+    37,
+    41,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01573",
+   "draw_date": "2026-10-09",
+   "trained_until_id": "01572",
+   "main": [
+    5,
+    7,
+    12,
+    23,
+    32,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01574",
+   "draw_date": "2026-10-11",
+   "trained_until_id": "01573",
+   "main": [
+    3,
+    9,
+    16,
+    29,
+    30,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01575",
+   "draw_date": "2026-10-14",
+   "trained_until_id": "01574",
+   "main": [
+    6,
+    16,
+    19,
+    21,
+    34,
+    43
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01576",
+   "draw_date": "2026-10-16",
+   "trained_until_id": "01575",
+   "main": [
+    9,
+    20,
+    26,
+    35,
+    36,
+    38
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01577",
+   "draw_date": "2026-10-18",
+   "trained_until_id": "01576",
+   "main": [
+    10,
+    11,
+    31,
+    38,
+    40,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01578",
+   "draw_date": "2026-10-21",
+   "trained_until_id": "01577",
+   "main": [
+    4,
+    10,
+    14,
+    22,
+    25,
+    44
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 0,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 1,
+     "gain": 30000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01579",
+   "draw_date": "2026-10-23",
+   "trained_until_id": "01578",
+   "main": [
+    2,
+    5,
+    11,
+    22,
+    32,
+    40
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01580",
+   "draw_date": "2026-10-25",
+   "trained_until_id": "01579",
+   "main": [
+    4,
+    13,
+    22,
+    25,
+    40,
+    41
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01581",
+   "draw_date": "2026-10-28",
+   "trained_until_id": "01580",
+   "main": [
+    1,
+    9,
+    11,
+    28,
+    33,
+    42
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 3,
+     "winners": 2,
+     "gain": 60000,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01582",
+   "draw_date": "2026-10-30",
+   "trained_until_id": "01581",
+   "main": [
+    7,
+    21,
+    22,
+    40,
+    41,
+    45
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 1,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  },
+  {
+   "draw_id": "01583",
+   "draw_date": "2026-11-01",
+   "trained_until_id": "01582",
+   "main": [
+    5,
+    9,
+    17,
+    18,
+    34,
+    36
+   ],
+   "bonus": null,
+   "best_key": "long_absence",
+   "picks": [
+    {
+     "key": "top5_roi",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    },
+    {
+     "key": "picks_top20",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 200000
+    },
+    {
+     "key": "picks_best10",
+     "best": 2,
+     "winners": 0,
+     "gain": 0,
+     "cost": 100000
+    }
+   ]
+  }
+ ]
+}
