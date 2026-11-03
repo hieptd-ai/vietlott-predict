@@ -5,20 +5,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Analyze Vietlott Data with Python, Polars &amp; Pandas — Vietlott Data</title>
         <meta name="description" content="Code examples for loading and analyzing Vietlott NDJSON lottery datasets using Python, Polars, Pandas, and DuckDB." />
-        <meta name="author" content="vietvudanh" />
+        <meta name="author" content="hieptd-ai" />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
-        <link rel="alternate" type="text/plain" href="https://vietvudanh.github.io/vietlott-data/llms.txt" title="LLM-readable summary" />
+        <link rel="alternate" type="text/plain" href="https://hieptd-ai.github.io/vietlott-predict/llms.txt" title="LLM-readable summary" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://vietvudanh.github.io/vietlott-data/python-examples/" />
+        <meta property="og:url" content="https://hieptd-ai.github.io/vietlott-predict/python-examples/" />
         <meta property="og:title" content="Analyze Vietlott Data with Python, Polars &amp; Pandas — Vietlott Data" />
         <meta property="og:description" content="Code examples for loading and analyzing Vietlott NDJSON lottery datasets using Python, Polars, Pandas, and DuckDB." />
-        <meta property="og:image" content="https://vietvudanh.github.io/vietlott-data/assets/screenshot.png" />
+        <meta property="og:image" content="https://hieptd-ai.github.io/vietlott-predict/assets/screenshot.png" />
         <meta property="og:locale" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Analyze Vietlott Data with Python, Polars &amp; Pandas — Vietlott Data" />
         <meta name="twitter:description" content="Code examples for loading and analyzing Vietlott NDJSON lottery datasets using Python, Polars, Pandas, and DuckDB." />
-        <meta name="twitter:image" content="https://vietvudanh.github.io/vietlott-data/assets/screenshot.png" />
-        <link rel="canonical" href="https://vietvudanh.github.io/vietlott-data/python-examples/" />
+        <meta name="twitter:image" content="https://hieptd-ai.github.io/vietlott-predict/assets/screenshot.png" />
+        <link rel="canonical" href="https://hieptd-ai.github.io/vietlott-predict/python-examples/" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -54,7 +54,7 @@
                             <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
                             <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
                         </button>
-                        <a href="https://github.com/vietvudanh/vietlott-data" target="_blank" rel="noreferrer" class="icon-btn" aria-label="GitHub Repository">
+                        <a href="https://github.com/hieptd-ai/vietlott-predict" target="_blank" rel="noreferrer" class="icon-btn" aria-label="GitHub Repository">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" /></svg>
                         </a>
                     </div>
@@ -79,7 +79,7 @@
                         <div class="code-card-header"><span class="code-card-title">python (polars)</span></div>
                         <pre class="code-block"><code>import polars as pl
 
-df = pl.read_ndjson("https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl")
+df = pl.read_ndjson("https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power655.jsonl")
 df = df.with_columns([
     pl.col("date").str.to_date(),
     pl.col("result").list.slice(0, 6).alias("main_numbers"),
@@ -128,7 +128,7 @@ print(recent_freq.head(10))</code></pre>
                         <div class="code-card-header"><span class="code-card-title">python (pandas)</span></div>
                         <pre class="code-block"><code>import pandas as pd
 
-url = "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power645.jsonl"
+url = "https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power645.jsonl"
 df = pd.read_json(url, lines=True)
 df["date"] = pd.to_datetime(df["date"])
 
@@ -165,7 +165,7 @@ print(f"Missing draws: {missing}")</code></pre>
                     <a href="../en/">English</a>
                     <a href="../data-schema/">Data Schema</a>
                     <a href="../python-examples/">Python Examples</a>
-                    <a href="https://github.com/vietvudanh/vietlott-data" target="_blank" rel="noreferrer">GitHub</a>
+                    <a href="https://github.com/hieptd-ai/vietlott-predict" target="_blank" rel="noreferrer">GitHub</a>
                     <a href="https://vietlott.vn" target="_blank" rel="noreferrer">vietlott.vn</a>
                 </div>
             </div>

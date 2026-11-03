@@ -348,7 +348,8 @@ func UpdateDocsHTML(root string) error {
 		html = replaceWhole(html, `(?s)<!-- BEGIN_MACHINE_LEARNING_SECTION -->.*?<!-- END_MACHINE_LEARNING_SECTION -->`, mlSection)
 	}
 
-	if err := os.WriteFile(htmlPath, []byte(html), 0o644); err != nil {
+	site := CurrentSite()
+	if err := os.WriteFile(htmlPath, []byte(site.Apply(html)), 0o644); err != nil {
 		return err
 	}
 
@@ -373,5 +374,8 @@ func UpdateDocsHTML(root string) error {
 		}
 	}
 	sitemapPath := filepath.Join(root, "docs", "sitemap.xml")
-	return os.WriteFile(sitemapPath, []byte(renderSitemap(latestDate)), 0o644)
+	if err := os.WriteFile(sitemapPath, []byte(site.Apply(renderSitemap(latestDate))), 0o644); err != nil {
+		return err
+	}
+	return site.ApplyToStaticFiles(root)
 }

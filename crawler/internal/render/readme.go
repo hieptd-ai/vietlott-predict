@@ -311,5 +311,5 @@ func WriteReadme(root string, now time.Time) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(root, "readme.md"), []byte(content), 0o644)
+	return os.WriteFile(filepath.Join(root, "readme.md"), []byte(CurrentSite().Apply(content)), 0o644)
 }

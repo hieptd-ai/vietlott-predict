@@ -28,8 +28,10 @@ readme = "README.md"
 license = { text = "MIT" }
 
 [project.urls]
-Homepage = "https://github.com/vietvudanh/vietlott-data"
-Issues = "https://github.com/vietvudanh/vietlott-data/issues"
+Homepage = "https://hieptd-ai.github.io/vietlott-predict/"
+Repository = "https://github.com/hieptd-ai/vietlott-predict"
+Upstream = "https://github.com/vietvudanh/vietlott-data"
+Issues = "https://github.com/hieptd-ai/vietlott-predict/issues"
 
 
 [project.optional-dependencies]

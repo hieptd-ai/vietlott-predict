@@ -1,18 +1,13 @@
 name: Deploy GitHub Pages
 
+# Builds the whole site (Go-rendered docs + ML analysis dashboard) and deploys it to GitHub Pages
+# whenever main changes, once a day, after every data sync (dispatched by sync-data.yml), or by hand.
 on:
   push:
     branches:
       - main
-    paths:
-      - "data/**"
-      - "docs/**"
-      - "src/vietlott/render_docs.py"
-      - "src/machine_learning/**"
-      - "crawler/internal/render/**"
-      - ".github/workflows/deploy-pages.yml"
   schedule:
-    - cron: "0 0 * * *" # every day at 00:00 UTC
+    - cron: "17 1 * * *" # daily safety net at 01:17 UTC
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -27,21 +22,30 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  # Rendered canonical / Open Graph / JSON-LD / sitemap URLs follow the repository this runs in,
+  # so the site stays correct after a rename or a fork. VIETLOTT_SITE_URL (repository variable)
+  # overrides the URL, e.g. for a custom domain; VIETLOTT_GA_ID enables Google Analytics.
+  VIETLOTT_REPO: ${{ github.repository }}
+  VIETLOTT_SITE_URL: ${{ vars.VIETLOTT_SITE_URL }}
+  VIETLOTT_GA_ID: ${{ vars.VIETLOTT_GA_ID }}
+
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          ref: main
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Setup Python
+        run: uv python install 3.11
 
       - name: Install dependencies
         run: uv sync --extra dev --extra ml
@@ -50,15 +54,27 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "crawler/go.mod"
+          cache-dependency-path: crawler/go.sum
 
-      - name: Generate docs
-        run: cd crawler && go run ./cmd/vietlott render-docs && cd .. && uv run --extra dev pytest src/vietlott/tests/test_freshness.py
+      - name: Test
+        run: |
+          (cd crawler && go test ./...)
+          uv run pytest src/machine_learning -q
+
+      - name: Render docs & README
+        run: |
+          cd crawler
+          go run ./cmd/vietlott render-readme
+          go run ./cmd/vietlott render-docs
 
       - name: Generate analysis & ML dashboard data
-        run: uv run --extra dev --extra ml python src/machine_learning/render_analysis.py
+        run: uv run python src/machine_learning/render_analysis.py
+
+      - name: Check rendered docs match data and SEO metadata
+        run: uv run pytest src/vietlott/tests/test_freshness.py -q
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

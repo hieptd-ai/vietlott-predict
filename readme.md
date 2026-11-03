@@ -1,38 +1,42 @@
 # Vietlott Data
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Go](https://img.shields.io/badge/go-1.27%2B-00ADD8.svg)](https://go.dev/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Data Updated](https://img.shields.io/badge/data-daily%20updated-brightgreen.svg)](https://github.com/vietvudanh/vietlott-data/commits/main)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deployed-blue)](https://vietvudanh.github.io/vietlott-data/)
+[![Data Updated](https://img.shields.io/badge/data-daily%20updated-brightgreen.svg)](https://github.com/hieptd-ai/vietlott-predict/commits/main)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deployed-blue)](https://hieptd-ai.github.io/vietlott-predict/)
 
-> **Automated Vietnamese Lottery Data Collection & Analysis**
+> **Open Historical Vietlott Lottery Dataset — Free NDJSON Downloads, Daily Updates, Statistics & Go/Python Tools**
 >
-> This project crawls and analyzes Vietnamese lottery data from [vietlott.vn](https://vietlott.vn/), providing statistics and insights for all major lottery products.
+> Complete draw history crawled daily from [vietlott.vn](https://vietlott.vn/) for all seven official Vietlott games: Power 6/55, Mega 6/45, Power 5/35, Keno, Max 3D, Max 3D Pro, and Bingo18.
 
-**Dữ liệu kết quả xổ số Vietlott đầy đủ, miễn phí, cập nhật hàng ngày** (Power 6/55, Mega 6/45, Power 5/35, Keno, Max 3D, Max 3D Pro, Bingo18) - open historical Vietlott draw results in NDJSON, from the first draw, MIT licensed. Raw files live in [data/](data/); each line has the fields date, id, result, process_time. See [llms.txt](https://vietvudanh.github.io/vietlott-data/llms.txt) for a machine-readable summary.
+**Dữ liệu kết quả xổ số Vietlott đầy đủ, miễn phí, cập nhật hàng ngày** (Power 6/55, Mega 6/45, Power 5/35, Keno, Max 3D, Max 3D Pro, Bingo18) - open historical Vietlott draw results in NDJSON, from the first draw, MIT licensed. Raw files live in [data/](data/); see [llms.txt](https://hieptd-ai.github.io/vietlott-predict/llms.txt) and [Data Schema](https://hieptd-ai.github.io/vietlott-predict/data-schema/) for machine-readable and developer references.
 
 ## Links
 
-- [Website](https://vietvudanh.github.io/vietlott-data/) - Interactive data visualization
+- [Website (Vietnamese)](https://hieptd-ai.github.io/vietlott-predict/) & [English Portal (/en/)](https://hieptd-ai.github.io/vietlott-predict/en/) - Interactive dataset portal & statistics
+- [Data Schema Reference](https://hieptd-ai.github.io/vietlott-predict/data-schema/) & [Python/Polars Examples](https://hieptd-ai.github.io/vietlott-predict/python-examples/)
 - [Blog Post](https://open.substack.com/pub/vietvudanh/p/minh-a-tao-repo-vietlott-data-the) - About this project
+- [Crawler Performance Benchmark](docs/BENCHMARK.md) - Speed & resource comparison: Go vs Python crawler
 
-## Supported Lottery Products
+## Supported Lottery Products & Data Schema
 
-| Product | Link | Description |
-|---------|------|-------------|
-| **Power 6/55** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/655) | Choose 6 numbers from 1-55 |
-| **Power 6/45** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/645) | Choose 6 numbers from 1-45 |
-| **Power 5/35** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/535) | Choose 5 numbers from 1-35 |
-| **Keno** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number-keno) | Fast-pace number game |
-| **Max 3D** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/max-3d) | 3-digit lottery game |
-| **Max 3D Pro** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/max-3dpro) | Enhanced 3D lottery |
-| **Bingo18** | [Results](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number-bingo18) | 3 numbers from 0-9 game |
+| Product | Raw NDJSON File | Dedicated Page | Official Results | `result` Field Structure |
+|---------|-----------------|----------------|------------------|--------------------------|
+| **Power 6/55** | [data/power655.jsonl](data/power655.jsonl) | [/power-6-55/](https://hieptd-ai.github.io/vietlott-predict/power-6-55/) | [Vietlott 6/55](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/655) | `int[7]`: 6 main numbers (1–55) + **1 bonus number** (`result[6]`) |
+| **Mega 6/45** | [data/power645.jsonl](data/power645.jsonl) | [/mega-6-45/](https://hieptd-ai.github.io/vietlott-predict/mega-6-45/) | [Vietlott 6/45](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/645) | `int[6]`: 6 winning numbers (1–45), **NO bonus number** |
+| **Power 5/35** | [data/power535.jsonl](data/power535.jsonl) | [/power-5-35/](https://hieptd-ai.github.io/vietlott-predict/power-5-35/) | [Vietlott 5/35](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/535) | `int[6]`: 5 main numbers (1–35) + **1 special number** (`result[5]`) |
+| **Keno** | [data/keno.jsonl](data/keno.jsonl) | [/keno/](https://hieptd-ai.github.io/vietlott-predict/keno/) | [Vietlott Keno](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number-keno) | `int[20]`: 20 numbers (1–80), plus `big_small` & `odd_even` |
+| **Max 3D** | [data/3d.jsonl](data/3d.jsonl) | [/max-3d/](https://hieptd-ai.github.io/vietlott-predict/max-3d/) | [Vietlott Max 3D](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/max-3d) | `object`: 4 prize tiers (`Giải Đặc biệt`, `Nhất`, `Nhì`, `ba`) -> 20 3-digit strings |
+| **Max 3D Pro** | [data/3d_pro.jsonl](data/3d_pro.jsonl) | [/max-3d-pro/](https://hieptd-ai.github.io/vietlott-predict/max-3d-pro/) | [Vietlott Max 3D Pro](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/max-3dpro) | `object`: 4 prize tiers -> 20 3-digit strings |
+| **Bingo18** | [data/bingo18.jsonl](data/bingo18.jsonl) | [/bingo18/](https://hieptd-ai.github.io/vietlott-predict/bingo18/) | [Vietlott Bingo18](https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number-bingo18) | `int[3]`: 3 numbers (1–6), plus `total` (3–18) & `large_small` |
 
 
 ## Table of Contents
 
 - [Links](#links)
-- [Supported Lottery Products](#supported-lottery-products)
+- [Supported Lottery Products & Data Schema](#supported-lottery-products--data-schema)
+- [Quick Python Usage Example](#quick-python-usage-example)
 - [Predictions](#predictions)
 - [Data Statistics](#data-statistics)
 - [Power 6/55 Analysis](#power-655-analysis)
@@ -43,7 +47,23 @@
   - [Days Since Last Appearance - All Numbers](#days-since-last-appearance---all-numbers)
 - [How It Works](#how-it-works)
 - [Installation & Usage](#installation--usage)
+- [Citation & Attribution](#citation--attribution)
 - [License](#license)
+
+## Quick Python Usage Example
+
+```python
+import polars as pl
+
+# Load Power 6/55 directly from raw NDJSON
+df = pl.read_ndjson("https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power655.jsonl")
+df = df.with_columns([
+    pl.col("date").str.to_date(),
+    pl.col("result").list.slice(0, 6).alias("main_numbers"),
+    pl.col("result").list.get(6).alias("bonus_number"),
+])
+print(df.head(5))
+```
 
 
 ## Predictions
@@ -109,74 +129,74 @@ For background on these models, see the [Machine Learning README](./src/machine_
 #### Last 30 Days
 | result | count | % | -1 | 1result | 1count | 1% | -2 | 2result | 2count | 2% |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 3 | 3.3 |  | 25 | 1 | 1.1 |  | 50 | 4 | 4.4 |
-| 2 | 1 | 1.1 |  | 26 | 2 | 2.2 |  | 51 | 1 | 1.1 |
-| 4 | 1 | 1.1 |  | 27 | 4 | 4.4 |  | 52 | 1 | 1.1 |
-| 6 | 3 | 3.3 |  | 28 | 2 | 2.2 |  | 53 | 3 | 3.3 |
-| 7 | 5 | 5.49 |  | 29 | 1 | 1.1 |  | 54 | 1 | 1.1 |
-| 9 | 2 | 2.2 |  | 30 | 2 | 2.2 |  | 55 | 2 | 2.2 |
-| 10 | 1 | 1.1 |  | 31 | 3 | 3.3 |  |  |  |  |
-| 11 | 3 | 3.3 |  | 33 | 1 | 1.1 |  |  |  |  |
-| 12 | 3 | 3.3 |  | 34 | 1 | 1.1 |  |  |  |  |
-| 13 | 2 | 2.2 |  | 35 | 1 | 1.1 |  |  |  |  |
-| 14 | 3 | 3.3 |  | 37 | 2 | 2.2 |  |  |  |  |
-| 16 | 2 | 2.2 |  | 38 | 1 | 1.1 |  |  |  |  |
-| 17 | 1 | 1.1 |  | 39 | 1 | 1.1 |  |  |  |  |
-| 18 | 5 | 5.49 |  | 40 | 1 | 1.1 |  |  |  |  |
-| 19 | 1 | 1.1 |  | 41 | 2 | 2.2 |  |  |  |  |
-| 20 | 2 | 2.2 |  | 42 | 2 | 2.2 |  |  |  |  |
-| 21 | 1 | 1.1 |  | 44 | 1 | 1.1 |  |  |  |  |
-| 22 | 1 | 1.1 |  | 45 | 3 | 3.3 |  |  |  |  |
-| 23 | 3 | 3.3 |  | 46 | 1 | 1.1 |  |  |  |  |
-| 24 | 3 | 3.3 |  | 48 | 1 | 1.1 |  |  |  |  |
+| 1 | 3 | 3.57 |  | 25 | 1 | 1.19 |  | 50 | 4 | 4.76 |
+| 2 | 1 | 1.19 |  | 26 | 2 | 2.38 |  | 51 | 1 | 1.19 |
+| 4 | 1 | 1.19 |  | 27 | 4 | 4.76 |  | 52 | 1 | 1.19 |
+| 6 | 3 | 3.57 |  | 28 | 2 | 2.38 |  | 53 | 3 | 3.57 |
+| 7 | 4 | 4.76 |  | 29 | 1 | 1.19 |  | 55 | 2 | 2.38 |
+| 9 | 2 | 2.38 |  | 30 | 2 | 2.38 |  |  |  |  |
+| 10 | 1 | 1.19 |  | 31 | 3 | 3.57 |  |  |  |  |
+| 11 | 2 | 2.38 |  | 33 | 1 | 1.19 |  |  |  |  |
+| 12 | 3 | 3.57 |  | 34 | 1 | 1.19 |  |  |  |  |
+| 13 | 1 | 1.19 |  | 35 | 1 | 1.19 |  |  |  |  |
+| 14 | 3 | 3.57 |  | 37 | 2 | 2.38 |  |  |  |  |
+| 16 | 1 | 1.19 |  | 38 | 1 | 1.19 |  |  |  |  |
+| 17 | 1 | 1.19 |  | 39 | 1 | 1.19 |  |  |  |  |
+| 18 | 4 | 4.76 |  | 40 | 1 | 1.19 |  |  |  |  |
+| 19 | 1 | 1.19 |  | 41 | 1 | 1.19 |  |  |  |  |
+| 20 | 2 | 2.38 |  | 42 | 2 | 2.38 |  |  |  |  |
+| 21 | 1 | 1.19 |  | 44 | 1 | 1.19 |  |  |  |  |
+| 22 | 1 | 1.19 |  | 45 | 3 | 3.57 |  |  |  |  |
+| 23 | 3 | 3.57 |  | 46 | 1 | 1.19 |  |  |  |  |
+| 24 | 3 | 3.57 |  | 48 | 1 | 1.19 |  |  |  |  |
 
 #### Last 60 Days
 | result | count | % | -1 | 1result | 1count | 1% | -2 | 2result | 2count | 2% |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 5 | 2.75 |  | 21 | 3 | 1.65 |  | 41 | 3 | 1.65 |
-| 2 | 3 | 1.65 |  | 22 | 3 | 1.65 |  | 42 | 3 | 1.65 |
-| 3 | 1 | 0.55 |  | 23 | 5 | 2.75 |  | 43 | 1 | 0.55 |
-| 4 | 4 | 2.2 |  | 24 | 6 | 3.3 |  | 44 | 1 | 0.55 |
-| 5 | 2 | 1.1 |  | 25 | 5 | 2.75 |  | 45 | 4 | 2.2 |
-| 6 | 4 | 2.2 |  | 26 | 3 | 1.65 |  | 46 | 3 | 1.65 |
-| 7 | 7 | 3.85 |  | 27 | 7 | 3.85 |  | 47 | 4 | 2.2 |
-| 8 | 2 | 1.1 |  | 28 | 4 | 2.2 |  | 48 | 2 | 1.1 |
-| 9 | 5 | 2.75 |  | 29 | 1 | 0.55 |  | 49 | 1 | 0.55 |
-| 10 | 2 | 1.1 |  | 30 | 2 | 1.1 |  | 50 | 6 | 3.3 |
-| 11 | 10 | 5.49 |  | 31 | 5 | 2.75 |  | 51 | 2 | 1.1 |
-| 12 | 3 | 1.65 |  | 32 | 2 | 1.1 |  | 52 | 4 | 2.2 |
-| 13 | 5 | 2.75 |  | 33 | 2 | 1.1 |  | 53 | 4 | 2.2 |
-| 14 | 5 | 2.75 |  | 34 | 2 | 1.1 |  | 54 | 3 | 1.65 |
-| 15 | 2 | 1.1 |  | 35 | 2 | 1.1 |  | 55 | 3 | 1.65 |
-| 16 | 3 | 1.65 |  | 36 | 2 | 1.1 |  |  |  |  |
-| 17 | 3 | 1.65 |  | 37 | 3 | 1.65 |  |  |  |  |
-| 18 | 7 | 3.85 |  | 38 | 3 | 1.65 |  |  |  |  |
-| 19 | 1 | 0.55 |  | 39 | 1 | 0.55 |  |  |  |  |
-| 20 | 2 | 1.1 |  | 40 | 1 | 0.55 |  |  |  |  |
+| 1 | 5 | 2.86 |  | 21 | 3 | 1.71 |  | 41 | 3 | 1.71 |
+| 2 | 3 | 1.71 |  | 22 | 3 | 1.71 |  | 42 | 2 | 1.14 |
+| 3 | 1 | 0.57 |  | 23 | 5 | 2.86 |  | 43 | 1 | 0.57 |
+| 4 | 4 | 2.29 |  | 24 | 6 | 3.43 |  | 44 | 1 | 0.57 |
+| 5 | 2 | 1.14 |  | 25 | 5 | 2.86 |  | 45 | 4 | 2.29 |
+| 6 | 4 | 2.29 |  | 26 | 3 | 1.71 |  | 46 | 2 | 1.14 |
+| 7 | 7 | 4.0 |  | 27 | 7 | 4.0 |  | 47 | 3 | 1.71 |
+| 8 | 1 | 0.57 |  | 28 | 4 | 2.29 |  | 48 | 2 | 1.14 |
+| 9 | 4 | 2.29 |  | 29 | 1 | 0.57 |  | 49 | 1 | 0.57 |
+| 10 | 2 | 1.14 |  | 30 | 2 | 1.14 |  | 50 | 6 | 3.43 |
+| 11 | 9 | 5.14 |  | 31 | 5 | 2.86 |  | 51 | 2 | 1.14 |
+| 12 | 3 | 1.71 |  | 32 | 2 | 1.14 |  | 52 | 4 | 2.29 |
+| 13 | 5 | 2.86 |  | 33 | 2 | 1.14 |  | 53 | 4 | 2.29 |
+| 14 | 5 | 2.86 |  | 34 | 2 | 1.14 |  | 54 | 3 | 1.71 |
+| 15 | 2 | 1.14 |  | 35 | 2 | 1.14 |  | 55 | 3 | 1.71 |
+| 16 | 2 | 1.14 |  | 36 | 2 | 1.14 |  |  |  |  |
+| 17 | 3 | 1.71 |  | 37 | 3 | 1.71 |  |  |  |  |
+| 18 | 7 | 4.0 |  | 38 | 3 | 1.71 |  |  |  |  |
+| 19 | 1 | 0.57 |  | 39 | 1 | 0.57 |  |  |  |  |
+| 20 | 2 | 1.14 |  | 40 | 1 | 0.57 |  |  |  |  |
 
 #### Last 90 Days
 | result | count | % | -1 | 1result | 1count | 1% | -2 | 2result | 2count | 2% |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 8 | 2.93 |  | 21 | 5 | 1.83 |  | 41 | 5 | 1.83 |
-| 2 | 6 | 2.2 |  | 22 | 3 | 1.1 |  | 42 | 5 | 1.83 |
-| 3 | 3 | 1.1 |  | 23 | 6 | 2.2 |  | 43 | 1 | 0.37 |
-| 4 | 4 | 1.47 |  | 24 | 7 | 2.56 |  | 44 | 3 | 1.1 |
-| 5 | 6 | 2.2 |  | 25 | 7 | 2.56 |  | 45 | 8 | 2.93 |
-| 6 | 4 | 1.47 |  | 26 | 4 | 1.47 |  | 46 | 4 | 1.47 |
-| 7 | 9 | 3.3 |  | 27 | 9 | 3.3 |  | 47 | 6 | 2.2 |
-| 8 | 4 | 1.47 |  | 28 | 4 | 1.47 |  | 48 | 3 | 1.1 |
-| 9 | 7 | 2.56 |  | 29 | 5 | 1.83 |  | 49 | 2 | 0.73 |
-| 10 | 4 | 1.47 |  | 30 | 4 | 1.47 |  | 50 | 8 | 2.93 |
-| 11 | 11 | 4.03 |  | 31 | 8 | 2.93 |  | 51 | 4 | 1.47 |
-| 12 | 3 | 1.1 |  | 32 | 2 | 0.73 |  | 52 | 4 | 1.47 |
-| 13 | 6 | 2.2 |  | 33 | 3 | 1.1 |  | 53 | 4 | 1.47 |
-| 14 | 8 | 2.93 |  | 34 | 3 | 1.1 |  | 54 | 4 | 1.47 |
-| 15 | 4 | 1.47 |  | 35 | 3 | 1.1 |  | 55 | 5 | 1.83 |
-| 16 | 4 | 1.47 |  | 36 | 3 | 1.1 |  |  |  |  |
-| 17 | 4 | 1.47 |  | 37 | 4 | 1.47 |  |  |  |  |
-| 18 | 11 | 4.03 |  | 38 | 6 | 2.2 |  |  |  |  |
-| 19 | 3 | 1.1 |  | 39 | 4 | 1.47 |  |  |  |  |
-| 20 | 4 | 1.47 |  | 40 | 4 | 1.47 |  |  |  |  |
+| 1 | 8 | 3.01 |  | 21 | 5 | 1.88 |  | 41 | 5 | 1.88 |
+| 2 | 6 | 2.26 |  | 22 | 3 | 1.13 |  | 42 | 4 | 1.5 |
+| 3 | 3 | 1.13 |  | 23 | 6 | 2.26 |  | 43 | 1 | 0.38 |
+| 4 | 4 | 1.5 |  | 24 | 7 | 2.63 |  | 44 | 3 | 1.13 |
+| 5 | 6 | 2.26 |  | 25 | 7 | 2.63 |  | 45 | 8 | 3.01 |
+| 6 | 4 | 1.5 |  | 26 | 4 | 1.5 |  | 46 | 4 | 1.5 |
+| 7 | 9 | 3.38 |  | 27 | 9 | 3.38 |  | 47 | 5 | 1.88 |
+| 8 | 4 | 1.5 |  | 28 | 4 | 1.5 |  | 48 | 3 | 1.13 |
+| 9 | 7 | 2.63 |  | 29 | 5 | 1.88 |  | 49 | 2 | 0.75 |
+| 10 | 4 | 1.5 |  | 30 | 4 | 1.5 |  | 50 | 8 | 3.01 |
+| 11 | 11 | 4.14 |  | 31 | 7 | 2.63 |  | 51 | 4 | 1.5 |
+| 12 | 3 | 1.13 |  | 32 | 2 | 0.75 |  | 52 | 4 | 1.5 |
+| 13 | 6 | 2.26 |  | 33 | 3 | 1.13 |  | 53 | 4 | 1.5 |
+| 14 | 7 | 2.63 |  | 34 | 3 | 1.13 |  | 54 | 3 | 1.13 |
+| 15 | 4 | 1.5 |  | 35 | 3 | 1.13 |  | 55 | 5 | 1.88 |
+| 16 | 4 | 1.5 |  | 36 | 3 | 1.13 |  |  |  |  |
+| 17 | 4 | 1.5 |  | 37 | 4 | 1.5 |  |  |  |  |
+| 18 | 11 | 4.14 |  | 38 | 6 | 2.26 |  |  |  |  |
+| 19 | 3 | 1.13 |  | 39 | 3 | 1.13 |  |  |  |  |
+| 20 | 4 | 1.5 |  | 40 | 3 | 1.13 |  |  |  |  |
 
 ### Top 10 Numbers by Days Since Last Appearance
 | result | last_date | days_since |
@@ -257,7 +277,7 @@ For background on these models, see the [Machine Learning README](./src/machine_
 
 Vietlott blocks non-Vietnam IPs ([issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)), so crawling runs on a scheduled local runner (`bin/github_data.sh`) and commits updated data back to GitHub.
 
-For architecture and runner setup, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+For architecture and runner setup, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For performance and speed metrics comparing Go vs Python, see [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
 
 ## Installation & Usage
@@ -294,10 +314,24 @@ uv run vietlott-missing power_655
 ### Development Setup
 
 ```bash
-git clone https://github.com/vietvudanh/vietlott-data.git
+git clone https://github.com/hieptd-ai/vietlott-predict.git
 cd vietlott-data
 uv sync --dev
 uv run pytest
+```
+
+## Citation & Attribution
+
+If you use this dataset in research, articles, or applications, please cite it as:
+
+```bibtex
+@misc{vietlott_data,
+  author       = {Viet Vu Danh},
+  title        = {Vietlott Data: Open Historical Vietnamese Lottery Dataset (NDJSON)},
+  year         = {2026},
+  url          = {https://github.com/hieptd-ai/vietlott-predict},
+  note         = {MIT License. Source data from vietlott.vn, updated daily.}
+}
 ```
 
 ## License

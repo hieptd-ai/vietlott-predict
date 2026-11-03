@@ -1,0 +1,68 @@
+name: CI
+
+# Lint and test every push and pull request, so broken code never reaches the deploy.
+on:
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "data/**"
+      - "docs/**"
+      - "readme.md"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python lint & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Setup Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra ml
+
+      - name: Lint
+        run: |
+          uv run ruff check --select I ./src
+          uv run ruff format --check ./src
+
+      # test_fetch calls vietlott.vn, which blocks non-Vietnam IPs (GitHub runners);
+      # test_freshness compares rendered docs with data and runs in the deploy workflow after rendering.
+      - name: Test
+        run: >-
+          uv run pytest src -q
+          --ignore=src/vietlott/tests/test_crawler/test_fetch.py
+          --ignore=src/vietlott/tests/test_freshness.py
+
+  go:
+    name: Go vet, tests & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crawler
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: crawler/go.mod
+          cache-dependency-path: crawler/go.sum
+
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build -o /dev/null ./cmd/vietlott

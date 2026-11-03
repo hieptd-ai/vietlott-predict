@@ -768,5 +768,5 @@ func writePageFile(root, relDir, content string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "index.html"), []byte(content), 0o644)
+	return os.WriteFile(filepath.Join(dir, "index.html"), []byte(CurrentSite().Apply(content)), 0o644)
 }
