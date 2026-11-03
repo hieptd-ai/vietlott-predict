@@ -28,8 +28,8 @@ BLOG_POST_BADGE = f"""
                         >
                     </a>"""
 
-ML_README_URL = "https://github.com/vietvudanh/vietlott-data/blob/main/src/machine_learning"
-BENCHMARK_URL = "https://github.com/vietvudanh/vietlott-data/blob/main/docs/BENCHMARK.md"
+ML_README_URL = "analysis/"
+BENCHMARK_URL = "https://github.com/hieptd-ai/vietlott-predict/blob/main/docs/BENCHMARK.md"
 
 
 class DocsRenderer:
