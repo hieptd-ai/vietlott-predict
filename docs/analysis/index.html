@@ -580,6 +580,23 @@
             #cmpTable tbody tr.is-best td {
                 background: var(--color-brand-subtle);
             }
+            #replayTable {
+                min-width: 1100px;
+            }
+            #replayDraws {
+                min-width: 1150px;
+            }
+            #replayTable td,
+            #replayTable th,
+            #replayDraws td,
+            #replayDraws th {
+                white-space: nowrap;
+            }
+            #replayTable td:nth-child(2) {
+                font-family: var(--font-sans);
+                color: var(--text-primary);
+                font-weight: 600;
+            }
             #ledgerTable td,
             #ledgerTable th {
                 white-space: nowrap;
@@ -613,6 +630,7 @@
                     <ul class="nav-menu">
                         <li><a href="#overview" class="nav-link">Tổng quan</a></li>
                         <li><a href="#compare" class="nav-link">Bảng so sánh</a></li>
+                        <li><a href="#replay" class="nav-link">Thẩm định 2026</a></li>
                         <li><a href="#tickets" class="nav-link">Vé kỳ tới</a></li>
                         <li><a href="#simulator" class="nav-link">Mô phỏng</a></li>
                         <li><a href="#ml" class="nav-link">Machine Learning</a></li>
@@ -673,6 +691,25 @@
                         </p>
                         <div class="chart" id="zChart"></div>
                         <p class="note" id="zNote"></p>
+                    </div>
+                </section>
+
+                <section class="section" id="replay">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Thẩm định từng kỳ (chạy lại)</span>
+                        <h2 class="section-title" id="replayTitle">Dự đoán rồi thẩm định từng kỳ quay</h2>
+                        <p class="section-description" id="replayDesc"></p>
+                    </div>
+                    <div class="ml-grid" id="replayCards"></div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Kết quả thẩm định của mọi phương pháp</h3>
+                        <p class="card-sub" id="replaySub"></p>
+                        <div class="stats-table"><table id="replayTable"></table></div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Chi tiết từng kỳ: 20 bộ xác suất cao, 10 bộ dễ trúng, top 5 ROI</h3>
+                        <p class="card-sub">Mỗi dòng là một lần dự đoán chỉ dùng dữ liệu đến kỳ "Học đến", rồi được chấm với kết quả thật.</p>
+                        <div class="stats-table" style="max-height: 560px; overflow: auto"><table id="replayDraws"></table></div>
                     </div>
                 </section>
 
@@ -1368,6 +1405,48 @@
                     fillTable("impTable", ["Đặc trưng", "Hệ số LR", "Quan trọng " + (gb.model === "random_forest" ? "RF" : "GB")], ml.features.map(function (k) {
                         return [featLabels[k] || k, signed(logistic.importance[k] || 0, nf4), gb.importance[k] !== undefined ? nf3.format(gb.importance[k]) : "—"];
                     }));
+
+                    // Replay (predict -> validate draw by draw)
+                    const rp = p.replay;
+                    document.getElementById("replay").classList.toggle("is-hidden", !rp);
+                    if (rp) {
+                        const fmtDate = function (d) { return d.split("-").reverse().join("/"); };
+                        setText("replayTitle", "Dự đoán rồi thẩm định từng kỳ từ " + fmtDate(rp.validate_from) + " đến " + fmtDate(rp.validate_to));
+                        setText("replayDesc", "Chạy lại đúng quy trình dự đoán kỳ tới cho " + rp.n_draws + " kỳ quay (thêm " + rp.warmup_draws + " kỳ khởi động). Trước mỗi kỳ, dữ liệu được cắt chỉ còn các kỳ trước ngày quay (kể cả dữ liệu sản phẩm khác), mọi mô hình được dựng lại từ đầu, và \"phương pháp tốt nhất\" / \"top 5 ROI\" chỉ dựa trên điểm thẩm định các kỳ trước. Sau đó chấm với kết quả thật.");
+                        const nameOf = {};
+                        rp.rows.forEach(function (r) { nameOf[r.key] = r.name; });
+                        const cardsBox = document.getElementById("replayCards");
+                        cardsBox.replaceChildren();
+                        [["picks_top20", "20 bộ xác suất cao nhất"], ["picks_best10", "10 bộ dễ trúng nhất"], ["top5_roi", "Kết hợp 5 ROI cao nhất"]].forEach(function (pair) {
+                            const r = rp.rows.find(function (x) { return x.key === pair[0]; });
+                            if (!r) return;
+                            const dl = el("dl", { class: "metric-list" });
+                            function item(k, v) { dl.append(el("dt", { text: k }), el("dd", { text: v })); }
+                            item("Số kỳ / số vé", nf.format(r.draws) + " / " + nf.format(r.tickets));
+                            item("Trúng TB / vé", nf4.format(r.avg_matches) + " (ngẫu nhiên " + nf4.format(rp.expected_avg_matches) + ")");
+                            item("z / p hiệu chỉnh", signed(r.z) + " / " + pval(r.p_adjusted));
+                            item("Vé trúng thưởng", nf.format(r.winners) + (Object.keys(r.tiers).length ? " (" + p.tiers.filter(function (t) { return r.tiers[t.key]; }).map(function (t) { return r.tiers[t.key] + "× " + tierLabel(t); }).join(", ") + ")" : ""));
+                            item("Trúng nhiều nhất", r.best_match + "/" + p.pick + " số");
+                            item("Chi / thu", money(r.cost) + " / " + money(r.gain));
+                            item("Lãi/lỗ · ROI", signedMoney(r.profit) + " · " + nf1.format(r.roi) + "%");
+                            cardsBox.appendChild(el("div", { class: "card" }, [el("h3", { text: pair[1] }), verdict(Math.abs(r.z) >= rp.bonferroni_z ? "Lệch có ý nghĩa thống kê" : "Không khác vé ngẫu nhiên"), dl]));
+                        });
+                        setText("replaySub", "Xếp theo số trúng trung bình mỗi vé. Ngưỡng ý nghĩa sau hiệu chỉnh Bonferroni: |z| ≥ " + nf2.format(rp.bonferroni_z) + ". Phương pháp được chọn làm \"10 bộ dễ trúng nhất\": " + rp.best_key_usage.map(function (u) { return (nameOf[u[0]] || u[0]) + " (" + u[1] + " kỳ)"; }).join(", ") + ".");
+                        fillTable("replayTable", ["#", "Phương pháp", "Trúng TB/vé", "z", "p (hiệu chỉnh)", "Vé trúng"].concat(p.tiers.map(function (t) { return tierLabel(t); })).concat(["Trúng nhiều nhất", "Chi", "Thu", "Lãi/lỗ", "ROI"]),
+                            rp.rows.map(function (r, i) {
+                                return [String(i + 1), r.name, nf4.format(r.avg_matches), signed(r.z), pval(r.p_adjusted), nf.format(r.winners)]
+                                    .concat(p.tiers.map(function (t) { return nf.format(r.tiers[t.key] || 0); }))
+                                    .concat([r.best_match + "/" + p.pick, money(r.cost), money(r.gain), signedMoney(r.profit), nf1.format(r.roi) + "%"]);
+                            }));
+                        const pickCell = function (d, key) {
+                            const x = d.picks.find(function (q) { return q.key === key; });
+                            return x ? x.best + " số · " + x.winners + " vé · " + money(x.gain) : "—";
+                        };
+                        fillTable("replayDraws", ["Kỳ", "Ngày", "Kết quả", "Học đến", "Phương pháp tốt nhất lúc đó", "20 bộ xác suất cao", "10 bộ dễ trúng", "Top 5 ROI"],
+                            rp.draws.slice().reverse().map(function (d) {
+                                return ["#" + d.draw_id, d.draw_date, balls(d.main, p.has_bonus ? d.bonus : null), "#" + d.trained_until_id, nameOf[d.best_key] || d.best_key || "—", pickCell(d, "picks_top20"), pickCell(d, "picks_best10"), pickCell(d, "top5_roi")];
+                            }));
+                    }
 
                     // Next draw & ledger
                     const nd = p.next_draw;
