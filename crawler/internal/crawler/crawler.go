@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/storage"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/storage"
 )
 
 // ProductAdapter retrieves the latest draw number and newest-first result

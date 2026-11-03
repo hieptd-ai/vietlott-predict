@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
 )
 
 type storedDraw struct {

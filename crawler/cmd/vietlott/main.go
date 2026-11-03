@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vietvudanh/vietlott-data/crawler/internal/client"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/crawler"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/render"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/storage"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/client"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/crawler"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/render"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/storage"
 )
 
 type options struct {

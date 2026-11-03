@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/vietvudanh/vietlott-data/crawler/internal/model"
+	"github.com/hieptd-ai/vietlott-predict/crawler/internal/model"
 )
 
 // ProductAdapter retrieves pages of draws for one product. The Vietlott

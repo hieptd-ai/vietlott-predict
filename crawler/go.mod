@@ -1,4 +1,4 @@
-module github.com/vietvudanh/vietlott-data/crawler
+module github.com/hieptd-ai/vietlott-predict/crawler
 
 go 1.27
 
