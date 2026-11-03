@@ -124,7 +124,7 @@ var productPageConfigs = []productPageConfig{
 }
 
 func pageHeaderHTML(title, description, canonicalPath, lang, altHrefVi, altHrefEn string) string {
-	canonicalURL := "https://vietvudanh.github.io/vietlott-data/" + canonicalPath
+	canonicalURL := "https://hieptd-ai.github.io/vietlott-predict/" + canonicalPath
 	ogLocale := "en_US"
 	if lang == "vi" {
 		ogLocale = "vi_VN"
@@ -143,19 +143,19 @@ func pageHeaderHTML(title, description, canonicalPath, lang, altHrefVi, altHrefE
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>%s</title>
         <meta name="description" content="%s" />
-        <meta name="author" content="vietvudanh" />
+        <meta name="author" content="hieptd-ai" />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
-        <link rel="alternate" type="text/plain" href="https://vietvudanh.github.io/vietlott-data/llms.txt" title="LLM-readable summary" />
+        <link rel="alternate" type="text/plain" href="https://hieptd-ai.github.io/vietlott-predict/llms.txt" title="LLM-readable summary" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="%s" />
         <meta property="og:title" content="%s" />
         <meta property="og:description" content="%s" />
-        <meta property="og:image" content="https://vietvudanh.github.io/vietlott-data/assets/screenshot.png" />
+        <meta property="og:image" content="https://hieptd-ai.github.io/vietlott-predict/assets/screenshot.png" />
         <meta property="og:locale" content="%s" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="%s" />
         <meta name="twitter:description" content="%s" />
-        <meta name="twitter:image" content="https://vietvudanh.github.io/vietlott-data/assets/screenshot.png" />
+        <meta name="twitter:image" content="https://hieptd-ai.github.io/vietlott-predict/assets/screenshot.png" />
 %s
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -192,7 +192,7 @@ func pageHeaderHTML(title, description, canonicalPath, lang, altHrefVi, altHrefE
                             <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
                             <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
                         </button>
-                        <a href="https://github.com/vietvudanh/vietlott-data" target="_blank" rel="noreferrer" class="icon-btn" aria-label="GitHub Repository">
+                        <a href="https://github.com/hieptd-ai/vietlott-predict" target="_blank" rel="noreferrer" class="icon-btn" aria-label="GitHub Repository">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" /></svg>
                         </a>
                     </div>
@@ -212,7 +212,7 @@ const pageFooterHTML = `        <footer class="footer">
                     <a href="../en/">English</a>
                     <a href="../data-schema/">Data Schema</a>
                     <a href="../python-examples/">Python Examples</a>
-                    <a href="https://github.com/vietvudanh/vietlott-data" target="_blank" rel="noreferrer">GitHub</a>
+                    <a href="https://github.com/hieptd-ai/vietlott-predict" target="_blank" rel="noreferrer">GitHub</a>
                     <a href="https://vietlott.vn" target="_blank" rel="noreferrer">vietlott.vn</a>
                 </div>
             </div>
@@ -241,7 +241,7 @@ const pageFooterHTML = `        <footer class="footer">
 `
 
 func renderProductPage(cfg productPageConfig, draws []Draw, stat productStat) string {
-	rawURL := "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/" + cfg.file
+	rawURL := "https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/" + cfg.file
 	sampleLine := `{}`
 	latestID := ""
 	if len(draws) > 0 {
@@ -410,7 +410,7 @@ print(df.head(5))</code></pre>
 func renderEnglishHomePage(stats []productStat, latestDate string, power655Draws []Draw) string {
 	title := "Vietlott Historical Lottery Dataset — Free NDJSON Downloads & Statistics"
 	desc := "Download historical Vietlott lottery results for Power 6/55, Mega 6/45, Power 5/35, Keno, Max 3D, Max 3D Pro and Bingo18. Free NDJSON data, daily updates, statistics and Python/Go tools."
-	header := pageHeaderHTML(title, desc, "en/", "en", "https://vietvudanh.github.io/vietlott-data/", "https://vietvudanh.github.io/vietlott-data/en/")
+	header := pageHeaderHTML(title, desc, "en/", "en", "https://hieptd-ai.github.io/vietlott-predict/", "https://hieptd-ai.github.io/vietlott-predict/en/")
 
 	rows := statsTableRows(stats)
 	daysSection := ""
@@ -457,7 +457,7 @@ func renderEnglishHomePage(stats []productStat, latestDate string, power655Draws
                     <span class="badge badge-green"><span>Data last updated: %s</span></span>
                     <a href="https://go.dev/" class="badge" target="_blank"><span>Go 1.27+ Crawler</span></a>
                     <a href="https://pypi.org/project/vietlott-data/" class="badge" target="_blank"><span>Python 3.11+ Package</span></a>
-                    <a href="https://github.com/vietvudanh/vietlott-data/blob/main/LICENSE" class="badge" target="_blank"><span>MIT License</span></a>
+                    <a href="https://github.com/hieptd-ai/vietlott-predict/blob/main/LICENSE" class="badge" target="_blank"><span>MIT License</span></a>
                     <a href="../" class="badge"><span>Tiếng Việt (Vietnamese) →</span></a>
                 </div>
                 <div class="hero-actions">
@@ -509,13 +509,13 @@ func renderEnglishHomePage(stats []productStat, latestDate string, power655Draws
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td><strong>Power 6/55</strong></td><td>7 ints: 6 main numbers (1–55) + 1 bonus number (7th element)</td><td><a href="../power-6-55/">/power-6-55/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl">power655.jsonl</a></td></tr>
-                            <tr><td><strong>Mega 6/45</strong></td><td>6 ints: 6 winning numbers (1–45), <strong>no bonus number</strong></td><td><a href="../mega-6-45/">/mega-6-45/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power645.jsonl">power645.jsonl</a></td></tr>
-                            <tr><td><strong>Power 5/35</strong></td><td>6 ints: 5 main numbers (1–35) + 1 special number (6th element)</td><td><a href="../power-5-35/">/power-5-35/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power535.jsonl">power535.jsonl</a></td></tr>
-                            <tr><td><strong>Keno</strong></td><td>20 ints (1–80), plus <code>big_small</code> and <code>odd_even</code></td><td><a href="../keno/">/keno/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/keno.jsonl">keno.jsonl</a></td></tr>
-                            <tr><td><strong>Max 3D</strong></td><td>JSON object mapping 4 prize tiers to 20 3-digit strings</td><td><a href="../max-3d/">/max-3d/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/3d.jsonl">3d.jsonl</a></td></tr>
-                            <tr><td><strong>Max 3D Pro</strong></td><td>JSON object mapping 4 prize tiers to 20 3-digit strings</td><td><a href="../max-3d-pro/">/max-3d-pro/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/3d_pro.jsonl">3d_pro.jsonl</a></td></tr>
-                            <tr><td><strong>Bingo18</strong></td><td>3 ints (1–6), plus <code>total</code> (3–18) and <code>large_small</code></td><td><a href="../bingo18/">/bingo18/</a></td><td><a href="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/bingo18.jsonl">bingo18.jsonl</a></td></tr>
+                            <tr><td><strong>Power 6/55</strong></td><td>7 ints: 6 main numbers (1–55) + 1 bonus number (7th element)</td><td><a href="../power-6-55/">/power-6-55/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power655.jsonl">power655.jsonl</a></td></tr>
+                            <tr><td><strong>Mega 6/45</strong></td><td>6 ints: 6 winning numbers (1–45), <strong>no bonus number</strong></td><td><a href="../mega-6-45/">/mega-6-45/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power645.jsonl">power645.jsonl</a></td></tr>
+                            <tr><td><strong>Power 5/35</strong></td><td>6 ints: 5 main numbers (1–35) + 1 special number (6th element)</td><td><a href="../power-5-35/">/power-5-35/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power535.jsonl">power535.jsonl</a></td></tr>
+                            <tr><td><strong>Keno</strong></td><td>20 ints (1–80), plus <code>big_small</code> and <code>odd_even</code></td><td><a href="../keno/">/keno/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/keno.jsonl">keno.jsonl</a></td></tr>
+                            <tr><td><strong>Max 3D</strong></td><td>JSON object mapping 4 prize tiers to 20 3-digit strings</td><td><a href="../max-3d/">/max-3d/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/3d.jsonl">3d.jsonl</a></td></tr>
+                            <tr><td><strong>Max 3D Pro</strong></td><td>JSON object mapping 4 prize tiers to 20 3-digit strings</td><td><a href="../max-3d-pro/">/max-3d-pro/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/3d_pro.jsonl">3d_pro.jsonl</a></td></tr>
+                            <tr><td><strong>Bingo18</strong></td><td>3 ints (1–6), plus <code>total</code> (3–18) and <code>large_small</code></td><td><a href="../bingo18/">/bingo18/</a></td><td><a href="https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/bingo18.jsonl">bingo18.jsonl</a></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -684,7 +684,7 @@ func renderPythonExamplesPage() string {
                         <div class="code-card-header"><span class="code-card-title">python (polars)</span></div>
                         <pre class="code-block"><code>import polars as pl
 
-df = pl.read_ndjson("https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl")
+df = pl.read_ndjson("https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power655.jsonl")
 df = df.with_columns([
     pl.col("date").str.to_date(),
     pl.col("result").list.slice(0, 6).alias("main_numbers"),
@@ -733,7 +733,7 @@ print(recent_freq.head(10))</code></pre>
                         <div class="code-card-header"><span class="code-card-title">python (pandas)</span></div>
                         <pre class="code-block"><code>import pandas as pd
 
-url = "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power645.jsonl"
+url = "https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power645.jsonl"
 df = pd.read_json(url, lines=True)
 df["date"] = pd.to_datetime(df["date"])
 

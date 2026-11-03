@@ -7,18 +7,14 @@ import (
 	"strings"
 )
 
-// The page templates keep the upstream project's URLs so this fork stays easy to merge with
-// vietvudanh/vietlott-data. Every rendered file is passed through Site.Apply, which rewrites
-// those URLs (canonical links, hreflang, Open Graph, JSON-LD, sitemap, raw data downloads)
-// to the site this repository is actually deployed to.
-const (
-	upstreamSiteURL = "https://vietvudanh.github.io/vietlott-data/"
-	upstreamRepo    = "vietvudanh/vietlott-data"
-	upstreamOwner   = "vietvudanh"
+// The page templates use this repository's URLs (DefaultRepo). Every rendered file is passed
+// through Site.Apply, which rewrites them (canonical links, hreflang, Open Graph, JSON-LD,
+// sitemap, raw data downloads) to the site configured by VIETLOTT_REPO / VIETLOTT_SITE_URL,
+// e.g. after a rename, a fork or a move to a custom domain. Links to the upstream project
+// (attribution, upstream issues, the data-sync source) are left untouched.
 
-	// DefaultRepo is the GitHub repository ("owner/name") this fork publishes from.
-	DefaultRepo = "hieptd-ai/vietlott-predict"
-)
+// DefaultRepo is the GitHub repository ("owner/name") this project publishes from.
+const DefaultRepo = "hieptd-ai/vietlott-predict"
 
 // Site describes where the rendered pages are published.
 type Site struct {
@@ -70,34 +66,23 @@ func CurrentSite() Site {
 
 var gtagBlock = regexp.MustCompile(`(?s)\n?[ \t]*<!-- Google tag \(gtag\.js\) -->\s*<script[^>]*googletagmanager\.com/gtag/js\?id=[A-Z0-9-]+"[^>]*>\s*</script>\s*<script>.*?gtag\("config", "[A-Z0-9-]+"\);\s*</script>`)
 
-// Apply rewrites upstream (and default-fork) URLs in content to this site.
+// Apply rewrites the DefaultRepo site URLs in content to this site and renders (or drops) the
+// Google Analytics tag.
 func (s Site) Apply(content string) string {
-	// Links to upstream issues document upstream history (e.g. the geo-blocking issue #13) and
-	// must keep pointing there, so shield them from the repository rewrite.
-	const shield = "\x00UPSTREAM_ISSUES\x00"
-	content = strings.ReplaceAll(content, "github.com/"+upstreamRepo+"/issues", shield)
-
-	pairs := []string{}
-	for _, from := range []Site{SiteFromRepo(DefaultRepo), {URL: upstreamSiteURL, Repo: upstreamRepo}} {
-		if from.Repo == s.Repo && from.URL == s.URL {
-			continue
-		}
-		pairs = append(pairs,
+	if from := SiteFromRepo(DefaultRepo); from.Repo != s.Repo || from.URL != s.URL {
+		pairs := []string{
 			from.URL, s.URL,
 			strings.TrimSuffix(from.URL, "/"), strings.TrimSuffix(s.URL, "/"),
-			from.Host()+"/robots.txt", s.Host()+"/robots.txt",
-			"https://raw.githubusercontent.com/"+from.Repo+"/", "https://raw.githubusercontent.com/"+s.Repo+"/",
-			"github.com/"+from.Repo, "github.com/"+s.Repo,
-			`"publisher": { "@type": "Person", "name": "`+from.Owner()+`", "url": "https://github.com/`+from.Owner()+`" }`,
-			`"publisher": { "@type": "Person", "name": "`+s.Owner()+`", "url": "https://github.com/`+s.Owner()+`" }`,
-			`<meta name="author" content="`+from.Owner()+`" />`, `<meta name="author" content="`+s.Owner()+`" />`,
+			from.Host() + "/robots.txt", s.Host() + "/robots.txt",
+			"https://raw.githubusercontent.com/" + from.Repo + "/", "https://raw.githubusercontent.com/" + s.Repo + "/",
+			"github.com/" + from.Repo, "github.com/" + s.Repo,
+			`"publisher": { "@type": "Person", "name": "` + from.Owner() + `", "url": "https://github.com/` + from.Owner() + `" }`,
+			`"publisher": { "@type": "Person", "name": "` + s.Owner() + `", "url": "https://github.com/` + s.Owner() + `" }`,
+			`<meta name="author" content="` + from.Owner() + `" />`, `<meta name="author" content="` + s.Owner() + `" />`,
 			strings.TrimPrefix(from.Host(), "https://"), strings.TrimPrefix(s.Host(), "https://"),
-		)
-	}
-	if len(pairs) > 0 {
+		}
 		content = strings.NewReplacer(pairs...).Replace(content)
 	}
-	content = strings.ReplaceAll(content, shield, "github.com/"+upstreamRepo+"/issues")
 
 	content = gtagBlock.ReplaceAllStringFunc(content, func(block string) string {
 		if s.GAID == "" {

@@ -29,14 +29,14 @@ func TestCurrentSiteEnv(t *testing.T) {
 	}
 }
 
-const sampleHTML = `<meta name="author" content="vietvudanh" />
-<link rel="canonical" href="https://vietvudanh.github.io/vietlott-data/en/" />
-"identifier": "https://github.com/vietvudanh/vietlott-data",
+const sampleHTML = `<meta name="author" content="hieptd-ai" />
+<link rel="canonical" href="https://hieptd-ai.github.io/vietlott-predict/en/" />
+"identifier": "https://github.com/hieptd-ai/vietlott-predict",
 "creator": { "@type": "Person", "name": "vietvudanh", "url": "https://github.com/vietvudanh" },
-"publisher": { "@type": "Person", "name": "vietvudanh", "url": "https://github.com/vietvudanh" },
-"contentUrl": "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl"
-[issue #13](https://github.com/vietvudanh/vietlott-data/issues/13)
-# (https://vietvudanh.github.io/vietlott-data) at https://vietvudanh.github.io/robots.txt
+"publisher": { "@type": "Person", "name": "hieptd-ai", "url": "https://github.com/hieptd-ai" },
+"contentUrl": "https://raw.githubusercontent.com/hieptd-ai/vietlott-predict/main/data/power655.jsonl"
+[upstream issue #13](https://github.com/vietvudanh/vietlott-data/issues/13), fork of https://github.com/vietvudanh/vietlott-data
+# (https://hieptd-ai.github.io/vietlott-predict) at https://hieptd-ai.github.io/robots.txt
     <!-- Google tag (gtag.js) -->
     <script
         async
@@ -55,23 +55,33 @@ func TestApplyRewritesSiteURLs(t *testing.T) {
 		`<meta name="author" content="acme" />`,
 		`href="https://acme.github.io/lotto/en/"`,
 		`"identifier": "https://github.com/acme/lotto"`,
-		`"creator": { "@type": "Person", "name": "vietvudanh"`,
+		`"creator": { "@type": "Person", "name": "vietvudanh", "url": "https://github.com/vietvudanh" }`,
 		`"publisher": { "@type": "Person", "name": "acme", "url": "https://github.com/acme" }`,
 		`https://raw.githubusercontent.com/acme/lotto/main/data/power655.jsonl`,
-		`https://github.com/vietvudanh/vietlott-data/issues/13`,
+		`https://github.com/vietvudanh/vietlott-data/issues/13), fork of https://github.com/vietvudanh/vietlott-data`,
 		`(https://acme.github.io/lotto) at https://acme.github.io/robots.txt`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}
 	}
-	for _, gone := range []string{"vietvudanh.github.io", "googletagmanager", "G-BQHSD144BE"} {
+	for _, gone := range []string{"hieptd-ai", "googletagmanager", "G-BQHSD144BE"} {
 		if strings.Contains(out, gone) {
 			t.Errorf("%q should be removed:\n%s", gone, out)
 		}
 	}
 	if again := site.Apply(out); again != out {
 		t.Errorf("Apply is not idempotent")
+	}
+}
+
+func TestApplyDefaultSiteOnlyDropsAnalytics(t *testing.T) {
+	out := SiteFromRepo(DefaultRepo).Apply(sampleHTML)
+	if strings.Contains(out, "googletagmanager") {
+		t.Fatalf("analytics tag should be dropped:\n%s", out)
+	}
+	if !strings.Contains(out, `href="https://hieptd-ai.github.io/vietlott-predict/en/"`) || !strings.Contains(out, "fork of https://github.com/vietvudanh/vietlott-data") {
+		t.Fatalf("default site content changed:\n%s", out)
 	}
 }
 
@@ -86,8 +96,8 @@ func TestApplyKeepsAnalyticsWhenConfigured(t *testing.T) {
 func TestApplyMigratesDefaultForkSite(t *testing.T) {
 	def := SiteFromRepo(DefaultRepo)
 	site := Site{URL: "https://lotto.example.com/", Repo: "acme/lotto"}
-	out := site.Apply(`<link href="` + def.URL + `x/" /> https://github.com/` + DefaultRepo)
-	if out != `<link href="https://lotto.example.com/x/" /> https://github.com/acme/lotto` {
+	out := site.Apply(`<link href="` + def.URL + `x/" /> https://github.com/` + DefaultRepo + ` https://github.com/vietvudanh/vietlott-data`)
+	if out != `<link href="https://lotto.example.com/x/" /> https://github.com/acme/lotto https://github.com/vietvudanh/vietlott-data` {
 		t.Fatalf("got %q", out)
 	}
 }
@@ -98,7 +108,7 @@ func TestApplyToStaticFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	robots := filepath.Join(root, "docs", "robots.txt")
-	if err := os.WriteFile(robots, []byte("Sitemap: https://vietvudanh.github.io/vietlott-data/sitemap.xml\n"), 0o644); err != nil {
+	if err := os.WriteFile(robots, []byte("Sitemap: https://hieptd-ai.github.io/vietlott-predict/sitemap.xml\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := (Site{URL: "https://acme.github.io/lotto/", Repo: "acme/lotto"}).ApplyToStaticFiles(root); err != nil {

@@ -25,7 +25,7 @@ const blogPostBadge = `
 
 // analysisURL is the static analysis & ML dashboard rendered from src/machine_learning/render_analysis.py.
 const analysisURL = "analysis/"
-const benchmarkURL = "https://github.com/vietvudanh/vietlott-data/blob/main/docs/BENCHMARK.md"
+const benchmarkURL = "https://github.com/hieptd-ai/vietlott-predict/blob/main/docs/BENCHMARK.md"
 
 const mlSection = `<!-- BEGIN_MACHINE_LEARNING_SECTION -->
             <section class="section">
@@ -255,18 +255,18 @@ func renderSitemap(latestDate string) string {
 		loc      string
 		priority string
 	}{
-		{"https://vietvudanh.github.io/vietlott-data/", "1.0"},
-		{"https://vietvudanh.github.io/vietlott-data/en/", "0.9"},
-		{"https://vietvudanh.github.io/vietlott-data/power-6-55/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/mega-6-45/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/power-5-35/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/keno/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/max-3d/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/max-3d-pro/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/bingo18/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/data-schema/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/python-examples/", "0.8"},
-		{"https://vietvudanh.github.io/vietlott-data/analysis/", "0.7"},
+		{"https://hieptd-ai.github.io/vietlott-predict/", "1.0"},
+		{"https://hieptd-ai.github.io/vietlott-predict/en/", "0.9"},
+		{"https://hieptd-ai.github.io/vietlott-predict/power-6-55/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/mega-6-45/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/power-5-35/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/keno/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/max-3d/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/max-3d-pro/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/bingo18/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/data-schema/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/python-examples/", "0.8"},
+		{"https://hieptd-ai.github.io/vietlott-predict/analysis/", "0.7"},
 	}
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
