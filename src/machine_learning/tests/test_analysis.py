@@ -359,6 +359,11 @@ def test_ledger_keeps_picks_and_homepage_shows_recorded_tickets(tmp_path):
     assert validated["validation"]["draw_id"] == df["id"].iloc[-1]
     assert {p["key"] for p in validated["validation"]["picks"]} == {"picks_top20", "picks_best10"}
     assert {a["key"] for a in validated["summary"]} == {"picks_top20", "picks_best10"}
+
+    assert append_prediction(nxt, "2026-11-05T11:00:00+07:00", tmp_path)
+    ledger = load_ledger("power_655", tmp_path)
+    stale = homepage_picks(prediction, comparison, ledger, score_ledger(ledger, df, POWER_655))
+    assert stale["after_id"] == nxt["after_id"] and stale["recorded_at"] == "2026-11-05T11:00:00+07:00"
     print("homepage shows the recorded picks and validates them after the draw")
 
 
@@ -597,14 +602,19 @@ def test_probabilities_payload_adds_results_and_names(tmp_path):
     df = prepare_draws(_raw_draws(75), POWER_655)
     entries = backfill(df.iloc[:-1], POWER_655, {}, df["date"].iloc[72], samples=40, seed=3)
     append_probabilities(entries, "power_655", tmp_path)
-    payload = probabilities_payload("power_655", POWER_655, df, tmp_path)
+    payload = probabilities_payload("power_655", POWER_655, df, tmp_path, since=None)
     assert payload["base"] == 6 / 55 and payload["range"] == [1, 55]
     assert [e["draw_id"] for e in payload["entries"]] == list(df["id"].iloc[72:74])
     assert all(e["main"] is not None and e["drawn_date"] for e in payload["entries"])
     names = {m["key"]: m["name"] for m in payload["methods"]}
     assert names["ml_avg"].startswith("TB 3 mô hình ML") and names["random"] == "Ngẫu nhiên (baseline)"
     assert payload["evaluation"]["n_draws"] == 2
-    print("dashboard probability payload carries results, names and the evaluation")
+    codes = {m["key"]: m["code"] for m in payload["methods"]}
+    assert codes["cold"] == "SLH" and codes["hot"] == "SNG" and codes["ml_avg"] == "TB3"
+    vote = payload["entries"][0]["vote"]
+    assert len(vote["selected"]) == 8 and "result" in vote and payload["vote_summary"]["n_draws"] == 2
+    assert "random" not in payload["voting"]["voters"] and "ml_avg" not in payload["voting"]["voters"]
+    print("dashboard probability payload carries results, names, codes, votes and the evaluation")
 
 
 def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed():
@@ -634,3 +644,77 @@ def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed(
     )
     np.testing.assert_allclose(top5, members, atol=1e-3)
     print("probability backfill falls back to the live ledger's top-5 selection")
+
+
+def test_vote_picks_follow_the_voting_rules():
+    from machine_learning.probabilities import METHOD_CODES, vote_picks
+
+    base = np.full(45, 6 / 45)
+    probs = {"random": list(base)}
+    favourites = {
+        "hot": [1, 2, 3, 4, 5, 6, 7],
+        "cold": [1, 2, 3, 4, 5, 6, 8],
+        "markov": [1, 2, 3, 9, 10, 11, 12],
+        "pair": [1, 2, 13, 14, 15, 16, 17],
+    }
+    for key, nums in favourites.items():
+        vec = base.copy()
+        for rank, n in enumerate(nums):
+            vec[n - 1] = 0.5 - rank * 0.01
+        probs[key] = list(vec)
+    probs["ml_avg"] = list(base + 0.2)  # composite: must not vote
+    picks = vote_picks(probs, ["markov", "pair", "hot", "cold"], MEGA_645)
+    assert picks["chosen_by"]["1"] == [METHOD_CODES[k] for k in ("hot", "cold", "markov", "pair")]
+    assert "TB3" not in {c for codes in picks["chosen_by"].values() for c in codes}
+    assert "NGN" not in {c for codes in picks["chosen_by"].values() for c in codes}
+    # 1, 2 (4 votes), 3 (3 votes), 4, 5, 6 (2 votes), then the best-averaged one-vote numbers
+    assert picks["selected"][:6] == [1, 2, 3, 4, 5, 6] and len(picks["selected"]) == 8
+    assert len(picks["vote_tickets"]) == 5 and all(set(t) <= set(picks["selected"]) for t in picks["vote_tickets"])
+    assert picks["vote_tickets"][0] == [1, 2, 3, 4, 5, 6]
+    assert [m["key"] for m in picks["method_tickets"]][:2] == ["markov", "pair"]
+    assert picks["method_tickets"][0]["ticket"] == [1, 2, 3, 9, 10, 11]
+    assert len(picks["tickets"]) == len(picks["vote_tickets"]) + len(picks["method_tickets"])
+    assert len({tuple(t) for t in picks["tickets"]}) == len(picks["tickets"])
+    print("voting picks 7 per method, keeps the 8 most voted numbers and adds the best methods' tickets")
+
+
+def test_vote_history_ranks_methods_only_with_earlier_draws():
+    from machine_learning.probabilities import backfill, summarise_votes, vote_history
+
+    df = prepare_draws(_raw_draws(80), POWER_655)
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[70], samples=40, seed=3)
+    history = vote_history(entries, df, POWER_655)
+    assert [h["draw_id"] for h in history] == list(df["id"].iloc[70:])
+    assert all(len(h["tickets"]) == 10 and "result" in h for h in history)
+    altered = df.copy()
+    altered.at[altered.index[-1], "result"] = [1, 2, 3, 4, 5, 6]
+    again = vote_history(entries, altered, POWER_655)
+    assert [h["tickets"] for h in again] == [h["tickets"] for h in history]  # results never change the picks
+    assert again[-1]["result"]["main"] == [1, 2, 3, 4, 5, 6]
+    summary = summarise_votes(history, POWER_655)
+    assert summary["n_draws"] == 10 and summary["all"]["tickets"] == 100 and summary["cost"] == 1_000_000
+    assert summary["vote"]["tickets"] == 50 and summary["methods"]["tickets"] == 50
+    assert summary["gain"] == summary["vote"]["gain"] + summary["methods"]["gain"]
+    assert math.isclose(summary["expected_selected_hits"], 8 * 6 / 55)
+    for half in ("all", "vote", "methods"):
+        assert math.isfinite(summary[half]["z"]) and 0 <= summary[half]["p_value"] <= 1
+    print("voting history is walk-forward and its summary adds up")
+
+
+def test_vote_summary_z_counts_draws_not_correlated_tickets():
+    from machine_learning.probabilities import summarise_votes
+
+    def draw(i, matches):
+        return {
+            "date": f"2026-01-{i + 1:02d}",
+            "tickets": [[1, 2, 3, 4, 5, 6]] * 10,
+            "result": {"matches": matches, "tiers": [None] * 10, "gain": 0, "selected_hits": 1},
+        }
+
+    # every draw's 10 tickets share the same outcome: 10 copies carry the information of one ticket
+    history = [draw(i, [2 if i % 2 else 0] * 10) for i in range(20)]
+    summary = summarise_votes(history, POWER_655)
+    assert summary["all"]["tickets"] == 200
+    assert abs(summary["all"]["z"]) < abs(summary["all"]["z_naive"])
+    assert math.isclose(summary["selected_hits"], 1.0)
+    print("the voting z-score treats a draw's tickets as one correlated group")

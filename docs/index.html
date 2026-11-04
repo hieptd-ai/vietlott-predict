@@ -1608,6 +1608,8 @@
                         list(p.best.tickets),
                     );
                     grid.append(top, best);
+                    const voteCard = voteBlock(p);
+                    if (voteCard) grid.prepend(voteCard);
 
                     const val = document.getElementById("picksValidation");
                     val.replaceChildren();
@@ -1648,6 +1650,52 @@
                     renderHistory(p);
                 }
 
+                function voteBlock(p) {
+                    const vt = p.vote;
+                    if (!vt || !vt.next) return null;
+                    const n = vt.next;
+                    const codes = vt.codes || {};
+                    const card = el("div", "card picks-card picks-vote");
+                    card.append(
+                        tx("h3", "", "10 bộ số đề xuất cho kỳ #" + n.draw_id + " (" + n.date + ")", "10 suggested tickets for draw #" + n.draw_id + " (" + n.date + ")"),
+                        tx("p", "picks-sub", "Mỗi phương pháp chọn 7 số có xác suất cao nhất. Giữ 8 số được nhiều phương pháp chọn nhất (bằng phiếu thì xét TB các phương pháp). 5 bộ đầu ghép từ 8 số này; 5 bộ sau là 6 số xác suất cao nhất của 5 phương pháp tốt nhất (AUC trung bình các kỳ trước).",
+                            "Every method picks its 7 most probable numbers. The 8 numbers picked by most methods are kept (ties: the average of the methods). The first 5 tickets are built from these 8; the last 5 are the 6 most probable numbers of the 5 best methods (mean AUC over earlier draws)."),
+                    );
+                    const sel = el("div", "vote-selected");
+                    n.selected.forEach(function (num) {
+                        const by = n.chosen_by[String(num)] || [];
+                        const cell = el("div", "vote-num");
+                        const ball = el("span", "pick-ball", pad(num));
+                        cell.append(ball, tx("span", "vote-count", by.length + " phiếu", by.length + " votes"), el("span", "vote-codes", by.join(" ")));
+                        cell.title = by.map(function (c) { return c + ": " + (codes[c] || c); }).join("\n");
+                        sel.appendChild(cell);
+                    });
+                    card.appendChild(sel);
+                    const cols = el("div", "vote-cols");
+                    const left = el("div");
+                    left.append(tx("h4", "", "5 bộ từ 8 số được chọn", "5 tickets from the 8 numbers"), list(n.vote_tickets));
+                    const right = el("div");
+                    right.append(
+                        tx("h4", "", "5 bộ của 5 phương pháp tốt nhất", "5 tickets of the 5 best methods"),
+                        list(n.method_tickets.map(function (m) { return m.ticket; }), function (i) {
+                            const m = n.method_tickets[i];
+                            const tag = el("span", "pick-ratio", m.code);
+                            tag.title = codes[m.code] || m.key;
+                            return tag;
+                        }),
+                    );
+                    cols.append(left, right);
+                    card.appendChild(cols);
+                    const s = vt.summary;
+                    if (s && s.n_draws) {
+                        const pct = function (v) { return v.toFixed(1).replace(".", ",") + "%"; };
+                        card.appendChild(tx("p", "picks-sub",
+                            "Chạy lại từ " + s.since + " (" + s.n_draws + " kỳ, mỗi kỳ chỉ dùng dữ liệu trước đó): trúng TB " + s.all.avg_matches.toFixed(3) + " số/vé (vé ngẫu nhiên " + s.expected_avg_matches.toFixed(3) + "), " + nf.format(s.all.winners) + "/" + nf.format(s.all.tickets) + " vé trúng, ROI " + pct(s.roi) + "; 8 số được chọn trúng TB " + s.selected_hits.toFixed(2) + "/" + p.pick + " (ngẫu nhiên " + s.expected_selected_hits.toFixed(2) + "). Xem cột \"10 bộ bỏ phiếu\" trong Chi tiết từng kỳ.",
+                            "Replayed since " + s.since + " (" + s.n_draws + " draws, each using earlier data only): " + s.all.avg_matches.toFixed(3) + " matches/ticket (random " + s.expected_avg_matches.toFixed(3) + "), " + nf.format(s.all.winners) + "/" + nf.format(s.all.tickets) + " winning tickets, ROI " + s.roi.toFixed(1) + "%; the 8 selected numbers matched " + s.selected_hits.toFixed(2) + "/" + p.pick + " on average (random " + s.expected_selected_hits.toFixed(2) + "). See \"10 voting tickets\" in the draw-by-draw details."));
+                    }
+                    return card;
+                }
+
                 function replayBlock(p, val) {
                     const rp = p.replay;
                     if (!rp || !rp.rows.length) return;
@@ -1677,11 +1725,12 @@
 
                 // ---------------------------------------------------------- draw-by-draw history
                 const HISTORY_SETS = [
+                    ["picks_vote10", "10 bộ bỏ phiếu", "10 voting tickets"],
                     ["picks_best10", "10 bộ dễ trúng nhất", "10 easiest tickets"],
                     ["picks_top20", "20 bộ xác suất cao nhất", "20 most probable tickets"],
                     ["top5_roi", "Kết hợp 5 ROI cao nhất", "Top-5 ROI combination"],
                 ];
-                let historySet = "picks_best10";
+                let historySet = "picks_vote10";
                 try { const savedSet = localStorage.getItem("vietlott-history-set"); if (HISTORY_SETS.some(function (h) { return h[0] === savedSet; })) historySet = savedSet; } catch (e) {}
                 function decode(packed, pick) {
                     const out = [];

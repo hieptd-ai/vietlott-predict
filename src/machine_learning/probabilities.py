@@ -19,6 +19,7 @@ models only use data before each draw - see the no-look-ahead tests).  Values ar
 import json
 import math
 from datetime import date
+from itertools import combinations
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
@@ -132,8 +133,9 @@ def backfill(
     seed: int = 42,
     replay_entries: Optional[List[dict]] = None,
     ledger_entries: Optional[List[dict]] = None,
+    end: Optional[date] = None,
 ) -> List[dict]:
-    """Walk-forward probability entries for every stored draw from ``start``.
+    """Walk-forward probability entries for every stored draw from ``start`` (to ``end`` inclusive).
 
     Uses one model per method over the full history: predictions for a draw only use earlier draws
     (proven by the no-look-ahead tests), which avoids re-training from scratch for every draw.
@@ -153,8 +155,9 @@ def backfill(
     models = {key: factory(df, game) for key, _, factory in default_strategies(seed, sources)}
     entries = []
     first = next((i for i, d in enumerate(df["date"]) if d >= start), len(df))
-    total = len(df) - first
-    for n, position in enumerate(range(max(first, 1), len(df)), start=1):
+    stop = next((i for i, d in enumerate(df["date"]) if end and d > end), len(df))
+    total = stop - first
+    for n, position in enumerate(range(max(first, 1), stop), start=1):
         draw = df.iloc[position]
         trained_until = str(df["id"].iloc[position - 1])
         rp = replay.get(str(draw.id), {})
@@ -221,13 +224,26 @@ def evaluate(entries: Sequence[dict], df: pd.DataFrame, game: GameSpec) -> dict:
 @click.option("--product", "products", multiple=True)
 @click.option("--samples", default=2000, show_default=True, help="Sampled tickets per heuristic method and draw.")
 @click.option("--seed", default=42, show_default=True)
-def main(start, products, samples: int, seed: int) -> None:
+@click.option(
+    "--to", "end", default=None, type=click.DateTime(formats=["%Y-%m-%d"]), help="Last draw date (inclusive)."
+)
+def main(start, products, samples: int, seed: int, end) -> None:
     """Backfill per-number probabilities of every method for each stored draw from ``--from``."""
     sources = load_sources()
     for key in products or GAMES:
         game = GAMES[key]
         df = load_draws(game)
-        entries = backfill(df, game, sources, start.date(), samples, seed, load_replay_entries(key), load_ledger(key))
+        entries = backfill(
+            df,
+            game,
+            sources,
+            start.date(),
+            samples,
+            seed,
+            load_replay_entries(key),
+            load_ledger(key),
+            end.date() if end else None,
+        )
         written = append_probabilities(entries, key)
         logger.info(f"{game.title}: {written} probability entries written")
 
@@ -242,16 +258,25 @@ METHOD_LABELS = {
 }
 
 
-def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None) -> dict:
-    """Dashboard data: every recorded entry (with the result once drawn), method names and the evaluation."""
+def probabilities_payload(
+    product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None, since: Optional[str] = "2026-01-01"
+) -> dict:
+    """Dashboard data for draws since ``since`` (earlier entries only warm up the voting ranking).
+
+    Every entry carries the result once drawn and its voting suggestion; plus method names and codes,
+    the evaluation of the probabilities and the totals of the 10 voting tickets.
+    """
     entries = load_probabilities(product, prob_dir)
+    votes = {v["draw_id"]: v for v in vote_history(entries, df, game)}
+    shown = [e for e in entries if not since or e["date"] >= since]
     names = {key: name for key, name, _ in default_strategies(42, None)}
     names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
     names.update(METHOD_LABELS)
     draws = {str(r.id): r for r in df.itertuples(index=False)}
     out = []
-    for entry in entries:
+    for entry in shown:
         draw = draws.get(entry["draw_id"])
+        vote = {k: v for k, v in votes[entry["draw_id"]].items() if k not in ("draw_id", "date", "source", "tickets")}
         out.append(
             {
                 **entry,
@@ -260,10 +285,11 @@ def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_d
                     int(draw.bonus) if draw is not None and draw.bonus is not None and not pd.isna(draw.bonus) else None
                 ),
                 "drawn_date": str(draw.date) if draw is not None else None,
+                "vote": vote,
             }
         )
     keys = []
-    for entry in entries:
+    for entry in shown:
         for key in entry["probs"]:
             if key not in keys:
                 keys.append(key)
@@ -273,7 +299,227 @@ def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_d
         "range": [game.min_val, game.max_val],
         "has_bonus": game.has_bonus,
         "base": game.pick / game.pool,
-        "methods": [{"key": k, "name": names.get(k, k)} for k in keys],
+        "methods": [{"key": k, "name": names.get(k, k), "code": METHOD_CODES.get(k, k)} for k in keys],
+        "voting": {
+            "select": VOTE_SELECT,
+            "numbers": VOTE_NUMBERS,
+            "vote_tickets": VOTE_TICKETS,
+            "method_tickets": BEST_METHOD_TICKETS,
+            "voters": voting_keys(keys),
+        },
         "entries": out,
-        "evaluation": evaluate(entries, df, game),
+        "evaluation": evaluate(shown, df, game),
+        "vote_summary": summarise_votes(list(votes.values()), game, since),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Voting: 10 suggested tickets built from the probability table
+# ---------------------------------------------------------------------------
+
+METHOD_CODES = {
+    "random": "NGN",
+    "hot": "SNG",
+    "cold": "SLH",
+    "long_absence": "LCV",
+    "not_repeat": "TSR",
+    "pattern": "MKC",
+    "exp_decay": "SGM",
+    "pair": "CSO",
+    "markov": "MKV",
+    "positional": "TVT",
+    "ml_logistic": "MLR",
+    "ml_gbm": "MLG",
+    "ml_multi": "MLD",
+    "consensus": "DTH",
+    TOP_ROI_KEY: "T5R",
+    ML_AVG_KEY: "TB3",
+}
+# composite columns: shown in the table, but neither averaged nor voting (they would double-count)
+COMPOSITE_KEYS = (TOP_ROI_KEY, ML_AVG_KEY)
+VOTE_KEY = "picks_vote10"
+VOTE_SELECT = 7
+VOTE_NUMBERS = 8
+VOTE_TICKETS = 5
+BEST_METHOD_TICKETS = 5
+
+
+def voting_keys(keys: Sequence[str]) -> List[str]:
+    """Methods that vote: every method except the uniform baseline and the composite columns."""
+    return [k for k in keys if k != "random" and k not in COMPOSITE_KEYS]
+
+
+def average_probabilities(probs: Dict[str, Sequence[float]]) -> np.ndarray:
+    """'TB các phương pháp': mean over every method except the composite columns (random included)."""
+    rows = [probs[k] for k in probs if k not in COMPOSITE_KEYS]
+    return np.mean(rows, axis=0)
+
+
+def top_numbers(vec: Sequence[float], game: GameSpec, n: int) -> List[int]:
+    """The ``n`` numbers with the highest probability (ties: smaller number first)."""
+    order = sorted(range(len(vec)), key=lambda i: (-vec[i], i))
+    return [game.min_val + i for i in order[:n]]
+
+
+def draw_auc(vec: Sequence[float], drawn: Sequence[int], game: GameSpec) -> float:
+    """Mann-Whitney AUC of one draw: chance that a drawn number got a higher probability than a non-drawn one."""
+    drawn_idx = {n - game.min_val for n in drawn}
+    pos = [vec[i] for i in drawn_idx]
+    neg = [vec[i] for i in range(len(vec)) if i not in drawn_idx]
+    wins = sum((p > q) + 0.5 * (p == q) for p in pos for q in neg)
+    return wins / (len(pos) * len(neg)) if pos and neg else 0.5
+
+
+def rank_methods(prior_aucs: Dict[str, List[float]], keys: Sequence[str]) -> List[str]:
+    """Methods ordered by their mean per-draw AUC on earlier draws (no history: table order)."""
+    order = {k: i for i, k in enumerate(keys)}
+    return sorted(keys, key=lambda k: (-(np.mean(prior_aucs[k]) if prior_aucs.get(k) else 0.5), order[k]))
+
+
+def vote_picks(probs: Dict[str, Sequence[float]], ranking: Sequence[str], game: GameSpec) -> dict:
+    """10 suggested tickets from one draw's probability table.
+
+    * every voting method picks its ``VOTE_SELECT`` (7) most probable numbers;
+    * the ``VOTE_NUMBERS`` (8) numbers picked by most methods are kept (ties: higher average);
+    * ``VOTE_TICKETS`` (5) tickets: the 6-of-8 combinations with the most votes (then average);
+    * ``BEST_METHOD_TICKETS`` (5) tickets: the 6 most probable numbers of each of the best methods in
+      ``ranking`` (skipping a ticket that is already suggested).
+    """
+    voters = voting_keys(list(probs))
+    avg = average_probabilities(probs)
+    chosen_by: Dict[int, List[str]] = {}
+    for key in voters:
+        for n in top_numbers(probs[key], game, VOTE_SELECT):
+            chosen_by.setdefault(n, []).append(METHOD_CODES.get(key, key.upper()[:3]))
+    votes = {n: len(codes) for n, codes in chosen_by.items()}
+    candidates = sorted(
+        range(game.min_val, game.max_val + 1), key=lambda n: (-votes.get(n, 0), -avg[n - game.min_val], n)
+    )
+    selected = sorted(candidates[:VOTE_NUMBERS])
+
+    def combo_score(combo):
+        return (-sum(votes.get(n, 0) for n in combo), -sum(avg[n - game.min_val] for n in combo), combo)
+
+    vote_tickets = [list(c) for c in sorted(combinations(selected, game.pick), key=combo_score)[:VOTE_TICKETS]]
+    method_tickets, seen = [], {tuple(t) for t in vote_tickets}
+    for key in ranking:
+        if len(method_tickets) == BEST_METHOD_TICKETS:
+            break
+        ticket = sorted(top_numbers(probs[key], game, game.pick))
+        if tuple(ticket) in seen:
+            continue
+        seen.add(tuple(ticket))
+        method_tickets.append({"key": key, "code": METHOD_CODES.get(key, key), "ticket": ticket})
+    return {
+        "chosen_by": {str(n): codes for n, codes in sorted(chosen_by.items())},
+        "selected": selected,
+        "vote_tickets": vote_tickets,
+        "method_tickets": method_tickets,
+        "best_methods": list(ranking[:BEST_METHOD_TICKETS]),
+        "tickets": vote_tickets + [m["ticket"] for m in method_tickets],
+    }
+
+
+def vote_history(entries: Sequence[dict], df: pd.DataFrame, game: GameSpec) -> List[dict]:
+    """Voting suggestion for every recorded draw, each ranked only with draws before it, plus results."""
+    draws = {str(r.id): r for r in df.itertuples(index=False)}
+    prior_aucs: Dict[str, List[float]] = {}
+    out = []
+    for entry in sorted(entries, key=lambda e: int(e["draw_id"])):
+        probs = {k: unpack(v) for k, v in entry["probs"].items()}
+        ranking = rank_methods(prior_aucs, voting_keys(list(probs)))
+        picks = vote_picks(probs, ranking, game)
+        draw = draws.get(entry["draw_id"])
+        row = {"draw_id": entry["draw_id"], "date": entry["date"], "source": entry.get("source"), **picks}
+        if draw is not None:
+            result = list(draw.result) + (
+                [int(draw.bonus)] if draw.bonus is not None and not pd.isna(draw.bonus) else []
+            )
+            outcomes = [game.score(t, result) for t in picks["tickets"]]
+            row["result"] = {
+                "main": list(draw.result),
+                "matches": [m for m, _, _ in outcomes],
+                "tiers": [t.key if t else None for _, _, t in outcomes],
+                "gain": sum(t.value for _, _, t in outcomes if t),
+                "selected_hits": len(set(picks["selected"]) & set(draw.result)),
+            }
+            for key in voting_keys(list(probs)):  # only after scoring: the ranking for later draws
+                prior_aucs.setdefault(key, []).append(draw_auc(probs[key], list(draw.result), game))
+        out.append(row)
+    return out
+
+
+def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str] = None) -> dict:
+    """Totals of the 10 voting tickets (and of each half) over the validated draws since ``since``.
+
+    Tickets of one draw share numbers, so they are not independent: ``z`` compares the per-draw mean
+    matches with chance using their spread across draws (``z_naive`` treats every ticket as independent).
+    """
+    scored = [h for h in history if "result" in h and (not since or h["date"] >= since)]
+    expected = game.expected_matches()
+    pmf = game.match_probabilities()
+    var = sum((k - expected) ** 2 * p for k, p in enumerate(pmf))
+
+    values = {t.key: t.value for t in game.tiers}
+
+    def clustered_z(per_draw):
+        d = len(per_draw)
+        if d < 2:
+            return 0.0
+        mean = sum(per_draw) / d
+        sd = math.sqrt(sum((x - mean) ** 2 for x in per_draw) / (d - 1))
+        return (mean - expected) / (sd / math.sqrt(d)) if sd else 0.0
+
+    def part(lo, hi):
+        matches = [m for h in scored for m in h["result"]["matches"][lo:hi]]
+        tiers = [t for h in scored for t in h["result"]["tiers"][lo:hi] if t]
+        per_draw = [
+            sum(h["result"]["matches"][lo:hi]) / len(h["result"]["matches"][lo:hi])
+            for h in scored
+            if h["result"]["matches"][lo:hi]
+        ]
+        n = len(matches)
+        avg = sum(matches) / n if n else 0.0
+        z = clustered_z(per_draw)
+        z_naive = (avg - expected) / math.sqrt(var / n) if n else 0.0
+        gain = sum(values[t] for t in tiers)
+        cost = n * game.ticket_price
+        counts: Dict[str, int] = {}
+        for t in tiers:
+            counts[t] = counts.get(t, 0) + 1
+        return {
+            "tickets": n,
+            "avg_matches": avg,
+            "z": z,
+            "p_value": math.erfc(abs(z) / math.sqrt(2)),
+            "z_naive": z_naive,
+            "winners": len(tiers),
+            "tiers": counts,
+            "cost": cost,
+            "gain": gain,
+            "roi": (gain - cost) / cost * 100 if cost else 0.0,
+        }
+
+    total_gain = sum(h["result"]["gain"] for h in scored)
+    cost = sum(len(h["tickets"]) for h in scored) * game.ticket_price
+    # hits of the 8 selected numbers are hypergeometric: 8 of the pool, 6 drawn
+    k, pool = VOTE_NUMBERS, game.pool
+    sel_mean = k * game.pick / pool
+    sel_var = sel_mean * (pool - game.pick) / pool * (pool - k) / (pool - 1)
+    sel_hits = sum(h["result"]["selected_hits"] for h in scored) / len(scored) if scored else 0.0
+    sel_z = (sel_hits - sel_mean) / math.sqrt(sel_var / len(scored)) if scored else 0.0
+    return {
+        "since": since,
+        "n_draws": len(scored),
+        "cost": cost,
+        "gain": total_gain,
+        "roi": (total_gain - cost) / cost * 100 if cost else 0.0,
+        "expected_avg_matches": expected,
+        "all": part(0, VOTE_TICKETS + BEST_METHOD_TICKETS),
+        "vote": part(0, VOTE_TICKETS),
+        "methods": part(VOTE_TICKETS, VOTE_TICKETS + BEST_METHOD_TICKETS),
+        "selected_hits": sel_hits,
+        "expected_selected_hits": sel_mean,
+        "selected_z": sel_z,
+        "selected_p_value": math.erfc(abs(sel_z) / math.sqrt(2)),
     }
