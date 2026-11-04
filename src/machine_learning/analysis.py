@@ -1016,9 +1016,13 @@ def homepage_picks(next_draw: dict, comparison: dict, ledger: Optional[List[dict
     """The homepage's 20 most-probable and 10 easiest-to-hit tickets, plus the last validation.
 
     When the ledger already holds the prediction made after the latest draw, its tickets are shown, so
-    the homepage always displays exactly what was recorded and will be validated.
+    the homepage always displays exactly what was recorded and will be validated. A prediction recorded
+    after a newer draw than ``next_draw`` (the published analysis is older than the ledger) wins.
     """
     recorded = next((e for e in (ledger or []) if e["after_id"] == next_draw["after_id"]), None)
+    newest = max(ledger or [], key=lambda e: int(e["after_id"]), default=None)
+    if newest is not None and int(newest["after_id"]) > int(next_draw["after_id"]):
+        recorded = newest
     source = recorded or next_draw
     rows = {r["key"]: r for r in source["strategies"]}
     meta = {**next_draw.get("picks", {})}

@@ -359,6 +359,11 @@ def test_ledger_keeps_picks_and_homepage_shows_recorded_tickets(tmp_path):
     assert validated["validation"]["draw_id"] == df["id"].iloc[-1]
     assert {p["key"] for p in validated["validation"]["picks"]} == {"picks_top20", "picks_best10"}
     assert {a["key"] for a in validated["summary"]} == {"picks_top20", "picks_best10"}
+
+    assert append_prediction(nxt, "2026-11-05T11:00:00+07:00", tmp_path)
+    ledger = load_ledger("power_655", tmp_path)
+    stale = homepage_picks(prediction, comparison, ledger, score_ledger(ledger, df, POWER_655))
+    assert stale["after_id"] == nxt["after_id"] and stale["recorded_at"] == "2026-11-05T11:00:00+07:00"
     print("homepage shows the recorded picks and validates them after the draw")
 
 
@@ -690,4 +695,26 @@ def test_vote_history_ranks_methods_only_with_earlier_draws():
     assert summary["n_draws"] == 10 and summary["all"]["tickets"] == 100 and summary["cost"] == 1_000_000
     assert summary["vote"]["tickets"] == 50 and summary["methods"]["tickets"] == 50
     assert summary["gain"] == summary["vote"]["gain"] + summary["methods"]["gain"]
+    assert math.isclose(summary["expected_selected_hits"], 8 * 6 / 55)
+    for half in ("all", "vote", "methods"):
+        assert math.isfinite(summary[half]["z"]) and 0 <= summary[half]["p_value"] <= 1
     print("voting history is walk-forward and its summary adds up")
+
+
+def test_vote_summary_z_counts_draws_not_correlated_tickets():
+    from machine_learning.probabilities import summarise_votes
+
+    def draw(i, matches):
+        return {
+            "date": f"2026-01-{i + 1:02d}",
+            "tickets": [[1, 2, 3, 4, 5, 6]] * 10,
+            "result": {"matches": matches, "tiers": [None] * 10, "gain": 0, "selected_hits": 1},
+        }
+
+    # every draw's 10 tickets share the same outcome: 10 copies carry the information of one ticket
+    history = [draw(i, [2 if i % 2 else 0] * 10) for i in range(20)]
+    summary = summarise_votes(history, POWER_655)
+    assert summary["all"]["tickets"] == 200
+    assert abs(summary["all"]["z"]) < abs(summary["all"]["z_naive"])
+    assert math.isclose(summary["selected_hits"], 1.0)
+    print("the voting z-score treats a draw's tickets as one correlated group")

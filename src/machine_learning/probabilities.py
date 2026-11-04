@@ -450,7 +450,11 @@ def vote_history(entries: Sequence[dict], df: pd.DataFrame, game: GameSpec) -> L
 
 
 def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str] = None) -> dict:
-    """Totals of the 10 voting tickets (and of each half) over the validated draws since ``since``."""
+    """Totals of the 10 voting tickets (and of each half) over the validated draws since ``since``.
+
+    Tickets of one draw share numbers, so they are not independent: ``z`` compares the per-draw mean
+    matches with chance using their spread across draws (``z_naive`` treats every ticket as independent).
+    """
     scored = [h for h in history if "result" in h and (not since or h["date"] >= since)]
     expected = game.expected_matches()
     pmf = game.match_probabilities()
@@ -458,12 +462,26 @@ def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str
 
     values = {t.key: t.value for t in game.tiers}
 
+    def clustered_z(per_draw):
+        d = len(per_draw)
+        if d < 2:
+            return 0.0
+        mean = sum(per_draw) / d
+        sd = math.sqrt(sum((x - mean) ** 2 for x in per_draw) / (d - 1))
+        return (mean - expected) / (sd / math.sqrt(d)) if sd else 0.0
+
     def part(lo, hi):
         matches = [m for h in scored for m in h["result"]["matches"][lo:hi]]
         tiers = [t for h in scored for t in h["result"]["tiers"][lo:hi] if t]
+        per_draw = [
+            sum(h["result"]["matches"][lo:hi]) / len(h["result"]["matches"][lo:hi])
+            for h in scored
+            if h["result"]["matches"][lo:hi]
+        ]
         n = len(matches)
         avg = sum(matches) / n if n else 0.0
-        z = (avg - expected) / math.sqrt(var / n) if n else 0.0
+        z = clustered_z(per_draw)
+        z_naive = (avg - expected) / math.sqrt(var / n) if n else 0.0
         gain = sum(values[t] for t in tiers)
         cost = n * game.ticket_price
         counts: Dict[str, int] = {}
@@ -474,6 +492,7 @@ def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str
             "avg_matches": avg,
             "z": z,
             "p_value": math.erfc(abs(z) / math.sqrt(2)),
+            "z_naive": z_naive,
             "winners": len(tiers),
             "tiers": counts,
             "cost": cost,
@@ -483,6 +502,12 @@ def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str
 
     total_gain = sum(h["result"]["gain"] for h in scored)
     cost = sum(len(h["tickets"]) for h in scored) * game.ticket_price
+    # hits of the 8 selected numbers are hypergeometric: 8 of the pool, 6 drawn
+    k, pool = VOTE_NUMBERS, game.pool
+    sel_mean = k * game.pick / pool
+    sel_var = sel_mean * (pool - game.pick) / pool * (pool - k) / (pool - 1)
+    sel_hits = sum(h["result"]["selected_hits"] for h in scored) / len(scored) if scored else 0.0
+    sel_z = (sel_hits - sel_mean) / math.sqrt(sel_var / len(scored)) if scored else 0.0
     return {
         "since": since,
         "n_draws": len(scored),
@@ -493,6 +518,8 @@ def summarise_votes(history: Sequence[dict], game: GameSpec, since: Optional[str
         "all": part(0, VOTE_TICKETS + BEST_METHOD_TICKETS),
         "vote": part(0, VOTE_TICKETS),
         "methods": part(VOTE_TICKETS, VOTE_TICKETS + BEST_METHOD_TICKETS),
-        "selected_hits": sum(h["result"]["selected_hits"] for h in scored) / len(scored) if scored else 0.0,
-        "expected_selected_hits": VOTE_NUMBERS * game.pick / game.pool,
+        "selected_hits": sel_hits,
+        "expected_selected_hits": sel_mean,
+        "selected_z": sel_z,
+        "selected_p_value": math.erfc(abs(sel_z) / math.sqrt(2)),
     }
