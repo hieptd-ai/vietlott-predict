@@ -222,3 +222,46 @@ def main(start, products, samples: int, seed: int) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+METHOD_LABELS = {
+    "ml_avg": "TB 3 mô hình ML (cơ sở của 20 bộ)",
+    TOP_ROI_KEY: "Kết hợp 5 ROI cao nhất",
+}
+
+
+def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None) -> dict:
+    """Dashboard data: every recorded entry (with the result once drawn), method names and the evaluation."""
+    entries = load_probabilities(product, prob_dir)
+    names = {key: name for key, name, _ in default_strategies(42, None)}
+    names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
+    names.update(METHOD_LABELS)
+    draws = {str(r.id): r for r in df.itertuples(index=False)}
+    out = []
+    for entry in entries:
+        draw = draws.get(entry["draw_id"])
+        out.append(
+            {
+                **entry,
+                "main": list(draw.result) if draw is not None else None,
+                "bonus": (
+                    int(draw.bonus) if draw is not None and draw.bonus is not None and not pd.isna(draw.bonus) else None
+                ),
+                "drawn_date": str(draw.date) if draw is not None else None,
+            }
+        )
+    keys = []
+    for entry in entries:
+        for key in entry["probs"]:
+            if key not in keys:
+                keys.append(key)
+    return {
+        "title": game.title,
+        "pick": game.pick,
+        "range": [game.min_val, game.max_val],
+        "has_bonus": game.has_bonus,
+        "base": game.pick / game.pool,
+        "methods": [{"key": k, "name": names.get(k, k)} for k in keys],
+        "entries": out,
+        "evaluation": evaluate(entries, df, game),
+    }

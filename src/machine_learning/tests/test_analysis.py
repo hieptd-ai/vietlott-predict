@@ -580,3 +580,19 @@ def test_method_probabilities_are_proper_and_leak_free(tmp_path):
     assert report["n_draws"] == 3 and abs(rows["random"]["auc"] - 0.5) < 1e-9
     assert all(0 <= r["auc"] <= 1 and r["mean_drawn_prob"] > 0 for r in rows.values())
     print("per-number probabilities are proper, leak-free and append-only")
+
+
+def test_probabilities_payload_adds_results_and_names(tmp_path):
+    from machine_learning.probabilities import append_probabilities, backfill, probabilities_payload
+
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    entries = backfill(df.iloc[:-1], POWER_655, {}, df["date"].iloc[72], samples=40, seed=3)
+    append_probabilities(entries, "power_655", tmp_path)
+    payload = probabilities_payload("power_655", POWER_655, df, tmp_path)
+    assert payload["base"] == 6 / 55 and payload["range"] == [1, 55]
+    assert [e["draw_id"] for e in payload["entries"]] == list(df["id"].iloc[72:74])
+    assert all(e["main"] is not None and e["drawn_date"] for e in payload["entries"])
+    names = {m["key"]: m["name"] for m in payload["methods"]}
+    assert names["ml_avg"].startswith("TB 3 mô hình ML") and names["random"] == "Ngẫu nhiên (baseline)"
+    assert payload["evaluation"]["n_draws"] == 2
+    print("dashboard probability payload carries results, names and the evaluation")

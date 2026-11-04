@@ -40,6 +40,20 @@ def _compact(value, digits: int = 6):
     return value
 
 
+def write_probabilities(out_dir: Path) -> None:
+    """Write ``probabilities.json`` / ``probabilities.js``: per-number probabilities of every method by draw."""
+    from machine_learning.probabilities import probabilities_payload
+
+    products = {}
+    for key in ("power_655", "power_645"):
+        game = get_game(key)
+        products[key] = probabilities_payload(key, game, load_draws(game))
+    text = json.dumps(_compact({"products": products}), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "probabilities.json").write_text(text + "\n", encoding="utf-8")
+    (out_dir / "probabilities.js").write_text(f"window.VIETLOTT_PROBS = {text};\n", encoding="utf-8")
+    logger.info(f"wrote {out_dir / 'probabilities.js'} ({len(text) / 1024:.0f} KiB)")
+
+
 def write_analysis(payload: dict, out_dir: Path) -> None:
     """Write ``analysis.json`` / ``analysis-data.js`` and the homepage's ``picks.json`` / ``picks.js``."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +96,7 @@ def refresh_picks(out_dir: Path) -> None:
             "history": picks_history(df, game, ledger, load_replay_entries(key), (replay or {}).get("validate_from")),
         }
     write_analysis(payload, out_dir)
+    write_probabilities(out_dir)
 
 
 @click.command()
@@ -113,6 +128,7 @@ def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_f
         n_runs=runs,
     )
     write_analysis(payload, out_dir)
+    write_probabilities(out_dir)
 
 
 if __name__ == "__main__":
