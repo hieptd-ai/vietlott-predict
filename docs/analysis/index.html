@@ -661,6 +661,25 @@
             .num-cell-down {
                 background: color-mix(in srgb, var(--series-2) var(--tint), transparent);
             }
+            #numTable td.vote-codes {
+                text-align: left;
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                white-space: normal;
+                min-width: 11rem;
+                max-width: 14rem;
+            }
+            #numTable tr.voted td:nth-child(2) {
+                font-weight: 700;
+                color: var(--color-brand);
+            }
+            #numTable tr.voted td:first-child {
+                box-shadow: inset 3px 0 0 var(--color-brand);
+            }
+            #voteSumTable td,
+            #voteSumTable th {
+                white-space: nowrap;
+            }
             .legend-swatch.down {
                 background: var(--series-2);
             }
@@ -799,6 +818,7 @@
                             <label class="field">Sắp xếp
                                 <select id="numSort">
                                     <option value="number">Theo con số</option>
+                                    <option value="votes">Theo số phiếu (8 số được chọn lên đầu)</option>
                                     <option value="avg">Theo xác suất trung bình (cao → thấp)</option>
                                     <option value="method">Theo phương pháp đang chọn ở cột đầu</option>
                                 </select>
@@ -809,7 +829,20 @@
                         </div>
                         <p class="card-sub" id="numSub"></p>
                         <div class="legend" id="numLegend"></div>
+                        <p class="note" id="numCodes"></p>
                         <div class="stats-table num-prob-wrap"><table id="numTable"></table></div>
+                    </div>
+                    <div class="grid-2" style="margin-top: 1.25rem">
+                        <div class="card">
+                            <h3 id="voteTitle">10 bộ đề xuất</h3>
+                            <p class="card-sub" id="voteSub"></p>
+                            <div class="ticket-list" id="voteTickets"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Chạy lại cách bỏ phiếu cho mọi kỳ năm 2026</h3>
+                            <p class="card-sub" id="voteSumSub"></p>
+                            <div class="stats-table"><table id="voteSumTable"></table></div>
+                        </div>
                     </div>
                     <div class="card" style="margin-top: 1.25rem">
                         <h3>Xác suất có báo trước được số sẽ ra không?</h3>
@@ -1972,16 +2005,26 @@
                     );
                     const order = [];
                     for (let i = 0; i < nNum; i++) order.push(i);
+                    const vote = entry.vote || { chosen_by: {}, selected: [] };
+                    const votesOf = function (i) { return (vote.chosen_by[String(pp.range[0] + i)] || []).length; };
+                    const selectedSet = new Set(vote.selected);
                     if (numState.sort === "avg") order.sort(function (a, b) { return avg[b] - avg[a]; });
+                    if (numState.sort === "votes") order.sort(function (a, b) { return (selectedSet.has(pp.range[0] + b) ? 1 : 0) - (selectedSet.has(pp.range[0] + a) ? 1 : 0) || votesOf(b) - votesOf(a) || avg[b] - avg[a]; });
                     if (numState.sort === "method" && vecs[numState.method]) order.sort(function (a, b) { return vecs[numState.method][b] - vecs[numState.method][a]; });
 
                     const table = document.getElementById("numTable");
                     table.replaceChildren();
                     const thead = el("thead");
                     const htr = el("tr");
+                    const codeOf = {};
+                    pp.methods.forEach(function (m) { codeOf[m.key] = m.code; });
                     htr.appendChild(el("th", { text: "Số" }));
+                    htr.appendChild(el("th", { text: "Phiếu", title: "Số phương pháp chọn số này trong " + pp.voting.select + " số xác suất cao nhất của mình" }));
+                    const codesTh = el("th", { text: "Được chọn theo phương pháp" });
+                    codesTh.style.textAlign = "left";
+                    htr.appendChild(codesTh);
                     htr.appendChild(el("th", { text: "TB các phương pháp", title: "Trung bình 14 phương pháp (không gồm Top 5 ROI và TB 3 ML vốn là tổ hợp)" }));
-                    keys.forEach(function (k) { htr.appendChild(el("th", { text: SHORT[k] || k, title: nameOf[k] || k })); });
+                    keys.forEach(function (k) { htr.appendChild(el("th", { text: (SHORT[k] || k) + " (" + (codeOf[k] || "") + ")", title: nameOf[k] || k })); });
                     thead.appendChild(htr);
                     const tbody = el("tbody");
                     function cell(v) {
@@ -1995,10 +2038,11 @@
                     }
                     order.forEach(function (i) {
                         const n = pp.range[0] + i;
-                        const tr = el("tr", { class: drawn.has(n) ? "drawn" : "" });
+                        const tr = el("tr", { class: (drawn.has(n) ? "drawn " : "") + (selectedSet.has(n) ? "voted" : "") });
                         const numTd = el("td");
                         numTd.appendChild(el("span", { class: "ball sm", text: String(n).padStart(2, "0") }));
-                        tr.append(numTd, cell(avg[i]));
+                        const codes = vote.chosen_by[String(n)] || [];
+                        tr.append(numTd, el("td", { text: codes.length ? String(codes.length) + (selectedSet.has(n) ? " ★" : "") : "—" }), el("td", { class: "vote-codes", text: codes.join(", ") }), cell(avg[i]));
                         keys.forEach(function (k) { tr.appendChild(vecs[k] ? cell(vecs[k][i]) : el("td", { text: "—" })); });
                         tbody.appendChild(tr);
                     });
@@ -2008,17 +2052,53 @@
                         const ftr = el("tr");
                         const idx = entry.main.map(function (n) { return n - pp.range[0]; });
                         const meanOf = function (vec) { return idx.reduce(function (a, i) { return a + vec[i]; }, 0) / idx.length; };
-                        ftr.append(el("td", { text: "TB số đã ra" }), cell(meanOf(avg)));
+                        ftr.append(el("td", { text: "TB số đã ra" }), el("td", { text: "" }), el("td", { class: "vote-codes", text: "8 số được chọn trúng " + entry.main.filter(function (x) { return selectedSet.has(x); }).length + "/" + pp.pick }), cell(meanOf(avg)));
                         keys.forEach(function (k) { ftr.appendChild(vecs[k] ? cell(meanOf(vecs[k])) : el("td", { text: "—" })); });
                         tfoot.appendChild(ftr);
                         table.appendChild(tfoot);
                     }
+
+                    document.getElementById("numCodes").replaceChildren(
+                        el("strong", { text: "Mã phương pháp: " }),
+                        pp.methods.map(function (m) { return m.code + " = " + (SHORT[m.key] || m.name); }).join(" · ") + ". Mỗi phương pháp bỏ phiếu cho " + pp.voting.select + " số xác suất cao nhất của mình (trừ NGN và hai cột tổng hợp T5R, TB3). ★ là " + pp.voting.numbers + " số được chọn nhiều nhất (bằng phiếu thì xét TB các phương pháp).",
+                    );
+                    renderVote(pp, entry, nameOf, codeOf);
 
                     const ev = pp.evaluation;
                     setText("numEvalSub", "Trên " + ev.n_draws + " kỳ đã quay. Nếu một phương pháp báo trước được số sẽ ra, các số đã ra phải có xác suất trung bình cao hơn " + nf2.format(pp.base * 100) + "%, AUC cao hơn 0,5 và 6 số xác suất cao nhất phải trúng nhiều hơn " + nf3.format(ev.rows.length ? ev.rows[0].expected_top6_hits : 0) + " số mỗi kỳ.");
                     fillTable("numEval", ["Phương pháp", "Số kỳ", "Xác suất TB của số đã ra", "Mức ngẫu nhiên", "AUC (ngẫu nhiên 0,5)", "6 số cao nhất trúng TB", "Log-loss", "Log-loss mức nền"],
                         ev.rows.map(function (r) {
                             return [nameOf[r.key] || r.key, nf.format(r.draws), nf2.format(r.mean_drawn_prob * 100) + "%", nf2.format(r.base_prob * 100) + "%", nf3.format(r.auc), nf3.format(r.top6_hits) + " / " + nf3.format(r.expected_top6_hits), nf4.format(r.log_loss), nf4.format(r.base_log_loss)];
+                        }));
+                }
+                function renderVote(pp, entry, nameOf, codeOf) {
+                    const vote = entry.vote;
+                    const box = document.getElementById("voteTickets");
+                    box.replaceChildren();
+                    if (!vote) return;
+                    const drawn = new Set(entry.main || []);
+                    setText("voteTitle", "10 bộ đề xuất cho kỳ #" + entry.draw_id + (entry.main ? " (đã quay " + entry.drawn_date + ")" : " (kỳ tới)"));
+                    setText("voteSub", "8 số được chọn: " + vote.selected.map(function (n) { return String(n).padStart(2, "0"); }).join(" ") + ". 5 bộ đầu: các tổ hợp 6 trong 8 số có nhiều phiếu nhất. 5 bộ sau: 6 số xác suất cao nhất của 5 phương pháp tốt nhất (xếp theo AUC trung bình ở các kỳ trước): " + vote.best_methods.map(function (k) { return codeOf[k] || k; }).join(", ") + "." + (entry.main ? " Số tô màu là số trúng." : ""));
+                    function row(label, ticket, extra) {
+                        const r = el("div", { class: "ticket-row" });
+                        const b = el("span", { class: "balls" });
+                        ticket.forEach(function (n) { b.appendChild(el("span", { class: "ball sm" + (drawn.has(n) ? " hit" : ""), text: String(n).padStart(2, "0") })); });
+                        r.append(el("span", { class: "muted", text: label }), b);
+                        if (entry.main) {
+                            const m = ticket.filter(function (n) { return drawn.has(n); }).length;
+                            r.appendChild(el("span", { text: m + " số" + (m >= 3 ? " · trúng giải" : "") }));
+                        } else if (extra) r.appendChild(el("span", { class: "muted", text: extra }));
+                        box.appendChild(r);
+                    }
+                    vote.vote_tickets.forEach(function (t, i) { row("Phiếu " + (i + 1), t); });
+                    vote.method_tickets.forEach(function (m) { row(m.code, m.ticket, nameOf[m.key] || m.key); });
+                    const sm = pp.vote_summary;
+                    setText("voteSumSub", sm.n_draws + " kỳ từ " + sm.since + ", mỗi kỳ 10 vé. Các bộ được suy ra từ bảng xác suất đã ghi trước ngày quay; 5 phương pháp tốt nhất chỉ xếp hạng bằng các kỳ trước (khởi động từ 07/2025). 8 số được chọn trúng TB " + nf3.format(sm.selected_hits) + " số/kỳ (ngẫu nhiên " + nf3.format(sm.expected_selected_hits) + (sm.selected_z !== undefined ? ", z " + signed(sm.selected_z) + ", p " + nf3.format(sm.selected_p_value) : "") + "). Các vé trong một kỳ dùng chung số nên z được tính trên trung bình từng kỳ, không coi mỗi vé là độc lập.");
+                    const tierText = function (t) { return Object.keys(t).length ? Object.keys(t).map(function (k) { return t[k] + "× " + (k === "third" ? "Giải Ba" : k === "second" ? "Giải Nhì" : k === "first" ? "Giải Nhất" : k); }).join(", ") : "—"; };
+                    fillTable("voteSumTable", ["Nhóm vé", "Số vé", "Trúng TB/vé", "z (theo kỳ)", "p", "Vé trúng", "Chi", "Thu", "ROI"],
+                        [["10 bộ đề xuất", sm.all], ["5 bộ bỏ phiếu (8 số)", sm.vote], ["5 bộ của 5 phương pháp tốt nhất", sm.methods]].map(function (r) {
+                            const x = r[1];
+                            return [r[0], nf.format(x.tickets), nf4.format(x.avg_matches) + " / " + nf4.format(sm.expected_avg_matches), signed(x.z), nf3.format(x.p_value), nf.format(x.winners) + " (" + tierText(x.tiers) + ")", money(x.cost), money(x.gain), nf1.format(x.roi) + "%"];
                         }));
                 }
                 function bindNumbers() {
