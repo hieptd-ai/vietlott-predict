@@ -561,6 +561,15 @@ def test_method_probabilities_are_proper_and_leak_free(tmp_path):
     for key in ("ml_logistic", "ml_gbm", "top5_roi", "ml_avg"):
         assert abs(sum(probs[key]) - 6) < 0.3, key  # per-number model probabilities sum to about 6
     np.testing.assert_allclose(probs["ml_avg"], np.mean([probs["ml_logistic"], probs["ml_gbm"]], axis=0))
+    # predict_next.py passes the target date as an ISO string
+    as_string = method_probabilities(
+        models,
+        POWER_655,
+        str(target),
+        samples=300,
+        top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"],
+    )
+    assert as_string == probs
     # leak-free: the same vectors come out of models that only ever saw earlier draws
     truncated = {k: f(df.iloc[:70], POWER_655) for k, _, f in strategies}
     probs_truncated = method_probabilities(

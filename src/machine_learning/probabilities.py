@@ -49,7 +49,8 @@ def method_probabilities(
     seed: int = 7,
     top_roi_keys: Optional[Sequence[str]] = None,
 ) -> Dict[str, List[float]]:
-    """Per-number probability vector of every method for the draw on ``target_date``."""
+    """Per-number probability vector of every method for the draw on ``target_date`` (date or ISO string)."""
+    target_date = pd.Timestamp(target_date).date()
     numbers = np.arange(game.min_val, game.max_val + 1)
     out: Dict[str, List[float]] = {}
     for index, (key, model) in enumerate(models.items()):
