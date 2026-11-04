@@ -592,8 +592,40 @@
             #replayDraws th {
                 white-space: nowrap;
             }
-            #replayDraws .balls {
+            #replayDraws .balls,
+            #dirDraws .balls {
                 flex-wrap: nowrap;
+            }
+            #dirDraws td,
+            #dirDraws th {
+                white-space: nowrap;
+                vertical-align: top;
+            }
+            #dirDraws .ball {
+                width: 1.7rem;
+                height: 1.7rem;
+                font-size: 0.74rem;
+            }
+            .dir-list {
+                display: grid;
+                gap: 0.2rem;
+                font-size: 0.82rem;
+            }
+            .dir-list .muted,
+            #dirDetail .muted {
+                color: var(--text-muted);
+                font-size: 0.76rem;
+            }
+            .dir-bar {
+                display: inline-block;
+                height: 0.5rem;
+                border-radius: 2px;
+                background: var(--color-brand);
+                vertical-align: middle;
+                margin-right: 0.35rem;
+            }
+            .dir-bar.rev {
+                background: var(--cat-orange, #e8833a);
             }
             #replayDraws .ball {
                 width: 1.7rem;
@@ -722,6 +754,7 @@
                         <li><a href="#compare" class="nav-link">Bảng so sánh</a></li>
                         <li><a href="#replay" class="nav-link">Thẩm định 2026</a></li>
                         <li><a href="#numbers" class="nav-link">Xác suất từng số</a></li>
+                        <li><a href="#directions" class="nav-link">Hướng liên quan</a></li>
                         <li><a href="#tickets" class="nav-link">Vé kỳ tới</a></li>
                         <li><a href="#simulator" class="nav-link">Mô phỏng</a></li>
                         <li><a href="#ml" class="nav-link">Machine Learning</a></li>
@@ -848,6 +881,50 @@
                         <h3>Xác suất có báo trước được số sẽ ra không?</h3>
                         <p class="card-sub" id="numEvalSub"></p>
                         <div class="stats-table"><table id="numEval"></table></div>
+                    </div>
+                </section>
+
+                <section class="section" id="directions">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Thẩm định sau mỗi kỳ</span>
+                        <h2 class="section-title">Hướng nào liên quan nhất đến lô số trúng?</h2>
+                        <p class="section-description" id="dirDesc"></p>
+                    </div>
+                    <div class="kpi-grid" id="dirKpis"></div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Từng kỳ: 3 hướng liên quan nhất</h3>
+                        <p class="card-sub" id="dirDrawsSub"></p>
+                        <div class="stats-table" style="max-height: 560px; overflow: auto"><table id="dirDraws"></table></div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Tổng hợp theo hướng</h3>
+                        <p class="card-sub" id="dirSumSub"></p>
+                        <div class="stats-table"><table id="dirSumTable"></table></div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3 id="dirLongTitle">Kiểm tra dài hạn</h3>
+                        <p class="card-sub" id="dirLongSub"></p>
+                        <div class="grid-2">
+                            <div class="stats-table"><table id="dirLongTable"></table></div>
+                            <div class="stats-table"><table id="dirLongFollow"></table></div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Đi theo hướng của các kỳ trước có trúng hơn không?</h3>
+                        <p class="card-sub" id="dirFollowSub"></p>
+                        <div class="stats-table"><table id="dirFollowTable"></table></div>
+                    </div>
+                    <div>
+                        <div class="card" style="margin-top: 1.25rem">
+                            <h3 id="dirDetailTitle">Mọi hướng của một kỳ</h3>
+                            <div class="sim-controls">
+                                <label class="field">Kỳ quay
+                                    <select id="dirDraw"></select>
+                                </label>
+                            </div>
+                            <p class="card-sub" id="dirDetailSub"></p>
+                            <div class="stats-table" style="max-height: 520px; overflow: auto"><table id="dirDetail"></table></div>
+                        </div>
                     </div>
                 </section>
 
@@ -1084,6 +1161,7 @@
         </script>
         <script src="analysis-data.js"></script>
         <script src="probabilities.js"></script>
+        <script src="directions.js"></script>
         <script>
             (function () {
                 "use strict";
@@ -1623,6 +1701,7 @@
                     fillTable("tierTable", ["Giải", "Giá trị", "Xác suất"], p.tiers.map(function (t) { return [t.label, money(t.value), "1 / " + nf.format(Math.round(t.odds))]; }));
 
                     renderNumbers();
+                    renderDirections();
 
                     // Simulator
                     if (p.simulation) {
@@ -2101,10 +2180,109 @@
                             return [r[0], nf.format(x.tickets), nf4.format(x.avg_matches) + " / " + nf4.format(sm.expected_avg_matches), signed(x.z), nf3.format(x.p_value), nf.format(x.winners) + " (" + tierText(x.tiers) + ")", money(x.cost), money(x.gain), nf1.format(x.roi) + "%"];
                         }));
                 }
+                // ---------------------------------------------------------------- related directions
+                const dirState = { draw: null };
+                const DIR_KIND = { feature: "Đặc điểm lịch sử", method: "Phương pháp (xác suất đã ghi)", control: "Đối chứng ngẫu nhiên" };
+                function dirBar(auc, sign) {
+                    const w = Math.round(Math.abs(auc - 0.5) * 200);
+                    return el("span", { class: "dir-bar" + (sign < 0 ? " rev" : ""), style: "width:" + Math.max(w, 2) + "px" });
+                }
+                function dirHits(b, pick) {
+                    return b.hits !== undefined && b.hits !== null ? " · " + b.hits + "/" + pick + " số (kỳ vọng " + nf1.format(b.expected) + ")" : "";
+                }
+                function ctrlText(sm) {
+                    const i = sm.directions.findIndex(function (x) { return x.key === "control"; });
+                    if (i < 0) return "";
+                    const c = sm.directions[i];
+                    return " Hướng \"Đối chứng: thứ tự ngẫu nhiên\" chỉ là một thứ tự bốc thăm trước giờ quay, không chứa thông tin gì, vậy mà vẫn đứng đầu " + c.top1 + " kỳ, lọt top 3 " + c.top3 + " kỳ và xếp hạng " + (i + 1) + "/" + sm.directions.length + " theo |z|.";
+                }
+                function renderDirections() {
+                    const section = document.getElementById("directions");
+                    const all = window.VIETLOTT_DIRECTIONS && window.VIETLOTT_DIRECTIONS.products;
+                    const dd = all && all[state.product];
+                    if (!dd || !dd.draws.length) { section.classList.add("is-hidden"); return; }
+                    section.classList.remove("is-hidden");
+                    const p = state.data.products[state.product];
+                    const sm = dd.summary;
+                    const specs = {};
+                    dd.specs.forEach(function (s) { specs[s.key] = s; });
+                    setText("dirDesc", "Sau khi có kết quả, mỗi kỳ được thẩm định với " + sm.n_directions + " \"hướng\": " +
+                        "đặc điểm lịch sử của từng số (lâu chưa về, nóng/lạnh, lặp/kề/cùng đuôi kỳ trước, chẵn/lẻ, lớn/nhỏ, số vừa ra ở sản phẩm khác…) " +
+                        "và xác suất mà từng phương pháp đã ghi trước giờ quay. Độ liên quan là AUC của các số trúng: 0,5 là không liên quan, 1 là các số trúng đứng đầu hướng đó. " +
+                        "AUC dưới 0,5 nghĩa là hướng ngược lại liên quan (ví dụ \"Lạnh\" thay vì \"Nóng\"). Mọi hướng chỉ dùng dữ liệu trước ngày quay.");
+
+                    const kp = document.getElementById("dirKpis");
+                    kp.replaceChildren();
+                    function kpi(label, value, note) {
+                        kp.appendChild(el("div", { class: "card kpi" }, [el("div", { class: "kpi-label", text: label }), el("div", { class: "kpi-value", text: value }), el("div", { class: "kpi-note", text: note })]));
+                    }
+                    kpi("Kỳ đã thẩm định", nf.format(sm.n_draws), "từ " + sm.since);
+                    kpi("Độ lệch của hướng mạnh nhất mỗi kỳ", nf3.format(sm.best.strength), "|AUC − 0,5| trung bình; nếu kết quả là ngẫu nhiên: " + nf3.format(sm.best.null_strength));
+                    kpi("Kỳ có hướng mạnh bất thường", sm.best.significant + "/" + sm.n_draws, "mạnh hơn 95% kết quả ngẫu nhiên; kỳ vọng do may rủi " + nf1.format(sm.n_draws * 0.05));
+                    const top = sm.directions[0];
+                    kpi("Hướng ổn định nhất cả giai đoạn", top.name, "AUC TB " + nf3.format(top.related_auc) + ", z " + signed(top.z) + " (ngưỡng " + nf2.format(sm.bonferroni_z) + ")");
+
+                    setText("dirDrawsSub", "Mỗi dòng: kết quả thật và 3 hướng có AUC xa 0,5 nhất. \"p ngẫu nhiên\" là tỉ lệ trong 1.000 kết quả ngẫu nhiên mà hướng mạnh nhất cũng mạnh bằng hoặc hơn. p nhỏ (< 0,05) mới là kỳ có hướng thật sự nổi bật. Cột cuối: hướng mạnh nhất của 10 kỳ trước, dùng cho kỳ này.");
+                    const pick = p.pick;
+                    const rows = dd.draws.slice().reverse().map(function (d) {
+                        const list = el("div", { class: "dir-list" });
+                        d.best.forEach(function (b) {
+                            list.appendChild(el("div", {}, [dirBar(b.auc, b.sign), el("span", { text: b.name + " " }), el("span", { class: "muted", text: "AUC " + nf3.format(b.auc) + dirHits(b, pick) })]));
+                        });
+                        const f = d.follow["10"];
+                        const fcell = f ? el("div", { class: "dir-list" }, [el("span", { text: f.name }), el("span", { class: "muted", text: "AUC " + nf3.format(f.auc) + " · vé 6 số trúng " + f.matches })]) : "—";
+                        return ["#" + d.draw_id, d.date, balls(d.main, p.has_bonus ? d.bonus : null), list, nf3.format(d.p_best), fcell];
+                    });
+                    fillTable("dirDraws", ["Kỳ", "Ngày", "Kết quả", "3 hướng liên quan nhất", "p ngẫu nhiên", "Theo hướng 10 kỳ trước"], rows);
+
+                    setText("dirSumSub", "Trên " + sm.n_draws + " kỳ: AUC trung bình của từng hướng (theo chiều liên quan), z so với 0,5 (phương sai chính xác cho kết quả ngẫu nhiên), số kỳ hướng đó đứng đầu và lọt top 3. Với " + sm.n_directions + " hướng, một hướng chỉ đáng tin khi |z| > " + nf2.format(sm.bonferroni_z) + " (hiệu chỉnh Bonferroni). Mỗi hướng đứng đầu trung bình " + nf1.format(sm.n_draws / sm.n_directions) + " kỳ do may rủi." + ctrlText(sm));
+                    fillTable("dirSumTable", ["Hướng", "Loại", "AUC TB", "z", "p", "Đứng đầu", "Top 3", "Số trúng thuộc nhóm / kỳ"],
+                        sm.directions.map(function (x) {
+                            const spec = specs[x.key];
+                            return [x.name, DIR_KIND[spec.kind], nf3.format(x.related_auc), signed(x.z), pval(x.p_value), x.top1 + " kỳ", x.top3 + " kỳ", x.hits !== undefined ? nf2.format(x.hits) + " / " + nf2.format(x.expected_hits) : "—"];
+                        }));
+
+                    setText("dirFollowSub", "Dùng kết quả thẩm định để chơi: trước mỗi kỳ, chọn hướng (và chiều) có AUC trung bình xa 0,5 nhất trong 1, 10, 30 kỳ trước hoặc toàn bộ từ 07/2025, rồi mua 6 số đứng đầu hướng đó. Nếu hướng liên quan có \"quán tính\", AUC kỳ sau phải > 0,5 và vé trúng nhiều hơn " + nf3.format(sm.expected_matches) + " số.");
+                    fillTable("dirFollowTable", ["Chọn theo", "AUC kỳ sau", "z", "Vé 6 số trúng TB", "z", "Hướng hay được chọn"],
+                        sm.follow.map(function (f) {
+                            return [f.window ? f.window + " kỳ trước" : "Mọi kỳ trước", nf3.format(f.mean_auc), signed(f.z), nf3.format(f.avg_matches) + " / " + nf3.format(sm.expected_matches), signed(f.matches_z), f.chosen.map(function (c) { return c[0] + " (" + c[1] + ")"; }).join(", ")];
+                        }));
+
+                    const lg = dd.long;
+                    if (lg && lg.n_draws) {
+                        setText("dirLongTitle", "Kiểm tra dài hạn " + lg.since.slice(0, 4) + "–" + lg.until.slice(0, 4) + ": " + nf.format(lg.n_draws) + " kỳ, chỉ đặc điểm lịch sử");
+                        setText("dirLongSub", "Cùng cách thẩm định nhưng trên nhiều kỳ hơn hẳn (các phương pháp chưa ghi xác suất trước 07/2025 nên không có ở đây). Hướng mạnh nhất mỗi kỳ lệch TB " + nf3.format(lg.best.strength) + " khỏi 0,5, gần như bằng kết quả ngẫu nhiên (" + nf3.format(lg.best.null_strength) + "); " + nf.format(lg.best.significant) + " kỳ nổi bật, may rủi cho khoảng " + nf.format(Math.round(lg.n_draws * 0.05)) + ". Ngưỡng |z| sau hiệu chỉnh: " + nf2.format(lg.bonferroni_z) + "." + ctrlText(lg).replace("vậy mà vẫn đứng đầu", "đứng đầu"));
+                        fillTable("dirLongTable", ["Hướng ổn định nhất", "AUC TB", "z"], lg.directions.slice(0, 6).map(function (x) { return [x.name, nf3.format(x.related_auc), signed(x.z)]; }));
+                        fillTable("dirLongFollow", ["Đi theo hướng của", "AUC kỳ sau", "z", "Vé 6 số trúng TB"], lg.follow.map(function (f) {
+                            return [f.window ? f.window + " kỳ trước" : "Mọi kỳ trước", nf3.format(f.mean_auc), signed(f.z), nf3.format(f.avg_matches) + " / " + nf3.format(lg.expected_matches)];
+                        }));
+                    }
+
+                    const sel = document.getElementById("dirDraw");
+                    const draws = dd.draws.slice().reverse();
+                    if (!draws.some(function (d) { return d.draw_id === dirState.draw; })) dirState.draw = draws[0].draw_id;
+                    sel.replaceChildren();
+                    draws.forEach(function (d) { sel.appendChild(el("option", { value: d.draw_id, text: "#" + d.draw_id + " · " + d.date + " · " + d.main.map(function (n) { return String(n).padStart(2, "0"); }).join(" ") })); });
+                    sel.value = dirState.draw;
+                    const d = draws.find(function (x) { return x.draw_id === dirState.draw; });
+                    setText("dirDetailTitle", "Mọi hướng của kỳ #" + d.draw_id);
+                    setText("dirDetailSub", "Sắp xếp theo độ liên quan. Thanh xanh: hướng như tên gọi; thanh cam: hướng ngược lại. Hướng mạnh nhất kỳ này lệch " + nf3.format(d.strength) + "; với kết quả ngẫu nhiên trung bình lệch " + nf3.format(d.null_best) + ".");
+                    const keys = Object.keys(d.auc).sort(function (a, b) { return Math.abs(d.auc[b] - 0.5) - Math.abs(d.auc[a] - 0.5); });
+                    fillTable("dirDetail", ["Hướng liên quan", "AUC", "Số trúng thuộc nhóm"], keys.map(function (k) {
+                        const spec = specs[k];
+                        const a = d.auc[k];
+                        const sign = a >= 0.5 ? 1 : -1;
+                        const h = d.hits[k];
+                        const hits = h === undefined ? "—" : (sign > 0 ? h : pick - h) + "/" + pick;
+                        return [el("span", {}, [dirBar(a, sign), el("span", { text: sign > 0 ? spec.name : spec.reverse })]), nf3.format(sign > 0 ? a : 1 - a), hits];
+                    }));
+                }
+
                 function bindNumbers() {
                     document.getElementById("numDraw").addEventListener("change", function (e) { numState.draw = e.target.value; renderNumbers(); });
                     document.getElementById("numSort").addEventListener("change", function (e) { numState.sort = e.target.value; renderNumbers(); });
                     document.getElementById("numMethod").addEventListener("change", function (e) { numState.method = e.target.value; renderNumbers(); });
+                    document.getElementById("dirDraw").addEventListener("change", function (e) { dirState.draw = e.target.value; renderDirections(); });
                 }
 
                 function setupSwitches() {
