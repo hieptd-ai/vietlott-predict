@@ -258,16 +258,25 @@ METHOD_LABELS = {
 }
 
 
-def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None) -> dict:
-    """Dashboard data: every recorded entry (with the result once drawn), method names and the evaluation."""
+def probabilities_payload(
+    product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None, since: Optional[str] = "2026-01-01"
+) -> dict:
+    """Dashboard data for draws since ``since`` (earlier entries only warm up the voting ranking).
+
+    Every entry carries the result once drawn and its voting suggestion; plus method names and codes,
+    the evaluation of the probabilities and the totals of the 10 voting tickets.
+    """
     entries = load_probabilities(product, prob_dir)
+    votes = {v["draw_id"]: v for v in vote_history(entries, df, game)}
+    shown = [e for e in entries if not since or e["date"] >= since]
     names = {key: name for key, name, _ in default_strategies(42, None)}
     names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
     names.update(METHOD_LABELS)
     draws = {str(r.id): r for r in df.itertuples(index=False)}
     out = []
-    for entry in entries:
+    for entry in shown:
         draw = draws.get(entry["draw_id"])
+        vote = {k: v for k, v in votes[entry["draw_id"]].items() if k not in ("draw_id", "date", "source", "tickets")}
         out.append(
             {
                 **entry,
@@ -276,10 +285,11 @@ def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_d
                     int(draw.bonus) if draw is not None and draw.bonus is not None and not pd.isna(draw.bonus) else None
                 ),
                 "drawn_date": str(draw.date) if draw is not None else None,
+                "vote": vote,
             }
         )
     keys = []
-    for entry in entries:
+    for entry in shown:
         for key in entry["probs"]:
             if key not in keys:
                 keys.append(key)
@@ -289,9 +299,17 @@ def probabilities_payload(product: str, game: GameSpec, df: pd.DataFrame, prob_d
         "range": [game.min_val, game.max_val],
         "has_bonus": game.has_bonus,
         "base": game.pick / game.pool,
-        "methods": [{"key": k, "name": names.get(k, k)} for k in keys],
+        "methods": [{"key": k, "name": names.get(k, k), "code": METHOD_CODES.get(k, k)} for k in keys],
+        "voting": {
+            "select": VOTE_SELECT,
+            "numbers": VOTE_NUMBERS,
+            "vote_tickets": VOTE_TICKETS,
+            "method_tickets": BEST_METHOD_TICKETS,
+            "voters": voting_keys(keys),
+        },
         "entries": out,
-        "evaluation": evaluate(entries, df, game),
+        "evaluation": evaluate(shown, df, game),
+        "vote_summary": summarise_votes(list(votes.values()), game, since),
     }
 
 

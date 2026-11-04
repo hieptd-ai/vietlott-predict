@@ -40,6 +40,38 @@ def _compact(value, digits: int = 6):
     return value
 
 
+def attach_vote_picks(payload: dict) -> None:
+    """Add the voting suggestion (next draw, draw-by-draw tickets and totals) to the homepage picks."""
+    from machine_learning.analysis import encode_tickets
+    from machine_learning.probabilities import VOTE_KEY, load_probabilities, summarise_votes, vote_history
+
+    for key, product in payload.get("products", {}).items():
+        picks = product.get("picks")
+        if picks is None:
+            continue
+        game = get_game(key)
+        history = vote_history(load_probabilities(key), load_draws(game), game)
+        if not history:
+            continue
+        since = (picks.get("history") or {}).get("since") or "2026-01-01"
+        nxt = history[-1] if "result" not in history[-1] else None
+        picks["vote"] = {
+            "next": None
+            if nxt is None
+            else {
+                k: nxt[k]
+                for k in ("draw_id", "date", "chosen_by", "selected", "vote_tickets", "method_tickets", "best_methods")
+            },
+            "summary": summarise_votes(history, game, since),
+        }
+        by_id = {h["draw_id"]: h for h in history}
+        for draw in (picks.get("history") or {}).get("draws", []):
+            vote = by_id.get(draw["draw_id"])
+            if vote:
+                draw["tickets"][VOTE_KEY] = encode_tickets(vote["tickets"])
+                draw["names"][VOTE_KEY] = "10 bộ bỏ phiếu"
+
+
 def write_probabilities(out_dir: Path) -> None:
     """Write ``probabilities.json`` / ``probabilities.js``: per-number probabilities of every method by draw."""
     from machine_learning.probabilities import probabilities_payload
@@ -95,6 +127,7 @@ def refresh_picks(out_dir: Path) -> None:
             "replay": replay_picks_summary(replay),
             "history": picks_history(df, game, ledger, load_replay_entries(key), (replay or {}).get("validate_from")),
         }
+    attach_vote_picks(payload)
     write_analysis(payload, out_dir)
     write_probabilities(out_dir)
 
@@ -127,6 +160,7 @@ def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_f
         simulation_tickets=tickets,
         n_runs=runs,
     )
+    attach_vote_picks(payload)
     write_analysis(payload, out_dir)
     write_probabilities(out_dir)
 

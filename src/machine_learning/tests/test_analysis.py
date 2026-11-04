@@ -597,14 +597,19 @@ def test_probabilities_payload_adds_results_and_names(tmp_path):
     df = prepare_draws(_raw_draws(75), POWER_655)
     entries = backfill(df.iloc[:-1], POWER_655, {}, df["date"].iloc[72], samples=40, seed=3)
     append_probabilities(entries, "power_655", tmp_path)
-    payload = probabilities_payload("power_655", POWER_655, df, tmp_path)
+    payload = probabilities_payload("power_655", POWER_655, df, tmp_path, since=None)
     assert payload["base"] == 6 / 55 and payload["range"] == [1, 55]
     assert [e["draw_id"] for e in payload["entries"]] == list(df["id"].iloc[72:74])
     assert all(e["main"] is not None and e["drawn_date"] for e in payload["entries"])
     names = {m["key"]: m["name"] for m in payload["methods"]}
     assert names["ml_avg"].startswith("TB 3 mô hình ML") and names["random"] == "Ngẫu nhiên (baseline)"
     assert payload["evaluation"]["n_draws"] == 2
-    print("dashboard probability payload carries results, names and the evaluation")
+    codes = {m["key"]: m["code"] for m in payload["methods"]}
+    assert codes["cold"] == "SLH" and codes["hot"] == "SNG" and codes["ml_avg"] == "TB3"
+    vote = payload["entries"][0]["vote"]
+    assert len(vote["selected"]) == 8 and "result" in vote and payload["vote_summary"]["n_draws"] == 2
+    assert "random" not in payload["voting"]["voters"] and "ml_avg" not in payload["voting"]["voters"]
+    print("dashboard probability payload carries results, names, codes, votes and the evaluation")
 
 
 def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed():
