@@ -202,6 +202,16 @@ def _top_ticket(score: np.ndarray, sign: int, game: GameSpec, rng: np.random.Gen
     return sorted(int(i) + game.min_val for i in order[: game.pick])
 
 
+def _best_entry(key: str, auc: float, spec: dict, hits: Optional[dict], game: GameSpec) -> dict:
+    """One related direction of a draw, named and measured the way it points (AUC >= 0.5)."""
+    sign = 1 if auc >= 0.5 else -1
+    entry = {"key": key, "sign": sign, "auc": auc if sign > 0 else 1 - auc, "name": _signed_name(spec, sign)}
+    if hits is not None:
+        entry["hits"] = hits["hits"] if sign > 0 else game.pick - hits["hits"]
+        entry["expected"] = hits["expected"] if sign > 0 else game.pick - hits["expected"]
+    return entry
+
+
 def _choose(prior: Sequence[dict], keys: Sequence[str]) -> Optional[Tuple[str, int]]:
     """Direction (and sign) furthest from 0.5 on average over ``prior`` validated draws."""
     best, best_key = -1.0, None
@@ -261,13 +271,7 @@ def direction_history(
             "var": table["var"],
             "hits": hits,
             "best": [
-                {
-                    "key": key,
-                    "sign": 1 if table["auc"][key] >= 0.5 else -1,
-                    "auc": table["auc"][key],
-                    "name": _signed_name(by_key[key], 1 if table["auc"][key] >= 0.5 else -1),
-                }
-                for key in ranked[:TOP_SHOWN]
+                _best_entry(key, table["auc"][key], by_key[key], hits.get(key), game) for key in ranked[:TOP_SHOWN]
             ],
             "strength": table["strength"],
             "null_best": table["null_best"],
@@ -334,14 +338,17 @@ def summarise_directions(rows: Sequence[dict], specs: Sequence[dict], game: Game
             "p_value": _p(z),
             "sign": 1 if mean >= 0.5 else -1,
             "name": _signed_name(spec, 1 if mean >= 0.5 else -1),
+            "related_auc": max(mean, 1 - mean),
             "top1": len(top1),
             "top1_reverse": sum(1 for s in top1 if s < 0),
             "top3": sum(1 for r in shown if any(b["key"] == key for b in r["best"])),
         }
         if spec["binary"]:
             hit_rows = [r["hits"][key] for r in shown if key in r["hits"]]
-            item["hits"] = sum(h["hits"] for h in hit_rows) / len(hit_rows)
-            item["expected_hits"] = sum(h["expected"] for h in hit_rows) / len(hit_rows)
+            hits = sum(h["hits"] for h in hit_rows) / len(hit_rows)
+            expected_hits = sum(h["expected"] for h in hit_rows) / len(hit_rows)
+            item["hits"] = hits if item["sign"] > 0 else game.pick - hits
+            item["expected_hits"] = expected_hits if item["sign"] > 0 else game.pick - expected_hits
         per.append(item)
     per.sort(key=lambda x: -abs(x["z"]))
     expected = game.expected_matches()
@@ -403,7 +410,7 @@ def directions_payload(
             "bonus": r["bonus"],
             "auc": {k: round(v, 4) for k, v in r["auc"].items()},
             "hits": {k: v["hits"] for k, v in r["hits"].items()},
-            "best": [{**b, "auc": round(b["auc"], 4)} for b in r["best"]],
+            "best": [{k: (round(v, 3) if isinstance(v, float) else v) for k, v in b.items()} for b in r["best"]],
             "strength": round(r["strength"], 4),
             "null_best": round(r["null_best"], 4),
             "p_best": round(r["p_best"], 4),
@@ -434,12 +441,12 @@ def last_validation(
     return {k: r[k] for k in ("draw_id", "date", "main", "bonus", "best", "strength", "null_best", "p_best")}
 
 
-def describe_best(best: dict, hits: Optional[dict] = None) -> str:
-    """``Số lẻ (AUC 0,78; 5/6 số trúng)`` style text of one most-related direction."""
-    text = f"{best['name']} (AUC {best['auc']:.3f}".replace(".", ",")
-    if hits and best["key"] in hits:
-        text += f"; {hits[best['key']]['hits']} số trúng có tính chất này"
-    return text + ")"
+def describe_best(best: dict, pick: int = 6) -> str:
+    """``Số lẻ (AUC 0,780; 5/6 số trúng thuộc nhóm này, kỳ vọng 3,1)`` text of one related direction."""
+    text = f"{best['name']} (AUC {best['auc']:.3f}"
+    if best.get("hits") is not None:
+        text += f"; {best['hits']}/{pick} số trúng thuộc nhóm này, kỳ vọng {best['expected']:.1f}"
+    return (text + ")").replace(".", ",")
 
 
 @click.command()

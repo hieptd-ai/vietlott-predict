@@ -388,6 +388,12 @@ def test_validation_markdown_lists_picks_first():
     text = validation_markdown("Power 6/55", scored)
     assert "kỳ #01419" in text and text.index("Top 20") < text.index("Random")
     assert "Chưa có" in validation_markdown("Mega", {"n_recorded": 0, "scored": []})
+    best = {"key": "odd", "name": "Số lẻ", "auc": 0.81, "hits": 5, "expected": 3.05}
+    directions = {"draw_id": "01419", "p_best": 0.42, "best": [best]}
+    text = validation_markdown("Power 6/55", scored, directions)
+    assert "Hướng liên quan nhất tới lô số trúng: Số lẻ (AUC 0,810; 5/6 số trúng thuộc nhóm này, kỳ vọng 3,0)" in text
+    assert "42%" in text
+    assert "Hướng" not in validation_markdown("Power 6/55", scored, {**directions, "draw_id": "01418"})
     print("validation report is readable")
 
 
@@ -775,6 +781,8 @@ def test_planted_direction_is_found_and_followed():
     key = "src:power_645"
     assert sum(r["best"][0]["key"] == key for r in history) >= 0.9 * len(history)
     assert all(r["hits"][key]["hits"] == 5 for r in history)
+    assert all(b["auc"] >= 0.5 for r in history for b in r["best"])
+    assert all(r["best"][0]["hits"] == 5 for r in history if r["best"][0]["key"] == key)
     assert sum(r["p_best"] < 0.05 for r in history) >= 0.9 * len(history)
     assert all(f["key"] == key and f["sign"] == 1 for r in history[1:] for f in r["follow"].values())
     summary = summarise_directions(history, specs, POWER_655, "2024-03-01")

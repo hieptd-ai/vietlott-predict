@@ -24,9 +24,15 @@ from machine_learning.analysis import (
     load_sources,
     predict_next_draw,
 )
+from machine_learning.directions import describe_best, last_validation
 from machine_learning.games import GAMES
 from machine_learning.ledger import LEDGER_DIR, append_prediction, load_ledger, next_draw_id, score_ledger
-from machine_learning.probabilities import append_probabilities, make_entry, method_probabilities
+from machine_learning.probabilities import (
+    append_probabilities,
+    load_probabilities,
+    make_entry,
+    method_probabilities,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ANALYSIS_JSON = REPO_ROOT / "docs" / "analysis" / "analysis.json"
@@ -46,7 +52,7 @@ def published_comparison(path: Path = ANALYSIS_JSON) -> dict:
     }
 
 
-def validation_markdown(title: str, scored: dict) -> str:
+def validation_markdown(title: str, scored: dict, directions: Optional[dict] = None) -> str:
     """Short Markdown report of the latest validated prediction (for the GitHub job summary)."""
     if not scored["scored"]:
         return f"### {title}\n\nChưa có dự đoán nào được thẩm định ({scored['n_recorded']} lần đã ghi).\n"
@@ -62,6 +68,13 @@ def validation_markdown(title: str, scored: dict) -> str:
     picks_first = sorted(last["strategies"], key=lambda s: (s["key"] not in (PICK_TOP_KEY, PICK_BEST_KEY), -s["best"]))
     for row in picks_first:
         lines.append(f"| {row['name']} | {row['best']} số | {row['winners']} | {row['gain']:,} đ |")
+    if directions and directions["draw_id"] == last["draw_id"]:
+        best = "; ".join(describe_best(b, len(last["main"])) for b in directions["best"])
+        lines += [
+            "",
+            f"Hướng liên quan nhất tới lô số trúng: {best}. "
+            f"Tỉ lệ kết quả ngẫu nhiên có hướng liên quan bằng hoặc mạnh hơn: {directions['p_best']:.0%}.",
+        ]
     return "\n".join(lines) + "\n"
 
 
@@ -99,14 +112,21 @@ def main(tickets: int, top: int, seed: int, ledger_dir: Optional[Path]) -> None:
         logger.info(f"{game.title}: prediction after draw #{prediction['after_id']} {state}")
 
         scored = score_ledger(load_ledger(key, ledger_dir), df, game)
+        prob_dir = None if ledger_dir is None else ledger_dir / "probabilities"
+        directions = last_validation(df, game, sources, load_probabilities(key, prob_dir))
         scorecard["products"][key] = {
             "title": game.title,
             "n_recorded": scored["n_recorded"],
             "n_scored": scored["n_scored"],
             "summary": scored["summary"],
             "last": scored["scored"][-1] if scored["scored"] else None,
+            "directions": directions,
         }
-        report.append(validation_markdown(game.title, scored))
+        report.append(validation_markdown(game.title, scored, directions))
+        if directions:
+            logger.info(
+                f"{game.title}: most related direction of #{directions['draw_id']}: {directions['best'][0]['name']}"
+            )
         logger.info(f"{game.title}: {scored['n_scored']} of {scored['n_recorded']} recorded predictions validated")
 
     out_dir = ledger_dir or LEDGER_DIR
