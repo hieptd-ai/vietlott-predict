@@ -499,3 +499,138 @@ def test_every_strategy_predicts_identically_from_truncated_history():
             b = [truncated.predict(target) for _ in range(5)]
             assert a == b, f"{key} differs between full and truncated history at draw {t}"
     print("every method gives the same tickets with or without later draws")
+
+
+def test_picks_history_merges_replay_and_live_ledger(tmp_path):
+    from machine_learning.analysis import picks_history
+    from machine_learning.ledger import append_prediction, load_ledger
+    from machine_learning.replay import replay_game
+
+    df = prepare_draws(_raw_draws(70), POWER_655)
+    other = prepare_draws(_raw_draws(70, pool=45, bonus=False, seed=8), MEGA_645)[["date", "result"]]
+    replay = replay_game(df, POWER_655, {"power_645": other}, df["date"].iloc[62], n_tickets=3, seed=1)
+    live = predict_next_draw(df.iloc[:-1], POWER_655, _random_strategy(), 3, seed=4, best_key="random", n_top=5)
+    append_prediction(live, "2026-11-03T11:00:00+07:00", tmp_path)
+    ledger = load_ledger("power_655", tmp_path)
+    history = picks_history(df, POWER_655, ledger, replay, since=str(df["date"].iloc[64]))
+    ids = [d["draw_id"] for d in history["draws"]]
+    assert ids == sorted(ids, key=int) and ids[0] == df["id"].iloc[64] and ids[-1] == df["id"].iloc[-1]
+    last = history["draws"][-1]
+    assert last["source"] == "live" and last["recorded_at"] == "2026-11-03T11:00:00+07:00"
+    assert (
+        decode_tickets(last["tickets"]["picks_best10"], 6)
+        == next(r for r in live["strategies"] if r["key"] == "picks_best10")["tickets"]
+    )
+    assert all(d["source"] == "replay" for d in history["draws"][:-1])
+    first = history["draws"][0]
+    assert int(first["trained_until_id"]) == int(first["draw_id"]) - 1
+    assert set(first["tickets"]) <= {"picks_top20", "picks_best10", "top5_roi"} and "picks_top20" in first["tickets"]
+    assert len(decode_tickets(first["tickets"]["picks_top20"], 6)) == 20
+    assert history["tiers"][1]["needs_bonus"] is True and history["ticket_price"] == 10_000
+    print("homepage history merges the replay with live ledger predictions")
+
+
+def test_method_probabilities_are_proper_and_leak_free(tmp_path):
+    from machine_learning.probabilities import (
+        append_probabilities,
+        backfill,
+        evaluate,
+        load_probabilities,
+        method_probabilities,
+        pack,
+        unpack,
+    )
+
+    assert unpack(pack([0.1094, 0.5, 0.0])) == [0.109, 0.5, 0.0]
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    strategies = [
+        s
+        for s in default_strategies(seed=3)
+        if s[0] in ("random", "hot", "markov", "ml_logistic", "ml_gbm", "positional")
+    ]
+    target = df["date"].iloc[70]
+    models = {k: f(df, POWER_655) for k, _, f in strategies}
+    probs = method_probabilities(
+        models, POWER_655, target, samples=300, top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"]
+    )
+    assert set(probs) == {"random", "hot", "markov", "ml_logistic", "ml_gbm", "positional", "top5_roi", "ml_avg"}
+    assert all(len(v) == 55 for v in probs.values())
+    assert probs["random"] == [6 / 55] * 55
+    for key in ("hot", "markov", "positional"):
+        assert abs(sum(probs[key]) - 6) < 1e-9, key  # inclusion probabilities of a 6-number ticket
+    for key in ("ml_logistic", "ml_gbm", "top5_roi", "ml_avg"):
+        assert abs(sum(probs[key]) - 6) < 0.3, key  # per-number model probabilities sum to about 6
+    np.testing.assert_allclose(probs["ml_avg"], np.mean([probs["ml_logistic"], probs["ml_gbm"]], axis=0))
+    # predict_next.py passes the target date as an ISO string
+    as_string = method_probabilities(
+        models,
+        POWER_655,
+        str(target),
+        samples=300,
+        top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"],
+    )
+    assert as_string == probs
+    # leak-free: the same vectors come out of models that only ever saw earlier draws
+    truncated = {k: f(df.iloc[:70], POWER_655) for k, _, f in strategies}
+    probs_truncated = method_probabilities(
+        truncated, POWER_655, target, samples=300, top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"]
+    )
+    for key in probs:
+        np.testing.assert_allclose(probs[key], probs_truncated[key], err_msg=key)
+
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[72], samples=50, seed=3)
+    assert [e["draw_id"] for e in entries] == list(df["id"].iloc[72:])
+    assert all(int(e["trained_until_id"]) == int(e["draw_id"]) - 1 for e in entries)
+    assert append_probabilities(entries, "power_655", tmp_path) == 3
+    assert append_probabilities(entries, "power_655", tmp_path) == 0
+    assert len(load_probabilities("power_655", tmp_path)) == 3
+    report = evaluate(entries, df, POWER_655)
+    rows = {r["key"]: r for r in report["rows"]}
+    assert report["n_draws"] == 3 and abs(rows["random"]["auc"] - 0.5) < 1e-9
+    assert all(0 <= r["auc"] <= 1 and r["mean_drawn_prob"] > 0 for r in rows.values())
+    print("per-number probabilities are proper, leak-free and append-only")
+
+
+def test_probabilities_payload_adds_results_and_names(tmp_path):
+    from machine_learning.probabilities import append_probabilities, backfill, probabilities_payload
+
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    entries = backfill(df.iloc[:-1], POWER_655, {}, df["date"].iloc[72], samples=40, seed=3)
+    append_probabilities(entries, "power_655", tmp_path)
+    payload = probabilities_payload("power_655", POWER_655, df, tmp_path)
+    assert payload["base"] == 6 / 55 and payload["range"] == [1, 55]
+    assert [e["draw_id"] for e in payload["entries"]] == list(df["id"].iloc[72:74])
+    assert all(e["main"] is not None and e["drawn_date"] for e in payload["entries"])
+    names = {m["key"]: m["name"] for m in payload["methods"]}
+    assert names["ml_avg"].startswith("TB 3 mô hình ML") and names["random"] == "Ngẫu nhiên (baseline)"
+    assert payload["evaluation"]["n_draws"] == 2
+    print("dashboard probability payload carries results, names and the evaluation")
+
+
+def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed():
+    from machine_learning.probabilities import backfill, unpack
+
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    strategies = [
+        s for s in default_strategies(seed=3) if s[0] in ("random", "hot", "cold", "markov", "positional", "pattern")
+    ]
+    prediction = predict_next_draw(
+        df.iloc[:-1],
+        POWER_655,
+        strategies,
+        2,
+        seed=5,
+        best_key="hot",
+        top_roi_keys=["hot", "cold", "markov", "positional", "pattern"],
+    )
+    ledger = [
+        {"after_id": prediction["after_id"], "strategies": prediction["strategies"], "picks": prediction["picks"]}
+    ]
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[-1], samples=60, seed=3, ledger_entries=ledger)
+    assert len(entries) == 1 and entries[0]["best_key"] == "hot"
+    top5 = np.asarray(unpack(entries[0]["probs"]["top5_roi"]))
+    members = np.mean(
+        [unpack(entries[0]["probs"][k]) for k in ("hot", "cold", "markov", "positional", "pattern")], axis=0
+    )
+    np.testing.assert_allclose(top5, members, atol=1e-3)
+    print("probability backfill falls back to the live ledger's top-5 selection")

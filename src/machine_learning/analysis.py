@@ -38,7 +38,7 @@ from machine_learning.features import (
     occurrence_matrix,
 )
 from machine_learning.games import GameSpec, get_game
-from machine_learning.ledger import load_replay_summary, score_ledger
+from machine_learning.ledger import load_replay_entries, load_replay_summary, next_draw_id, score_ledger
 from machine_learning.strategies import (
     ColdNumbersStrategy,
     ConsensusStrategy,
@@ -637,7 +637,7 @@ def predict_next_draw(
     """
     last = df.iloc[-1]
     target = next_draw_date(list(df["date"]))
-    models = dict(models or {})
+    models = models if models is not None else {}  # filled in place so callers can reuse the trained models
     rows = []
     for index, (key, name, factory) in enumerate(strategies):
         try:
@@ -951,6 +951,7 @@ def analyse_game(
     sources: Optional[Sources] = None,
     ledger: Optional[List[dict]] = None,
     replay: Optional[dict] = None,
+    replay_entries: Optional[List[dict]] = None,
 ) -> dict:
     """Full analysis block for one game."""
     random.seed(seed)
@@ -1002,7 +1003,11 @@ def analyse_game(
         "next_draw": next_draw,
         "simulation": simulation,
         "ledger": scored,
-        "picks": {**homepage_picks(next_draw, comparison, ledger, scored), "replay": replay_picks_summary(replay)},
+        "picks": {
+            **homepage_picks(next_draw, comparison, ledger, scored),
+            "replay": replay_picks_summary(replay),
+            "history": picks_history(df, game, ledger, replay_entries, (replay or {}).get("validate_from")),
+        },
         "replay": replay,
     }
 
@@ -1063,6 +1068,63 @@ def homepage_picks(next_draw: dict, comparison: dict, ledger: Optional[List[dict
     }
 
 
+def picks_history(
+    df: pd.DataFrame,
+    game: GameSpec,
+    ledger: Optional[List[dict]],
+    replay_entries: Optional[List[dict]],
+    since: Optional[str] = None,
+) -> dict:
+    """Draw-by-draw tickets of the homepage picks (20 most probable, 10 easiest, top-5 ROI) with results.
+
+    Draws predicted live (recorded in the ledger before the draw) come from the ledger; the other draws
+    since ``since`` come from the leak-free replay.  Tickets are packed; the browser scores them.
+    """
+    keys = (PICK_TOP_KEY, PICK_BEST_KEY, TOP_ROI_KEY)
+    draws = {str(r.id): r for r in df.itertuples(index=False)}
+    history: Dict[str, dict] = {}
+    for entry in replay_entries or []:
+        if since and entry["draw_date"] < since:
+            continue
+        rows = [r for r in entry["rows"] if r["key"] in keys]
+        history[entry["draw_id"]] = {
+            "draw_id": entry["draw_id"],
+            "date": entry["draw_date"],
+            "main": entry["main"],
+            "bonus": entry["bonus"],
+            "source": "replay",
+            "trained_until_id": entry["trained_until_id"],
+            "names": {r["key"]: r["name"] for r in rows},
+            "tickets": {r["key"]: encode_tickets(r["tickets"]) for r in rows},
+        }
+    for entry in ledger or []:
+        draw_id = next_draw_id(entry["after_id"])
+        draw = draws.get(draw_id)
+        if draw is None:
+            continue
+        rows = [r for r in entry["strategies"] if r["key"] in keys]
+        history[draw_id] = {
+            "draw_id": draw_id,
+            "date": str(draw.date),
+            "main": list(draw.result),
+            "bonus": _int(draw.bonus),
+            "source": "live",
+            "trained_until_id": entry["after_id"],
+            "recorded_at": entry["generated_at"],
+            "names": {r["key"]: r["name"] for r in rows},
+            "tickets": {r["key"]: encode_tickets(r["tickets"]) for r in rows},
+        }
+    return {
+        "since": since,
+        "ticket_price": game.ticket_price,
+        "tiers": [
+            {"key": t.key, "label": t.label, "matches": t.matches, "needs_bonus": t.needs_bonus, "value": t.value}
+            for t in game.tiers
+        ],
+        "draws": [history[k] for k in sorted(history, key=int)],
+    }
+
+
 def replay_picks_summary(replay: Optional[dict]) -> Optional[dict]:
     """Homepage view of the replay: totals of the 20 + 10 picks and top5_roi over the replayed draws."""
     if not replay:
@@ -1113,7 +1175,13 @@ def build_analysis(games: Sequence[str] = ("power_655", "power_645"), **kwargs) 
         game = get_game(key)
         logger.info(f"analysing {game.title}...")
         products[key] = analyse_game(
-            load_draws(game), game, sources=sources, ledger=load_ledger(key), replay=load_replay_summary(key), **kwargs
+            load_draws(game),
+            game,
+            sources=sources,
+            ledger=load_ledger(key),
+            replay=load_replay_summary(key),
+            replay_entries=load_replay_entries(key),
+            **kwargs,
         )
     return {
         "generated_at": pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").isoformat(timespec="seconds"),

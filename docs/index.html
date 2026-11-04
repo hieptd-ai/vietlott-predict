@@ -369,7 +369,11 @@
                         <p class="picks-sub" data-vi="Đang tải dự đoán… Nếu không hiển thị, xem trang Phân tích &amp; dự đoán." data-en="Loading predictions… If nothing shows, open the Analysis &amp; predictions page.">Đang tải dự đoán… Nếu không hiển thị, xem trang Phân tích &amp; dự đoán.</p>
                     </div>
                 </div>
+                <p class="picks-meta" style="margin-top: 0.75rem">
+                    <a href="analysis/#numbers" data-vi="Xem bảng xác suất của từng con số theo từng phương pháp, cho từng kỳ →" data-en="See every number's probability by method and draw →">Xem bảng xác suất của từng con số theo từng phương pháp, cho từng kỳ →</a>
+                </p>
                 <div class="card picks-validation" id="picksValidation"></div>
+                <div class="card picks-history" id="picksHistory"></div>
                 <a href="analysis/" class="ml-card-banner" style="margin-top: 1.25rem">
                     <div class="ml-card-content">
                         <div class="ml-card-icon">
@@ -1641,6 +1645,7 @@
                         }
                     }
                     replayBlock(p, val);
+                    renderHistory(p);
                 }
 
                 function replayBlock(p, val) {
@@ -1668,6 +1673,145 @@
                         tx("p", "picks-sub", "Mỗi kỳ được dự đoán chỉ từ dữ liệu trước ngày quay, rồi chấm với kết quả thật. Cột 2 so với vé ngẫu nhiên.", "Each draw predicted from earlier draws only, then scored against the real result. Column 2 compares with a random ticket."),
                         box,
                     );
+                }
+
+                // ---------------------------------------------------------- draw-by-draw history
+                const HISTORY_SETS = [
+                    ["picks_best10", "10 bộ dễ trúng nhất", "10 easiest tickets"],
+                    ["picks_top20", "20 bộ xác suất cao nhất", "20 most probable tickets"],
+                    ["top5_roi", "Kết hợp 5 ROI cao nhất", "Top-5 ROI combination"],
+                ];
+                let historySet = "picks_best10";
+                try { const savedSet = localStorage.getItem("vietlott-history-set"); if (HISTORY_SETS.some(function (h) { return h[0] === savedSet; })) historySet = savedSet; } catch (e) {}
+                function decode(packed, pick) {
+                    const out = [];
+                    for (let i = 0; i + pick * 2 <= packed.length; i += pick * 2) {
+                        const t = [];
+                        for (let j = 0; j < pick; j++) t.push(parseInt(packed.substr(i + j * 2, 2), 10));
+                        out.push(t);
+                    }
+                    return out;
+                }
+                function tierFor(tiers, matches, bonusHit) {
+                    let best = null;
+                    tiers.forEach(function (t) { if (t.matches === matches && (bonusHit || !t.needs_bonus) && (!best || t.value > best.value)) best = t; });
+                    return best;
+                }
+                function money(v) {
+                    const a = Math.abs(v);
+                    const txt = a >= 1e9 ? (a / 1e9).toFixed(1).replace(".", ",") + " tỷ" : a >= 1e6 ? (a / 1e6).toFixed(1).replace(".", ",") + " triệu" : nf.format(a) + " đ";
+                    return (v < 0 ? "−" : v > 0 ? "+" : "") + txt;
+                }
+                function renderHistory(p) {
+                    const box = document.getElementById("picksHistory");
+                    box.replaceChildren();
+                    const h = p.history;
+                    if (!h || !h.draws || !h.draws.length) { box.classList.add("is-hidden"); return; }
+                    box.classList.remove("is-hidden");
+                    const head = el("div", "card-head");
+                    const titleBox = el("div");
+                    titleBox.append(
+                        tx("h3", "", "Chi tiết từng kỳ", "Draw-by-draw details"),
+                        tx("p", "picks-sub", "Số tô màu là số trúng. Mở \"Xem vé\" để xem tất cả vé đã dự đoán trong kỳ. \"Ghi trước giờ quay\" là dự đoán thật được lưu trước kỳ quay; \"Chạy lại\" là dự đoán được tái tạo chỉ từ dữ liệu trước ngày quay.",
+                            "Highlighted numbers matched. Open \"tickets\" to see every ticket predicted for the draw. \"Recorded\" predictions were stored before the draw; \"Replay\" ones were rebuilt from earlier draws only."),
+                    );
+                    const sw = el("div", "segmented-control");
+                    HISTORY_SETS.forEach(function (hs) {
+                        const b = tx("button", "segmented-btn" + (hs[0] === historySet ? " active" : ""), hs[1], hs[2]);
+                        b.addEventListener("click", function () {
+                            historySet = hs[0];
+                            try { localStorage.setItem("vietlott-history-set", historySet); } catch (e) {}
+                            renderHistory(p);
+                        });
+                        sw.appendChild(b);
+                    });
+                    head.append(titleBox, sw);
+                    box.appendChild(head);
+
+                    let cost = 0, gain = 0, winners = 0, nDraws = 0, nTickets = 0;
+                    const rows = [];
+                    h.draws.forEach(function (d) {
+                        const packed = d.tickets[historySet];
+                        if (!packed) return;
+                        const tickets = decode(packed, p.pick);
+                        const main = new Set(d.main);
+                        const scored = tickets.map(function (t) {
+                            let m = 0;
+                            t.forEach(function (n) { if (main.has(n)) m++; });
+                            const bonusHit = p.has_bonus && d.bonus !== null && t.indexOf(d.bonus) >= 0;
+                            return { t: t, m: m, bonusHit: bonusHit, tier: tierFor(h.tiers, m, bonusHit) };
+                        });
+                        const drawCost = tickets.length * h.ticket_price;
+                        const drawGain = scored.reduce(function (a, s) { return a + (s.tier ? s.tier.value : 0); }, 0);
+                        cost += drawCost; gain += drawGain; nDraws++; nTickets += tickets.length;
+                        const won = scored.filter(function (s) { return s.tier; }).length;
+                        winners += won;
+                        rows.push({ d: d, scored: scored, gain: drawGain, won: won, cum: gain - cost });
+                    });
+                    const roi = cost ? ((gain - cost) / cost) * 100 : 0;
+                    const sumVi = nDraws + " kỳ · " + nf.format(nTickets) + " vé · chi " + money(cost).replace("+", "") + " · thu " + money(gain).replace("+", "") + " · " + nf.format(winners) + " vé trúng · lãi/lỗ " + money(gain - cost) + " (ROI " + roi.toFixed(1).replace(".", ",") + "%)";
+                    const sumEn = nDraws + " draws · " + nf.format(nTickets) + " tickets · cost " + money(cost).replace("+", "") + " · won " + money(gain).replace("+", "") + " · " + nf.format(winners) + " winning tickets · P/L " + money(gain - cost) + " (ROI " + roi.toFixed(1) + "%)";
+                    box.appendChild(tx("p", "picks-meta", sumVi, sumEn));
+
+                    const table = el("table");
+                    const thead = el("thead");
+                    const htr = el("tr");
+                    [["Kỳ · nguồn", "Draw · source"], ["Ngày", "Date"], ["Kết quả", "Result"], ["Vé tốt nhất", "Best ticket"], ["Trúng", "Matched"], ["Thưởng", "Winnings"], ["Lãi lũy kế", "Cumulative P/L"]].forEach(function (c) { htr.appendChild(tx("th", "", c[0], c[1])); });
+                    thead.appendChild(htr);
+                    const tbody = el("tbody");
+                    rows.slice().reverse().forEach(function (r) {
+                        const best = r.scored.slice().sort(function (a, b) { return (b.tier ? b.tier.value : 0) - (a.tier ? a.tier.value : 0) || b.m - a.m || (b.bonusHit ? 1 : 0) - (a.bonusHit ? 1 : 0); })[0];
+                        const main = new Set(r.d.main);
+                        const bestSet = new Set(best.t);
+                        const tr = el("tr");
+                        const result = el("td");
+                        const rb = el("span", "pick-balls");
+                        r.d.main.forEach(function (n) { rb.appendChild(el("span", "pick-ball" + (bestSet.has(n) ? " hit" : ""), pad(n))); });
+                        if (p.has_bonus && r.d.bonus !== null) {
+                            const bb = el("span", "pick-ball bonus" + (bestSet.has(r.d.bonus) ? " hit" : ""), pad(r.d.bonus));
+                            bb.title = "Số đặc biệt / bonus";
+                            rb.appendChild(bb);
+                        }
+                        result.appendChild(rb);
+                        const bestCell = el("td");
+                        const hits = new Set(r.d.main.concat(p.has_bonus && r.d.bonus !== null ? [r.d.bonus] : []));
+                        bestCell.appendChild(balls(best.t, main));
+                        const det = el("details");
+                        det.appendChild(tx("summary", "", "Xem " + r.scored.length + " vé", "Show " + r.scored.length + " tickets"));
+                        det.addEventListener("toggle", function () {
+                            if (!det.open || det.dataset.filled) return;
+                            det.dataset.filled = "1";
+                            const list = el("div", "pick-list");
+                            r.scored.forEach(function (s, i) {
+                                const row = el("div", "pick-row");
+                                row.append(el("span", "pick-index", pad(i + 1)), balls(s.t, hits), el("span", "", s.m + (s.bonusHit ? "+ĐB" : "") + (s.tier ? " · " + s.tier.label.split(" (")[0] : "")));
+                                list.appendChild(row);
+                            });
+                            det.appendChild(list);
+                        });
+                        bestCell.appendChild(det);
+                        const source = r.d.source === "live"
+                            ? tx("span", "source-tag live", "Ghi trước giờ quay", "Recorded before draw")
+                            : tx("span", "source-tag", "Chạy lại", "Replay");
+                        source.title = (r.d.recorded_at ? r.d.recorded_at.replace("T", " ").slice(0, 16) + " · " : "") + "học đến kỳ #" + r.d.trained_until_id;
+                        const idCell = el("td");
+                        idCell.append(el("div", "", "#" + r.d.draw_id), source);
+                        tr.append(
+                            idCell,
+                            el("td", "", r.d.date),
+                            result,
+                            bestCell,
+                            el("td", "", best.m + " số" + (best.bonusHit ? " + ĐB" : "")),
+                            el("td", "", r.won ? r.won + " vé · " + money(r.gain).replace("+", "") : "—"),
+                            el("td", r.cum >= 0 ? "pnl-pos" : "pnl-neg", money(r.cum)),
+                        );
+                        tbody.appendChild(tr);
+                    });
+                    table.append(thead, tbody);
+                    const wrap = el("div", "stats-table");
+                    wrap.style.marginTop = "0.75rem";
+                    wrap.appendChild(table);
+                    box.appendChild(wrap);
                 }
 
                 const sw = document.getElementById("picksSwitch");

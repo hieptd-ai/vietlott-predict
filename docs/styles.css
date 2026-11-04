@@ -1432,3 +1432,93 @@ td:nth-child(5) {
 .picks-validation td:nth-child(4) {
     font-family: var(--font-mono);
 }
+
+.picks-history {
+    margin-top: 1.25rem;
+}
+
+.picks-history .stats-table {
+    max-height: 560px;
+    overflow: auto;
+}
+
+.picks-history table {
+    min-width: 860px;
+}
+
+.picks-history td,
+.picks-history th {
+    vertical-align: top;
+    white-space: nowrap;
+    padding: 0.6rem 0.7rem;
+}
+
+.picks-history .pick-balls {
+    flex-wrap: nowrap;
+}
+
+.picks-history .pick-ball {
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.74rem;
+}
+
+.picks-history details summary {
+    cursor: pointer;
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+}
+
+.picks-history .pick-list {
+    margin-top: 0.4rem;
+}
+
+.picks-history .pick-row {
+    flex-wrap: nowrap;
+}
+
+.picks-history .source-tag {
+    margin-top: 0.35rem;
+}
+
+.pnl-pos {
+    color: var(--cat-green);
+}
+
+.pnl-neg {
+    color: var(--cat-red);
+}
+
+.source-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 1px 7px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-default);
+    color: var(--text-muted);
+}
+
+.source-tag.live {
+    border-color: var(--color-brand-border);
+    color: var(--color-brand);
+    background: var(--color-brand-subtle);
+}
+
+.picks-history .card-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.picks-history .segmented-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.is-hidden {
+    display: none !important;
+}

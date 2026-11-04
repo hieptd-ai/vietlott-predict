@@ -605,6 +605,69 @@
                 color: var(--text-primary);
                 font-weight: 600;
             }
+            .num-prob-wrap {
+                max-height: 640px;
+                overflow: auto;
+            }
+            #numTable {
+                min-width: 1500px;
+                font-size: 0.8rem;
+            }
+            #numTable th,
+            #numTable td {
+                padding: 0.4rem 0.5rem;
+                white-space: nowrap;
+                text-align: right;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+            }
+            #numTable th {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: var(--bg-subtle);
+                white-space: normal;
+                min-width: 4.5rem;
+                max-width: 6rem;
+                font-size: 0.66rem;
+                text-align: center;
+                vertical-align: bottom;
+            }
+            #numTable td:first-child,
+            #numTable th:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 1;
+                background: var(--bg-surface);
+                text-align: center;
+            }
+            #numTable th:first-child {
+                z-index: 3;
+                background: var(--bg-subtle);
+            }
+            #numTable tr.drawn td:first-child .ball {
+                background: var(--series-1);
+                border-color: var(--series-1);
+                color: #fff;
+            }
+            #numTable tfoot td {
+                font-weight: 700;
+                border-top: 2px solid var(--border-default);
+                background: var(--bg-subtle);
+            }
+            .num-cell-up {
+                background: color-mix(in srgb, var(--series-1) var(--tint), transparent);
+            }
+            .num-cell-down {
+                background: color-mix(in srgb, var(--series-2) var(--tint), transparent);
+            }
+            .legend-swatch.down {
+                background: var(--series-2);
+            }
+            #numEval td,
+            #numEval th {
+                white-space: nowrap;
+            }
             #ledgerTable td,
             #ledgerTable th {
                 white-space: nowrap;
@@ -639,6 +702,7 @@
                         <li><a href="#overview" class="nav-link">Tổng quan</a></li>
                         <li><a href="#compare" class="nav-link">Bảng so sánh</a></li>
                         <li><a href="#replay" class="nav-link">Thẩm định 2026</a></li>
+                        <li><a href="#numbers" class="nav-link">Xác suất từng số</a></li>
                         <li><a href="#tickets" class="nav-link">Vé kỳ tới</a></li>
                         <li><a href="#simulator" class="nav-link">Mô phỏng</a></li>
                         <li><a href="#ml" class="nav-link">Machine Learning</a></li>
@@ -718,6 +782,39 @@
                         <h3>Chi tiết từng kỳ: 20 bộ xác suất cao, 10 bộ dễ trúng, top 5 ROI</h3>
                         <p class="card-sub">Mỗi dòng là một lần dự đoán chỉ dùng dữ liệu đến kỳ "Học đến", rồi được chấm với kết quả thật.</p>
                         <div class="stats-table" style="max-height: 560px; overflow: auto"><table id="replayDraws"></table></div>
+                    </div>
+                </section>
+
+                <section class="section" id="numbers">
+                    <div class="section-header">
+                        <span class="section-eyebrow">Xác suất từng số</span>
+                        <h2 class="section-title">Mỗi phương pháp cho mỗi con số xác suất ra bao nhiêu?</h2>
+                        <p class="section-description" id="numDesc"></p>
+                    </div>
+                    <div class="card">
+                        <div class="sim-controls">
+                            <label class="field">Kỳ quay
+                                <select id="numDraw"></select>
+                            </label>
+                            <label class="field">Sắp xếp
+                                <select id="numSort">
+                                    <option value="number">Theo con số</option>
+                                    <option value="avg">Theo xác suất trung bình (cao → thấp)</option>
+                                    <option value="method">Theo phương pháp đang chọn ở cột đầu</option>
+                                </select>
+                            </label>
+                            <label class="field">Cột đầu (dùng để sắp xếp)
+                                <select id="numMethod"></select>
+                            </label>
+                        </div>
+                        <p class="card-sub" id="numSub"></p>
+                        <div class="legend" id="numLegend"></div>
+                        <div class="stats-table num-prob-wrap"><table id="numTable"></table></div>
+                    </div>
+                    <div class="card" style="margin-top: 1.25rem">
+                        <h3>Xác suất có báo trước được số sẽ ra không?</h3>
+                        <p class="card-sub" id="numEvalSub"></p>
+                        <div class="stats-table"><table id="numEval"></table></div>
                     </div>
                 </section>
 
@@ -953,6 +1050,7 @@
             })();
         </script>
         <script src="analysis-data.js"></script>
+        <script src="probabilities.js"></script>
         <script>
             (function () {
                 "use strict";
@@ -1491,6 +1589,8 @@
                     setText("tierSub", "Giá vé " + nf.format(p.ticket_price) + " đ. Xác suất tính chính xác cho một vé ngẫu nhiên");
                     fillTable("tierTable", ["Giải", "Giá trị", "Xác suất"], p.tiers.map(function (t) { return [t.label, money(t.value), "1 / " + nf.format(Math.round(t.odds))]; }));
 
+                    renderNumbers();
+
                     // Simulator
                     if (p.simulation) {
                         setupSimulator(p);
@@ -1814,6 +1914,119 @@
                     });
                 }
 
+                // ---------------------------------------------------------------- per-number probabilities
+                const SHORT = {
+                    random: "Ngẫu nhiên", hot: "Số nóng", cold: "Số lạnh", long_absence: "Lâu chưa về", not_repeat: "Tránh số vừa ra",
+                    pattern: "Mẫu khoảng cách", exp_decay: "Suy giảm mũ", pair: "Cặp số", markov: "Markov", positional: "Theo vị trí",
+                    ml_logistic: "ML Logistic", ml_gbm: "ML GBM", ml_multi: "ML đa nguồn", consensus: "Đồng thuận",
+                    top5_roi: "Top 5 ROI", ml_avg: "TB 3 ML (20 bộ)",
+                };
+                const numState = { draw: null, sort: "number", method: "ml_avg" };
+                function unpackProbs(s) {
+                    const out = [];
+                    for (let i = 0; i < s.length; i += 3) out.push(parseInt(s.substr(i, 3), 10) / 1000);
+                    return out;
+                }
+                function renderNumbers() {
+                    const section = document.getElementById("numbers");
+                    const all = window.VIETLOTT_PROBS && window.VIETLOTT_PROBS.products;
+                    const pp = all && all[state.product];
+                    if (!pp || !pp.entries.length) { section.classList.add("is-hidden"); return; }
+                    section.classList.remove("is-hidden");
+                    const entries = pp.entries.slice().reverse();
+                    const drawSel = document.getElementById("numDraw");
+                    if (!entries.some(function (e) { return e.draw_id === numState.draw; })) numState.draw = entries[0].draw_id;
+                    drawSel.replaceChildren();
+                    entries.forEach(function (e) {
+                        const label = "#" + e.draw_id + " · " + (e.main ? e.drawn_date + " · đã quay" : "kỳ tới, dự kiến " + e.date) + (e.source === "live" ? " · ghi trước giờ quay" : "");
+                        drawSel.appendChild(el("option", { value: e.draw_id, text: label }));
+                    });
+                    drawSel.value = numState.draw;
+                    const methodSel = document.getElementById("numMethod");
+                    methodSel.replaceChildren();
+                    pp.methods.forEach(function (m) { methodSel.appendChild(el("option", { value: m.key, text: m.name })); });
+                    if (!pp.methods.some(function (m) { return m.key === numState.method; })) numState.method = pp.methods[0].key;
+                    methodSel.value = numState.method;
+                    document.getElementById("numSort").value = numState.sort;
+
+                    const entry = pp.entries.find(function (e) { return e.draw_id === numState.draw; });
+                    const keys = [numState.method].concat(pp.methods.map(function (m) { return m.key; }).filter(function (k) { return k !== numState.method && entry.probs[k]; }));
+                    const vecs = {};
+                    keys.forEach(function (k) { if (entry.probs[k]) vecs[k] = unpackProbs(entry.probs[k]); });
+                    const nNum = pp.range[1] - pp.range[0] + 1;
+                    const avg = [];
+                    for (let i = 0; i < nNum; i++) {
+                        let sum = 0, cnt = 0;
+                        keys.forEach(function (k) { if (vecs[k] && k !== "ml_avg" && k !== "top5_roi") { sum += vecs[k][i]; cnt++; } });
+                        avg.push(cnt ? sum / cnt : 0);
+                    }
+                    const drawn = new Set(entry.main || []);
+                    const nameOf = {};
+                    pp.methods.forEach(function (m) { nameOf[m.key] = m.name; });
+                    setText("numDesc", "Với mỗi kỳ quay, xác suất số đó nằm trong vé của từng phương pháp, chỉ tính từ dữ liệu trước ngày quay. ML: xác suất mô hình dự đoán; Ngẫu nhiên: đúng " + nf2.format(pp.base * 100) + "%; các phương pháp khác: tỉ lệ vé chứa số đó trong 2.000 vé được sinh thử (sai số khoảng ±0,7 điểm %). Đã ghi " + pp.entries.length + " kỳ.");
+                    const best = entry.best_key ? " · \"10 bộ dễ trúng nhất\" kỳ này dùng: " + (nameOf[entry.best_key] || entry.best_key) : "";
+                    setText("numSub", (entry.main ? "Kỳ #" + entry.draw_id + " đã quay ngày " + entry.drawn_date + ": số đã ra được tô màu ở cột Số." : "Kỳ #" + entry.draw_id + " chưa quay (dự kiến " + entry.date + ").") + " Học đến kỳ #" + entry.trained_until_id + (entry.source === "live" ? ", ghi trước giờ quay lúc " + (entry.recorded_at || "").replace("T", " ").slice(0, 16) : ", tính bù walk-forward") + "." + best);
+                    document.getElementById("numLegend").replaceChildren(
+                        el("span", { class: "legend-item" }, [el("span", { class: "legend-swatch" }), "Cao hơn mức ngẫu nhiên " + nf2.format(pp.base * 100) + "%"]),
+                        el("span", { class: "legend-item" }, [el("span", { class: "legend-swatch down" }), "Thấp hơn mức ngẫu nhiên"]),
+                    );
+                    const order = [];
+                    for (let i = 0; i < nNum; i++) order.push(i);
+                    if (numState.sort === "avg") order.sort(function (a, b) { return avg[b] - avg[a]; });
+                    if (numState.sort === "method" && vecs[numState.method]) order.sort(function (a, b) { return vecs[numState.method][b] - vecs[numState.method][a]; });
+
+                    const table = document.getElementById("numTable");
+                    table.replaceChildren();
+                    const thead = el("thead");
+                    const htr = el("tr");
+                    htr.appendChild(el("th", { text: "Số" }));
+                    htr.appendChild(el("th", { text: "TB các phương pháp", title: "Trung bình 14 phương pháp (không gồm Top 5 ROI và TB 3 ML vốn là tổ hợp)" }));
+                    keys.forEach(function (k) { htr.appendChild(el("th", { text: SHORT[k] || k, title: nameOf[k] || k })); });
+                    thead.appendChild(htr);
+                    const tbody = el("tbody");
+                    function cell(v) {
+                        const td = el("td", { text: nf1.format(v * 100) });
+                        const d = Math.max(-1, Math.min(1, (v - pp.base) / (pp.base * 0.5)));
+                        if (Math.abs(d) > 0.02) {
+                            td.className = d > 0 ? "num-cell-up" : "num-cell-down";
+                            td.style.setProperty("--tint", Math.round(Math.abs(d) * 45) + "%");
+                        }
+                        return td;
+                    }
+                    order.forEach(function (i) {
+                        const n = pp.range[0] + i;
+                        const tr = el("tr", { class: drawn.has(n) ? "drawn" : "" });
+                        const numTd = el("td");
+                        numTd.appendChild(el("span", { class: "ball sm", text: String(n).padStart(2, "0") }));
+                        tr.append(numTd, cell(avg[i]));
+                        keys.forEach(function (k) { tr.appendChild(vecs[k] ? cell(vecs[k][i]) : el("td", { text: "—" })); });
+                        tbody.appendChild(tr);
+                    });
+                    table.append(thead, tbody);
+                    if (entry.main) {
+                        const tfoot = el("tfoot");
+                        const ftr = el("tr");
+                        const idx = entry.main.map(function (n) { return n - pp.range[0]; });
+                        const meanOf = function (vec) { return idx.reduce(function (a, i) { return a + vec[i]; }, 0) / idx.length; };
+                        ftr.append(el("td", { text: "TB số đã ra" }), cell(meanOf(avg)));
+                        keys.forEach(function (k) { ftr.appendChild(vecs[k] ? cell(meanOf(vecs[k])) : el("td", { text: "—" })); });
+                        tfoot.appendChild(ftr);
+                        table.appendChild(tfoot);
+                    }
+
+                    const ev = pp.evaluation;
+                    setText("numEvalSub", "Trên " + ev.n_draws + " kỳ đã quay. Nếu một phương pháp báo trước được số sẽ ra, các số đã ra phải có xác suất trung bình cao hơn " + nf2.format(pp.base * 100) + "%, AUC cao hơn 0,5 và 6 số xác suất cao nhất phải trúng nhiều hơn " + nf3.format(ev.rows.length ? ev.rows[0].expected_top6_hits : 0) + " số mỗi kỳ.");
+                    fillTable("numEval", ["Phương pháp", "Số kỳ", "Xác suất TB của số đã ra", "Mức ngẫu nhiên", "AUC (ngẫu nhiên 0,5)", "6 số cao nhất trúng TB", "Log-loss", "Log-loss mức nền"],
+                        ev.rows.map(function (r) {
+                            return [nameOf[r.key] || r.key, nf.format(r.draws), nf2.format(r.mean_drawn_prob * 100) + "%", nf2.format(r.base_prob * 100) + "%", nf3.format(r.auc), nf3.format(r.top6_hits) + " / " + nf3.format(r.expected_top6_hits), nf4.format(r.log_loss), nf4.format(r.base_log_loss)];
+                        }));
+                }
+                function bindNumbers() {
+                    document.getElementById("numDraw").addEventListener("change", function (e) { numState.draw = e.target.value; renderNumbers(); });
+                    document.getElementById("numSort").addEventListener("change", function (e) { numState.sort = e.target.value; renderNumbers(); });
+                    document.getElementById("numMethod").addEventListener("change", function (e) { numState.method = e.target.value; renderNumbers(); });
+                }
+
                 function setupSwitches() {
                     const sw = document.getElementById("productSwitch");
                     sw.replaceChildren();
@@ -1849,6 +2062,7 @@
                     });
                     setupSwitches();
                     bindSimulator();
+                    bindNumbers();
                     document.getElementById("loading").classList.add("is-hidden");
                     document.getElementById("content").classList.remove("is-hidden");
                     renderProduct();

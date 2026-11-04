@@ -17,9 +17,9 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from machine_learning.analysis import build_analysis, homepage_picks, load_draws, replay_picks_summary
+from machine_learning.analysis import build_analysis, homepage_picks, load_draws, picks_history, replay_picks_summary
 from machine_learning.games import get_game
-from machine_learning.ledger import load_ledger, load_replay_summary, score_ledger
+from machine_learning.ledger import load_ledger, load_replay_entries, load_replay_summary, score_ledger
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "docs" / "analysis"
@@ -38,6 +38,20 @@ def _compact(value, digits: int = 6):
     if hasattr(value, "item"):  # numpy scalar
         return _compact(value.item(), digits)
     return value
+
+
+def write_probabilities(out_dir: Path) -> None:
+    """Write ``probabilities.json`` / ``probabilities.js``: per-number probabilities of every method by draw."""
+    from machine_learning.probabilities import probabilities_payload
+
+    products = {}
+    for key in ("power_655", "power_645"):
+        game = get_game(key)
+        products[key] = probabilities_payload(key, game, load_draws(game))
+    text = json.dumps(_compact({"products": products}), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "probabilities.json").write_text(text + "\n", encoding="utf-8")
+    (out_dir / "probabilities.js").write_text(f"window.VIETLOTT_PROBS = {text};\n", encoding="utf-8")
+    logger.info(f"wrote {out_dir / 'probabilities.js'} ({len(text) / 1024:.0f} KiB)")
 
 
 def write_analysis(payload: dict, out_dir: Path) -> None:
@@ -71,15 +85,18 @@ def refresh_picks(out_dir: Path) -> None:
     for key, product in payload["products"].items():
         game = get_game(key)
         ledger = load_ledger(key)
-        scored = score_ledger(ledger, load_draws(game), game)
+        df = load_draws(game)
+        scored = score_ledger(ledger, df, game)
         product["ledger"] = scored
         replay = load_replay_summary(key)
         product["replay"] = replay
         product["picks"] = {
             **homepage_picks(product["next_draw"], product["comparison"], ledger, scored),
             "replay": replay_picks_summary(replay),
+            "history": picks_history(df, game, ledger, load_replay_entries(key), (replay or {}).get("validate_from")),
         }
     write_analysis(payload, out_dir)
+    write_probabilities(out_dir)
 
 
 @click.command()
@@ -111,6 +128,7 @@ def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_f
         n_runs=runs,
     )
     write_analysis(payload, out_dir)
+    write_probabilities(out_dir)
 
 
 if __name__ == "__main__":

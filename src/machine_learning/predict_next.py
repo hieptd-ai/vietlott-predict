@@ -25,7 +25,8 @@ from machine_learning.analysis import (
     predict_next_draw,
 )
 from machine_learning.games import GAMES
-from machine_learning.ledger import LEDGER_DIR, append_prediction, load_ledger, score_ledger
+from machine_learning.ledger import LEDGER_DIR, append_prediction, load_ledger, next_draw_id, score_ledger
+from machine_learning.probabilities import append_probabilities, make_entry, method_probabilities
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ANALYSIS_JSON = REPO_ROOT / "docs" / "analysis" / "analysis.json"
@@ -80,9 +81,19 @@ def main(tickets: int, top: int, seed: int, ledger_dir: Optional[Path]) -> None:
         df = load_draws(game)
         strategies = default_strategies(seed, sources)
         best_key, top_roi_keys = published.get(key, (None, []))
+        models: dict = {}
         prediction = predict_next_draw(
-            df, game, strategies, tickets, seed, best_key=best_key, n_top=top, top_roi_keys=top_roi_keys
+            df, game, strategies, tickets, seed, models=models, best_key=best_key, n_top=top, top_roi_keys=top_roi_keys
         )
+        # per-number probabilities of every method for the next draw, recorded before the draw
+        target_id = next_draw_id(prediction["after_id"])
+        probs = method_probabilities(models, game, prediction["target_date"], top_roi_keys=top_roi_keys)
+        entry = make_entry(
+            target_id, prediction["target_date"], prediction["after_id"], probs, "live", best_key=best_key
+        )
+        entry["recorded_at"] = generated_at
+        if append_probabilities([entry], key, None if ledger_dir is None else ledger_dir / "probabilities"):
+            logger.info(f"{game.title}: per-number probabilities for draw #{target_id} recorded")
         written = append_prediction(prediction, generated_at, ledger_dir)
         state = "recorded" if written else "already recorded"
         logger.info(f"{game.title}: prediction after draw #{prediction['after_id']} {state}")
