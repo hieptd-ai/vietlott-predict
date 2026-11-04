@@ -42,19 +42,17 @@ def _compact(value, digits: int = 6):
 
 def attach_vote_picks(payload: dict) -> None:
     """Add the voting suggestion (next draw, draw-by-draw tickets and totals) to the homepage picks."""
-    from machine_learning.analysis import default_strategies, encode_tickets
+    from machine_learning.analysis import encode_tickets
     from machine_learning.probabilities import (
         METHOD_CODES,
-        METHOD_LABELS,
         VOTE_KEY,
         load_probabilities,
+        method_names,
         summarise_votes,
         vote_history,
     )
 
-    names = {key: name for key, name, _ in default_strategies(42, None)}
-    names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
-    names.update(METHOD_LABELS)
+    names = method_names()
     codes = {code: names.get(key, key) for key, code in METHOD_CODES.items()}
     for key, product in payload.get("products", {}).items():
         picks = product.get("picks")
