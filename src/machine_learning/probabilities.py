@@ -35,7 +35,7 @@ from machine_learning.analysis import (
     load_sources,
 )
 from machine_learning.games import GAMES, GameSpec
-from machine_learning.ledger import LEDGER_DIR, load_replay_entries
+from machine_learning.ledger import LEDGER_DIR, load_ledger, load_replay_entries, next_draw_id
 
 PROB_DIR = LEDGER_DIR / "probabilities"
 ML_AVG_KEY = "ml_avg"
@@ -131,14 +131,25 @@ def backfill(
     samples: int = 2000,
     seed: int = 42,
     replay_entries: Optional[List[dict]] = None,
+    ledger_entries: Optional[List[dict]] = None,
 ) -> List[dict]:
     """Walk-forward probability entries for every stored draw from ``start``.
 
     Uses one model per method over the full history: predictions for a draw only use earlier draws
     (proven by the no-look-ahead tests), which avoids re-training from scratch for every draw.
-    ``top5_roi`` and the best method come from the leak-free replay entries of the same draw.
+    ``top5_roi`` and the best method come from the leak-free replay entries of the same draw, or from
+    the live ledger prediction made before that draw when the replay does not cover it.
     """
     replay = {e["draw_id"]: e for e in replay_entries or []}
+    for entry in ledger_entries or []:
+        draw_id = next_draw_id(entry["after_id"])
+        if draw_id in replay:
+            continue
+        top = next((r for r in entry["strategies"] if r["key"] == TOP_ROI_KEY), {})
+        replay[draw_id] = {
+            "top_roi_keys": top.get("selected"),
+            "best_key": entry.get("picks", {}).get("best", {}).get("method_key"),
+        }
     models = {key: factory(df, game) for key, _, factory in default_strategies(seed, sources)}
     entries = []
     first = next((i for i, d in enumerate(df["date"]) if d >= start), len(df))
@@ -216,7 +227,7 @@ def main(start, products, samples: int, seed: int) -> None:
     for key in products or GAMES:
         game = GAMES[key]
         df = load_draws(game)
-        entries = backfill(df, game, sources, start.date(), samples, seed, load_replay_entries(key))
+        entries = backfill(df, game, sources, start.date(), samples, seed, load_replay_entries(key), load_ledger(key))
         written = append_probabilities(entries, key)
         logger.info(f"{game.title}: {written} probability entries written")
 

@@ -605,3 +605,32 @@ def test_probabilities_payload_adds_results_and_names(tmp_path):
     assert names["ml_avg"].startswith("TB 3 mô hình ML") and names["random"] == "Ngẫu nhiên (baseline)"
     assert payload["evaluation"]["n_draws"] == 2
     print("dashboard probability payload carries results, names and the evaluation")
+
+
+def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed():
+    from machine_learning.probabilities import backfill, unpack
+
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    strategies = [
+        s for s in default_strategies(seed=3) if s[0] in ("random", "hot", "cold", "markov", "positional", "pattern")
+    ]
+    prediction = predict_next_draw(
+        df.iloc[:-1],
+        POWER_655,
+        strategies,
+        2,
+        seed=5,
+        best_key="hot",
+        top_roi_keys=["hot", "cold", "markov", "positional", "pattern"],
+    )
+    ledger = [
+        {"after_id": prediction["after_id"], "strategies": prediction["strategies"], "picks": prediction["picks"]}
+    ]
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[-1], samples=60, seed=3, ledger_entries=ledger)
+    assert len(entries) == 1 and entries[0]["best_key"] == "hot"
+    top5 = np.asarray(unpack(entries[0]["probs"]["top5_roi"]))
+    members = np.mean(
+        [unpack(entries[0]["probs"][k]) for k in ("hot", "cold", "markov", "positional", "pattern")], axis=0
+    )
+    np.testing.assert_allclose(top5, members, atol=1e-3)
+    print("probability backfill falls back to the live ledger's top-5 selection")
