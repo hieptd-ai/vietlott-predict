@@ -1645,6 +1645,7 @@
                             const sum = p.summary.map(function (a) { return a.name + ": " + a.draws + " kỳ, ROI " + a.roi.toFixed(1) + "%"; }).join(" · ");
                             val.appendChild(tx("p", "picks-sub", "Lũy kế: " + sum, "Cumulative: " + sum));
                         }
+                        directionBlock(p, v, val);
                     }
                     replayBlock(p, val);
                     renderHistory(p);
@@ -1694,6 +1695,48 @@
                             "Replayed since " + s.since + " (" + s.n_draws + " draws, each using earlier data only): " + s.all.avg_matches.toFixed(3) + " matches/ticket (random " + s.expected_avg_matches.toFixed(3) + "), " + nf.format(s.all.winners) + "/" + nf.format(s.all.tickets) + " winning tickets, ROI " + s.roi.toFixed(1) + "%; the 8 selected numbers matched " + s.selected_hits.toFixed(2) + "/" + p.pick + " on average (random " + s.expected_selected_hits.toFixed(2) + "). See \"10 voting tickets\" in the draw-by-draw details."));
                     }
                     return card;
+                }
+
+                function directionBlock(p, v, val) {
+                    const draw = p.history && p.history.draws ? p.history.draws.find(function (d) { return d.draw_id === v.draw_id; }) : null;
+                    const dir = draw && draw.directions;
+                    if (!dir) return;
+                    const title = tx("h3", "", "Hướng liên quan nhất tới lô số trúng kỳ #" + v.draw_id, "Directions most related to the winning numbers of draw #" + v.draw_id);
+                    title.style.marginTop = "1.25rem";
+                    const box = el("div", "dir-lines");
+                    dir.best.forEach(function (b, i) {
+                        const line = el("div", "dir-line");
+                        const hits = b.hits !== undefined && b.hits !== null;
+                        line.append(
+                            el("span", "pick-index", String(i + 1)),
+                            el("span", "dir-name", b.name),
+                            tx("span", "dir-meta",
+                                "AUC " + b.auc.toFixed(3).replace(".", ",") + (hits ? " · " + b.hits + "/" + p.pick + " số trúng thuộc nhóm này (kỳ vọng " + b.expected.toFixed(1).replace(".", ",") + ")" : ""),
+                                "AUC " + b.auc.toFixed(3) + (hits ? " · " + b.hits + "/" + p.pick + " winning numbers in this group (expected " + b.expected.toFixed(1) + ")" : "")),
+                        );
+                        box.appendChild(line);
+                    });
+                    const pb = Math.round(dir.p_best * 100);
+                    val.append(
+                        title,
+                        tx("p", "picks-sub", "Mỗi hướng xếp hạng các số trước giờ quay (đặc điểm lịch sử hoặc xác suất của một phương pháp). AUC 0,5 là không liên quan, 1 là các số trúng đứng đầu hướng đó.",
+                            "Each direction ranks the numbers before the draw (a history feature or a method's probabilities). AUC 0.5 means unrelated, 1 means the winning numbers ranked first."),
+                        box,
+                        tx("p", "picks-sub", pb + "% kết quả ngẫu nhiên cũng có một hướng liên quan mạnh bằng hoặc hơn" + (dir.p_best < 0.05 ? ": kỳ này nổi bật." : ", nên mối liên quan này nhiều khả năng do may rủi."),
+                            pb + "% of random results also have a direction at least this related" + (dir.p_best < 0.05 ? ": this draw stands out." : ", so this relation is most likely chance.")),
+                    );
+                    const ds = p.directions;
+                    if (ds && ds.n_draws) {
+                        const f = ds.follow && ds.follow[0];
+                        const vi = "Lũy kế " + ds.n_draws + " kỳ từ " + ds.since + ": hướng mạnh nhất mỗi kỳ lệch TB " + ds.best.strength.toFixed(3).replace(".", ",") + " khỏi 0,5 (kết quả ngẫu nhiên: " + ds.best.null_strength.toFixed(3).replace(".", ",") + "); " + ds.best.significant + " kỳ nổi bật (may rủi: khoảng " + Math.round(ds.n_draws * 0.05) + ")." + (f ? " Đi theo hướng mạnh nhất 10 kỳ trước: vé trúng TB " + f.avg_matches.toFixed(3).replace(".", ",") + " số (ngẫu nhiên " + ds.expected_matches.toFixed(3).replace(".", ",") + ")." : "");
+                        const en = "Cumulative " + ds.n_draws + " draws since " + ds.since + ": the strongest direction of a draw deviates " + ds.best.strength.toFixed(3) + " from 0.5 on average (random results: " + ds.best.null_strength.toFixed(3) + "); " + ds.best.significant + " draws stand out (chance: about " + Math.round(ds.n_draws * 0.05) + ")." + (f ? " Following the strongest direction of the last 10 draws: " + f.avg_matches.toFixed(3) + " matches per ticket (random " + ds.expected_matches.toFixed(3) + ")." : "");
+                        const link = el("a", "", "");
+                        link.href = "analysis/#directions";
+                        link.append(tx("span", "", " Xem mọi kỳ →", " See every draw →"));
+                        const para = tx("p", "picks-sub", vi, en);
+                        para.appendChild(link);
+                        val.appendChild(para);
+                    }
                 }
 
                 function replayBlock(p, val) {
@@ -1805,7 +1848,7 @@
                     const table = el("table");
                     const thead = el("thead");
                     const htr = el("tr");
-                    [["Kỳ · nguồn", "Draw · source"], ["Ngày", "Date"], ["Kết quả", "Result"], ["Vé tốt nhất", "Best ticket"], ["Trúng", "Matched"], ["Thưởng", "Winnings"], ["Lãi lũy kế", "Cumulative P/L"]].forEach(function (c) { htr.appendChild(tx("th", "", c[0], c[1])); });
+                    [["Kỳ · nguồn", "Draw · source"], ["Ngày", "Date"], ["Kết quả", "Result"], ["Hướng liên quan nhất", "Most related direction"], ["Vé tốt nhất", "Best ticket"], ["Trúng", "Matched"], ["Thưởng", "Winnings"], ["Lãi lũy kế", "Cumulative P/L"]].forEach(function (c) { htr.appendChild(tx("th", "", c[0], c[1])); });
                     thead.appendChild(htr);
                     const tbody = el("tbody");
                     rows.slice().reverse().forEach(function (r) {
@@ -1845,10 +1888,17 @@
                         source.title = (r.d.recorded_at ? r.d.recorded_at.replace("T", " ").slice(0, 16) + " · " : "") + "học đến kỳ #" + r.d.trained_until_id;
                         const idCell = el("td");
                         idCell.append(el("div", "", "#" + r.d.draw_id), source);
+                        const dirCell = el("td", "dir-cell");
+                        const top = r.d.directions && r.d.directions.best && r.d.directions.best[0];
+                        if (top) {
+                            dirCell.append(el("div", "", top.name), el("div", "dir-meta", "AUC " + top.auc.toFixed(3).replace(".", ",")));
+                            dirCell.title = r.d.directions.best.map(function (b) { return b.name + " · AUC " + b.auc.toFixed(3); }).join("\n");
+                        } else dirCell.textContent = "—";
                         tr.append(
                             idCell,
                             el("td", "", r.d.date),
                             result,
+                            dirCell,
                             bestCell,
                             el("td", "", best.m + " số" + (best.bonusHit ? " + ĐB" : "")),
                             el("td", "", r.won ? r.won + " vé · " + money(r.gain).replace("+", "") : "—"),
