@@ -634,3 +634,55 @@ def test_probability_backfill_takes_top5_from_the_live_ledger_when_not_replayed(
     )
     np.testing.assert_allclose(top5, members, atol=1e-3)
     print("probability backfill falls back to the live ledger's top-5 selection")
+
+
+def test_vote_picks_follow_the_voting_rules():
+    from machine_learning.probabilities import METHOD_CODES, vote_picks
+
+    base = np.full(45, 6 / 45)
+    probs = {"random": list(base)}
+    favourites = {
+        "hot": [1, 2, 3, 4, 5, 6, 7],
+        "cold": [1, 2, 3, 4, 5, 6, 8],
+        "markov": [1, 2, 3, 9, 10, 11, 12],
+        "pair": [1, 2, 13, 14, 15, 16, 17],
+    }
+    for key, nums in favourites.items():
+        vec = base.copy()
+        for rank, n in enumerate(nums):
+            vec[n - 1] = 0.5 - rank * 0.01
+        probs[key] = list(vec)
+    probs["ml_avg"] = list(base + 0.2)  # composite: must not vote
+    picks = vote_picks(probs, ["markov", "pair", "hot", "cold"], MEGA_645)
+    assert picks["chosen_by"]["1"] == [METHOD_CODES[k] for k in ("hot", "cold", "markov", "pair")]
+    assert "TB3" not in {c for codes in picks["chosen_by"].values() for c in codes}
+    assert "NGN" not in {c for codes in picks["chosen_by"].values() for c in codes}
+    # 1, 2 (4 votes), 3 (3 votes), 4, 5, 6 (2 votes), then the best-averaged one-vote numbers
+    assert picks["selected"][:6] == [1, 2, 3, 4, 5, 6] and len(picks["selected"]) == 8
+    assert len(picks["vote_tickets"]) == 5 and all(set(t) <= set(picks["selected"]) for t in picks["vote_tickets"])
+    assert picks["vote_tickets"][0] == [1, 2, 3, 4, 5, 6]
+    assert [m["key"] for m in picks["method_tickets"]][:2] == ["markov", "pair"]
+    assert picks["method_tickets"][0]["ticket"] == [1, 2, 3, 9, 10, 11]
+    assert len(picks["tickets"]) == len(picks["vote_tickets"]) + len(picks["method_tickets"])
+    assert len({tuple(t) for t in picks["tickets"]}) == len(picks["tickets"])
+    print("voting picks 7 per method, keeps the 8 most voted numbers and adds the best methods' tickets")
+
+
+def test_vote_history_ranks_methods_only_with_earlier_draws():
+    from machine_learning.probabilities import backfill, summarise_votes, vote_history
+
+    df = prepare_draws(_raw_draws(80), POWER_655)
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[70], samples=40, seed=3)
+    history = vote_history(entries, df, POWER_655)
+    assert [h["draw_id"] for h in history] == list(df["id"].iloc[70:])
+    assert all(len(h["tickets"]) == 10 and "result" in h for h in history)
+    altered = df.copy()
+    altered.at[altered.index[-1], "result"] = [1, 2, 3, 4, 5, 6]
+    again = vote_history(entries, altered, POWER_655)
+    assert [h["tickets"] for h in again] == [h["tickets"] for h in history]  # results never change the picks
+    assert again[-1]["result"]["main"] == [1, 2, 3, 4, 5, 6]
+    summary = summarise_votes(history, POWER_655)
+    assert summary["n_draws"] == 10 and summary["all"]["tickets"] == 100 and summary["cost"] == 1_000_000
+    assert summary["vote"]["tickets"] == 50 and summary["methods"]["tickets"] == 50
+    assert summary["gain"] == summary["vote"]["gain"] + summary["methods"]["gain"]
+    print("voting history is walk-forward and its summary adds up")
