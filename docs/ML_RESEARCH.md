@@ -335,6 +335,42 @@ Với **mỗi** kỳ quay từ 01/07/2025 (79 kỳ khởi động) đến kỳ m
 
 **Kết luận:** quy trình đã được kiểm chứng là không nhìn trước kết quả. Chính vì vậy, kết quả thẩm định là trung thực: dự đoán bằng ML hay thống kê không giúp trúng nhiều hơn. Nhật ký dự đoán thật (ghi trước giờ quay) sẽ tiếp tục kiểm chứng điều này qua các kỳ tới.
 
+## 5g. 10 bộ số "bỏ phiếu" từ bảng xác suất từng con số
+
+### Quy tắc (`vote_picks` trong `src/machine_learning/probabilities.py`)
+1. Với mỗi kỳ, bảng xác suất từng con số (ghi trước giờ quay) có một cột cho mỗi phương pháp. Mỗi phương pháp **chọn 7 số** có xác suất cao nhất. "Ngẫu nhiên" và các cột tổng hợp (Kết hợp 5 ROI, TB 3 mô hình ML) không bỏ phiếu.
+2. Cột "Được chọn theo phương pháp" ghi mã 3 ký tự của các phương pháp đã chọn số đó, ví dụ SNG (Số nóng), SLH (Số lạnh), LCV (Lâu chưa về), TSR (Tránh số vừa ra), MKC (Mẫu khoảng cách), MKV (Markov), SGM (Suy giảm mũ), CSO (Cặp số), TVT (Theo vị trí), MLR/MLG/MLD (ML Logistic/GBM/đa nguồn), DTH (Đồng thuận).
+3. Giữ **8 số có nhiều phiếu nhất**. Nếu bằng phiếu thì xét "TB các phương pháp".
+4. **5 bộ đầu**: các tổ hợp 6 trong 8 số có tổng phiếu cao nhất (bằng nhau thì xét tổng TB các phương pháp).
+5. **5 bộ sau**: 6 số xác suất cao nhất của **5 phương pháp tốt nhất**. Phương pháp được xếp hạng bằng AUC trung bình trên các kỳ **trước** kỳ đang đề xuất (khởi động từ 07/2025); bộ trùng với bộ đã có thì chuyển sang phương pháp kế tiếp.
+6. Gộp lại thành **10 bộ đề xuất**. Trang chủ hiển thị 10 bộ cho kỳ tới, 8 số được chọn kèm số phiếu và mã phương pháp. "Chi tiết từng kỳ" có thêm bộ "10 bộ bỏ phiếu". Trang Phân tích (`#numbers`) có cột phiếu, cột mã, ★ cho 8 số được chọn và bảng tổng kết.
+
+Không lộ dữ liệu tương lai: bảng xác suất của mỗi kỳ được tạo từ dữ liệu trước ngày quay (§5f). Xếp hạng phương pháp chỉ thêm AUC của một kỳ **sau khi** kỳ đó được chấm. Test `test_vote_history_ranks_methods_only_with_earlier_draws` thay kết quả kỳ cuối và kiểm tra rằng mọi vé đề xuất không đổi.
+
+### Kết quả chạy lại (10 vé/kỳ)
+Các vé trong cùng một kỳ dùng chung số (5 bộ đầu chỉ từ 8 số), nên chúng **không độc lập**. Vì vậy z được tính trên trung bình trúng của **từng kỳ**. Nếu coi 1.310 vé là độc lập, z của 6/55 sẽ bị thổi lên +3,63, một kết luận sai.
+
+| | Power 6/55 | Mega 6/45 |
+|---|---|---|
+| **2026 (131 kỳ)**: 10 bộ đề xuất | 0,7275 / 0,6545 số/vé, z +1,75 (p 0,08), 31 vé trúng (30 Giải Ba, 1 Giải Nhì), ROI −84,7% | 0,8344 / 0,8000, z +0,77 (p 0,44), 38 vé trúng (35 Ba, 3 Nhì), ROI −85,1% |
+| 2026: 5 bộ bỏ phiếu | 0,7679, z +1,82 (p 0,07), ROI −77,9% | 0,8275, z +0,44, ROI −84,0% |
+| 2026: 5 bộ của 5 phương pháp tốt nhất | 0,6870, z +1,02, ROI −91,6% | 0,8412, z +1,09, ROI −86,3% |
+| 2026: 8 số được chọn trúng TB/kỳ | 1,038 / 0,873, z +2,30 (p 0,021) | 1,092 / 1,067, z +0,32 |
+| **07–12/2025 (79 kỳ, kiểm tra độc lập)**: 10 bộ | 0,5519 / 0,6545, z −2,28, ROI −98,1% | 0,7544 / 0,8000, z −0,80, ROI −85,2% |
+| 07–12/2025: 8 số được chọn | 0,734 / 0,873, z −1,50 | 1,000 / 1,067, z −0,67 |
+
+So với các bộ khác năm 2026: ở 6/55, 10 bộ bỏ phiếu (ROI −84,7%) ngang 20 bộ xác suất cao nhất (−84,4%) và hơn 10 bộ dễ trúng nhất (−91,2%). Ở 6/45 nó đứng giữa (10 bộ dễ trúng −87,4%, 20 bộ −91,8%).
+
+### Đánh giá
+1. **Không có bằng chứng tốt hơn ngẫu nhiên.**
+   - Kết quả tốt nhất là 8 số được chọn ở 6/55 năm 2026 (z +2,30, p 0,021). Đây chỉ là 1 trong khoảng 16 phép so sánh (2 sản phẩm × 2 giai đoạn × 4 chỉ số), nên vẫn dưới ngưỡng sau hiệu chỉnh (2,97).
+   - Quan trọng hơn, **cùng quy tắc đó cho z −1,50 ở nửa cuối 2025** và chỉ +0,32 ở 6/45. Một lợi thế thật phải lặp lại qua giai đoạn và sản phẩm.
+2. **Bỏ phiếu không tạo ra thông tin mới.** Các phương pháp thành phần đều có AUC khoảng 0,48–0,51 (§5f). Gộp nhiều tín hiệu gần như bằng 0 vẫn cho tín hiệu gần như bằng 0.
+3. **5 bộ từ 8 số làm tăng rủi ro, không tăng kỳ vọng.** Các bộ dùng chung 8 số nên trúng hoặc trượt cùng nhau, giống nhận xét về 20 bộ ở §5f.
+4. **ROI vẫn từ −78% đến −98%** và không có vé nào trúng từ Giải Nhất trở lên. Đây là kết quả của trò chơi có kỳ vọng âm; chọn số không thay đổi điều đó.
+
+**Kết luận:** chức năng bỏ phiếu đã hoạt động đúng quy tắc và được thẩm định trung thực. Nó là cách trình bày minh bạch "các phương pháp đang đồng ý ở đâu", không phải lợi thế khi chơi. Từ kỳ #01420 (6/55) và #01584 (6/45), 10 bộ được suy ra từ bảng xác suất ghi trực tiếp trước giờ quay, nên tiếp tục được thẩm định thật sau mỗi kỳ.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 làm sản phẩm được dự đoán (hiện chỉ dùng làm nguồn dữ liệu phụ) sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.
