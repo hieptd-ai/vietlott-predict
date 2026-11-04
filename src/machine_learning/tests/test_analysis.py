@@ -499,3 +499,32 @@ def test_every_strategy_predicts_identically_from_truncated_history():
             b = [truncated.predict(target) for _ in range(5)]
             assert a == b, f"{key} differs between full and truncated history at draw {t}"
     print("every method gives the same tickets with or without later draws")
+
+
+def test_picks_history_merges_replay_and_live_ledger(tmp_path):
+    from machine_learning.analysis import picks_history
+    from machine_learning.ledger import append_prediction, load_ledger
+    from machine_learning.replay import replay_game
+
+    df = prepare_draws(_raw_draws(70), POWER_655)
+    other = prepare_draws(_raw_draws(70, pool=45, bonus=False, seed=8), MEGA_645)[["date", "result"]]
+    replay = replay_game(df, POWER_655, {"power_645": other}, df["date"].iloc[62], n_tickets=3, seed=1)
+    live = predict_next_draw(df.iloc[:-1], POWER_655, _random_strategy(), 3, seed=4, best_key="random", n_top=5)
+    append_prediction(live, "2026-11-03T11:00:00+07:00", tmp_path)
+    ledger = load_ledger("power_655", tmp_path)
+    history = picks_history(df, POWER_655, ledger, replay, since=str(df["date"].iloc[64]))
+    ids = [d["draw_id"] for d in history["draws"]]
+    assert ids == sorted(ids, key=int) and ids[0] == df["id"].iloc[64] and ids[-1] == df["id"].iloc[-1]
+    last = history["draws"][-1]
+    assert last["source"] == "live" and last["recorded_at"] == "2026-11-03T11:00:00+07:00"
+    assert (
+        decode_tickets(last["tickets"]["picks_best10"], 6)
+        == next(r for r in live["strategies"] if r["key"] == "picks_best10")["tickets"]
+    )
+    assert all(d["source"] == "replay" for d in history["draws"][:-1])
+    first = history["draws"][0]
+    assert int(first["trained_until_id"]) == int(first["draw_id"]) - 1
+    assert set(first["tickets"]) <= {"picks_top20", "picks_best10", "top5_roi"} and "picks_top20" in first["tickets"]
+    assert len(decode_tickets(first["tickets"]["picks_top20"], 6)) == 20
+    assert history["tiers"][1]["needs_bonus"] is True and history["ticket_price"] == 10_000
+    print("homepage history merges the replay with live ledger predictions")

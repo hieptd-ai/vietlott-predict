@@ -68,7 +68,8 @@ def append_prediction(prediction: dict, generated_at: str, ledger_dir: Optional[
     return True
 
 
-def _next_id(after_id: str) -> str:
+def next_draw_id(after_id: str) -> str:
+    """Id of the draw following ``after_id`` (zero-padded like the stored ids)."""
     return str(int(after_id) + 1).zfill(len(after_id))
 
 
@@ -81,7 +82,7 @@ def score_ledger(entries: List[dict], df: pd.DataFrame, game: GameSpec) -> dict:
     scored, pending = [], []
     summary: Dict[str, dict] = {}
     for entry in entries:
-        draw = draws.get(_next_id(entry["after_id"]))
+        draw = draws.get(next_draw_id(entry["after_id"]))
         if draw is None:
             pending.append(entry)
             continue
@@ -146,3 +147,11 @@ def load_replay_summary(product: str, replay_dir: Optional[Path] = None) -> Opti
     """Summary written by ``replay.py`` for ``product`` (None when the replay has not been run)."""
     path = (replay_dir or LEDGER_DIR / "replay") / f"{product}-summary.json"
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def load_replay_entries(product: str, replay_dir: Optional[Path] = None) -> List[dict]:
+    """Per-draw entries written by ``replay.py`` for ``product`` (empty when the replay has not been run)."""
+    path = (replay_dir or LEDGER_DIR / "replay") / f"{product}.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]

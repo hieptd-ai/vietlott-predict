@@ -17,9 +17,9 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from machine_learning.analysis import build_analysis, homepage_picks, load_draws, replay_picks_summary
+from machine_learning.analysis import build_analysis, homepage_picks, load_draws, picks_history, replay_picks_summary
 from machine_learning.games import get_game
-from machine_learning.ledger import load_ledger, load_replay_summary, score_ledger
+from machine_learning.ledger import load_ledger, load_replay_entries, load_replay_summary, score_ledger
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "docs" / "analysis"
@@ -71,13 +71,15 @@ def refresh_picks(out_dir: Path) -> None:
     for key, product in payload["products"].items():
         game = get_game(key)
         ledger = load_ledger(key)
-        scored = score_ledger(ledger, load_draws(game), game)
+        df = load_draws(game)
+        scored = score_ledger(ledger, df, game)
         product["ledger"] = scored
         replay = load_replay_summary(key)
         product["replay"] = replay
         product["picks"] = {
             **homepage_picks(product["next_draw"], product["comparison"], ledger, scored),
             "replay": replay_picks_summary(replay),
+            "history": picks_history(df, game, ledger, load_replay_entries(key), (replay or {}).get("validate_from")),
         }
     write_analysis(payload, out_dir)
 
