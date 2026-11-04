@@ -637,7 +637,7 @@ def predict_next_draw(
     """
     last = df.iloc[-1]
     target = next_draw_date(list(df["date"]))
-    models = dict(models or {})
+    models = models if models is not None else {}  # filled in place so callers can reuse the trained models
     rows = []
     for index, (key, name, factory) in enumerate(strategies):
         try:

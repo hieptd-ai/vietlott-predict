@@ -528,3 +528,55 @@ def test_picks_history_merges_replay_and_live_ledger(tmp_path):
     assert len(decode_tickets(first["tickets"]["picks_top20"], 6)) == 20
     assert history["tiers"][1]["needs_bonus"] is True and history["ticket_price"] == 10_000
     print("homepage history merges the replay with live ledger predictions")
+
+
+def test_method_probabilities_are_proper_and_leak_free(tmp_path):
+    from machine_learning.probabilities import (
+        append_probabilities,
+        backfill,
+        evaluate,
+        load_probabilities,
+        method_probabilities,
+        pack,
+        unpack,
+    )
+
+    assert unpack(pack([0.1094, 0.5, 0.0])) == [0.109, 0.5, 0.0]
+    df = prepare_draws(_raw_draws(75), POWER_655)
+    strategies = [
+        s
+        for s in default_strategies(seed=3)
+        if s[0] in ("random", "hot", "markov", "ml_logistic", "ml_gbm", "positional")
+    ]
+    target = df["date"].iloc[70]
+    models = {k: f(df, POWER_655) for k, _, f in strategies}
+    probs = method_probabilities(
+        models, POWER_655, target, samples=300, top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"]
+    )
+    assert set(probs) == {"random", "hot", "markov", "ml_logistic", "ml_gbm", "positional", "top5_roi", "ml_avg"}
+    assert all(len(v) == 55 for v in probs.values())
+    assert probs["random"] == [6 / 55] * 55
+    for key in ("hot", "markov", "positional"):
+        assert abs(sum(probs[key]) - 6) < 1e-9, key  # inclusion probabilities of a 6-number ticket
+    for key in ("ml_logistic", "ml_gbm", "top5_roi", "ml_avg"):
+        assert abs(sum(probs[key]) - 6) < 0.3, key  # per-number model probabilities sum to about 6
+    np.testing.assert_allclose(probs["ml_avg"], np.mean([probs["ml_logistic"], probs["ml_gbm"]], axis=0))
+    # leak-free: the same vectors come out of models that only ever saw earlier draws
+    truncated = {k: f(df.iloc[:70], POWER_655) for k, _, f in strategies}
+    probs_truncated = method_probabilities(
+        truncated, POWER_655, target, samples=300, top_roi_keys=["hot", "markov", "positional", "ml_logistic", "ml_gbm"]
+    )
+    for key in probs:
+        np.testing.assert_allclose(probs[key], probs_truncated[key], err_msg=key)
+
+    entries = backfill(df, POWER_655, {}, df["date"].iloc[72], samples=50, seed=3)
+    assert [e["draw_id"] for e in entries] == list(df["id"].iloc[72:])
+    assert all(int(e["trained_until_id"]) == int(e["draw_id"]) - 1 for e in entries)
+    assert append_probabilities(entries, "power_655", tmp_path) == 3
+    assert append_probabilities(entries, "power_655", tmp_path) == 0
+    assert len(load_probabilities("power_655", tmp_path)) == 3
+    report = evaluate(entries, df, POWER_655)
+    rows = {r["key"]: r for r in report["rows"]}
+    assert report["n_draws"] == 3 and abs(rows["random"]["auc"] - 0.5) < 1e-9
+    assert all(0 <= r["auc"] <= 1 and r["mean_drawn_prob"] > 0 for r in rows.values())
+    print("per-number probabilities are proper, leak-free and append-only")
