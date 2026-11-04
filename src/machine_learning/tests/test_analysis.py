@@ -782,6 +782,7 @@ def test_planted_direction_is_found_and_followed():
     assert sum(r["best"][0]["key"] == key for r in history) >= 0.9 * len(history)
     assert all(r["hits"][key]["hits"] == 5 for r in history)
     assert all(b["auc"] >= 0.5 for r in history for b in r["best"])
+    assert all("control" in r["auc"] and "m:random" not in r["auc"] for r in history)
     assert all(r["best"][0]["hits"] == 5 for r in history if r["best"][0]["key"] == key)
     assert sum(r["p_best"] < 0.05 for r in history) >= 0.9 * len(history)
     assert all(f["key"] == key and f["sign"] == 1 for r in history[1:] for f in r["follow"].values())

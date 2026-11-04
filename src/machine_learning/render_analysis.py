@@ -85,14 +85,16 @@ def attach_vote_picks(payload: dict) -> None:
 def write_directions(payload: dict, out_dir: Path, since: str = "2026-01-01") -> None:
     """Write ``directions.json`` / ``directions.js`` and add each draw's most related directions to the picks."""
     from machine_learning.analysis import load_sources
-    from machine_learning.directions import directions_payload
+    from machine_learning.directions import directions_payload, long_check
     from machine_learning.probabilities import load_probabilities
 
     sources = load_sources()
     products = {}
     for key, product in payload.get("products", {}).items():
         game = get_game(key)
-        data = directions_payload(load_draws(game), game, sources, load_probabilities(key), since)
+        df = load_draws(game)
+        data = directions_payload(df, game, sources, load_probabilities(key), since)
+        data["long"] = long_check(df, game, sources, until=since)
         products[key] = data
         picks = product.get("picks")
         if picks is None:

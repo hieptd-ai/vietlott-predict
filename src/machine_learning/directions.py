@@ -42,7 +42,7 @@ NULL_SETS = 1000
 TOP_SHOWN = 3
 FOLLOW_WINDOWS = (1, 10, 30, 0)  # 0 = every earlier draw
 METHOD_PREFIX = "m:"
-CONTROL_KEY = METHOD_PREFIX + "random"
+CONTROL_KEY = "control"
 
 # key, name, reverse name, binary (a yes/no property of the number)
 FEATURES: Tuple[Tuple[str, str, str, bool], ...] = (
@@ -84,17 +84,28 @@ def direction_specs(game: GameSpec, sources: Optional[Sources]) -> List[dict]:
         )
     names = method_names()
     for key, code in METHOD_CODES.items():
+        if key == "random":  # its recorded probabilities are flat: replaced by the control below
+            continue
         name = names.get(key, key)
         specs.append(
             {
                 "key": METHOD_PREFIX + key,
                 "name": f"{name} ({code})",
                 "reverse": f"Ngược {name} ({code})",
-                "kind": "control" if key == "random" else "method",
+                "kind": "method",
                 "binary": False,
                 "code": code,
             }
         )
+    specs.append(
+        {
+            "key": CONTROL_KEY,
+            "name": "Đối chứng: thứ tự ngẫu nhiên",
+            "reverse": "Đối chứng: thứ tự ngẫu nhiên (đảo)",
+            "kind": "control",
+            "binary": False,
+        }
+    )
     return specs
 
 
@@ -251,6 +262,8 @@ def direction_history(
             for key, packed in entry["probs"].items():
                 if METHOD_PREFIX + key in by_key:
                     scores[METHOD_PREFIX + key] = np.asarray(unpack(packed))
+        # a direction that is pure noise, drawn before the result: how often does chance "win"?
+        scores[CONTROL_KEY] = np.random.default_rng([int(draw["id"]), 7]).random(game.pool)
         main = [int(x) for x in draw["result"]]
         drawn_idx = [x - game.min_val for x in main]
         rng = np.random.default_rng(int(draw["id"]))
@@ -334,7 +347,7 @@ def summarise_directions(rows: Sequence[dict], specs: Sequence[dict], game: Game
             "key": key,
             "n": len(values),
             "mean_auc": mean,
-            "z": z,
+            "z": z if mean >= 0.5 else -z,  # measured the way the named direction points
             "p_value": _p(z),
             "sign": 1 if mean >= 0.5 else -1,
             "name": _signed_name(spec, 1 if mean >= 0.5 else -1),
@@ -426,6 +439,21 @@ def directions_payload(
         "draws": draws,
         "summary": summarise_directions(rows, specs, game, since),
     }
+
+
+def long_check(
+    df: pd.DataFrame,
+    game: GameSpec,
+    sources: Optional[Sources],
+    since: str = "2018-01-01",
+    until: str = "2026-01-01",
+    null_sets: int = 200,
+) -> dict:
+    """Same validation over many more draws with the history features only (no recorded probabilities)."""
+    rows, specs = direction_history(df, game, sources, [], since=since, null_sets=null_sets)
+    rows = [r for r in rows if r["date"] < until]
+    summary = summarise_directions(rows, specs, game, since)
+    return {**summary, "until": rows[-1]["date"] if rows else until}
 
 
 def last_validation(
