@@ -371,6 +371,70 @@ So với các bộ khác năm 2026: ở 6/55, 10 bộ bỏ phiếu (ROI −84,7%
 
 **Kết luận:** chức năng bỏ phiếu đã hoạt động đúng quy tắc và được thẩm định trung thực. Nó là cách trình bày minh bạch "các phương pháp đang đồng ý ở đâu", không phải lợi thế khi chơi. Từ kỳ #01420 (6/55) và #01584 (6/45), 10 bộ được suy ra từ bảng xác suất ghi trực tiếp trước giờ quay, nên tiếp tục được thẩm định thật sau mỗi kỳ.
 
+## 5h. Thẩm định sau mỗi kỳ: hướng nào liên quan nhất đến lô số trúng?
+
+### Cách làm (`src/machine_learning/directions.py`)
+1. **Hướng** là một cách xếp hạng các số **trước giờ quay**. Có 31–32 hướng, gồm 3 nhóm:
+   - **Đặc điểm lịch sử:** lâu chưa về; nóng/lạnh 10, 30, 100 kỳ và cả lịch sử; đang nóng lên/nguội đi; lặp, kề (±1), cùng đuôi và hay đi cùng số kỳ trước; ra nhiều trong 3 kỳ gần nhất; chẵn/lẻ; nửa lớn/nhỏ; số đặc biệt kỳ trước (6/55); số vừa ra ở sản phẩm khác (6/55, 6/45, 5/35, lấy kỳ gần nhất có ngày trước ngày quay).
+   - **Xác suất từng số mà mỗi phương pháp đã ghi trước giờ quay**, lấy từ `predictions/probabilities`.
+   - **Một hướng đối chứng:** thứ tự ngẫu nhiên bốc trước giờ quay, không chứa thông tin gì.
+2. Khi có kết quả, mỗi hướng được chấm bằng **AUC của 6 số trúng**:
+   - 0,5 là không liên quan; 1 là cả 6 số trúng đứng đầu hướng đó.
+   - AUC < 0,5 nghĩa là **hướng ngược lại** liên quan, ví dụ "Lạnh 30 kỳ" thay vì "Nóng 30 kỳ". Tên và AUC luôn được báo theo chiều liên quan.
+   - Với hướng có/không (ví dụ "Số lẻ"), báo thêm số số trúng thuộc nhóm so với kỳ vọng.
+3. Với khoảng 30 hướng, hướng mạnh nhất kỳ nào cũng *trông* liên quan. Vì vậy mỗi kỳ được so với **1.000 kết quả ngẫu nhiên**:
+   - `p_best` là tỉ lệ kết quả ngẫu nhiên mà hướng mạnh nhất cũng mạnh bằng hoặc hơn.
+   - Tổng hợp cả năm dùng z với phương sai **chính xác** của AUC khi kết quả là ngẫu nhiên (có tính các giá trị bằng nhau).
+4. **"Đi theo hướng"**: trước mỗi kỳ, chọn hướng có AUC trung bình xa 0,5 nhất trong 1, 10, 30 kỳ trước hoặc mọi kỳ trước (chỉ dùng các lần thẩm định trước), rồi mua 6 số đứng đầu hướng đó.
+5. **Kiểm tra dài hạn 2018–2025** (khoảng 1.220 kỳ mỗi sản phẩm): làm lại tất cả với các đặc điểm lịch sử. Các phương pháp chưa ghi xác suất trước 07/2025 nên không có trong phần này.
+6. **Tích hợp:**
+   - `predict_next.py` (chạy mỗi giờ) ghi 3 hướng liên quan nhất của kỳ vừa quay vào `predictions/scorecard.json` và job summary.
+   - Trang chủ hiển thị chúng trong "Thẩm định dự đoán kỳ trước" và cột "Hướng liên quan nhất" của "Chi tiết từng kỳ".
+   - Trang Phân tích có mục `#directions`.
+
+Không lộ dữ liệu tương lai, đã có test kiểm chứng:
+- đặc điểm của một kỳ không đổi khi thay kết quả của kỳ đó và các kỳ sau;
+- hướng được "đi theo" của một kỳ không đổi khi thay kết quả của chính kỳ đó;
+- một xổ số giả lập luôn chép 5 số của kỳ Mega 6/45 trước đó thì hướng "Vừa ra ở 6/45" đứng đầu, vượt ngưỡng, và vé đi theo nó trúng hơn 3 số/vé. Điều này chứng minh công cụ **tìm được** mối liên quan khi nó thật sự tồn tại.
+
+### Kết quả năm 2026 (131 kỳ mỗi sản phẩm)
+| | Power 6/55 | Mega 6/45 |
+|---|---|---|
+| Hướng mạnh nhất mỗi kỳ, \|AUC − 0,5\| TB | 0,249, với kết quả ngẫu nhiên 0,252 | 0,252, với kết quả ngẫu nhiên 0,258 |
+| Kỳ có hướng nổi bật (p_best < 0,05) | 6/131 (may rủi ≈ 6,6) | 1/131 |
+| Hướng ổn định nhất cả năm | Nửa nhỏ, AUC 0,518, z +1,86 (ngưỡng 3,16) | Lâu chưa về (LCV), 0,514, z +1,45 (ngưỡng 3,15) |
+| **Đối chứng ngẫu nhiên** | đứng đầu 11 kỳ (nhiều nhất cùng MLD), hạng 17/32 | đứng đầu 7 kỳ, **hạng 2/31** |
+| Đi theo hướng của 1 kỳ trước | AUC 0,486 (z −1,28); vé 0,718/0,655 số (z +0,99) | 0,491 (z −0,79); 0,786/0,800 |
+| Đi theo hướng của 10 kỳ trước | 0,507 (z +0,63); 0,649 | 0,485 (z −1,39); 0,718 (z −1,20) |
+| Đi theo hướng của 30 kỳ trước | 0,500 (z −0,02); 0,634 | 0,481 (z −1,77); 0,748 |
+| Đi theo hướng của mọi kỳ trước | 0,476 (z −2,27); 0,641 | 0,478 (z −2,03); 0,771 |
+
+### Kiểm tra dài hạn 2018–2025 (chỉ đặc điểm lịch sử)
+| | Power 6/55 (1.222 kỳ) | Mega 6/45 (1.225 kỳ) |
+|---|---|---|
+| Hướng mạnh nhất mỗi kỳ | 0,219, với kết quả ngẫu nhiên 0,221 | 0,224, với kết quả ngẫu nhiên 0,226 |
+| Kỳ nổi bật | 46 (may rủi ≈ 61) | 50 (may rủi ≈ 61) |
+| Hướng ổn định nhất | Nửa lớn, z +2,10 (ngưỡng 2,97) | **Đối chứng ngẫu nhiên**, z +1,94, hạng 1/16 |
+| z khi đi theo hướng 1/10/30/mọi kỳ | −0,15 / +0,65 / −1,16 / −1,15 | −1,66 / +0,28 / +1,11 / −0,09 |
+
+### Đánh giá
+1. **Kỳ nào cũng có một hướng "liên quan", nhưng chỉ ở mức may rủi.**
+   - Ví dụ kỳ #01419 (6/55): "Lạnh 30 kỳ" AUC 0,673, và "Khác đuôi số kỳ trước" có cả 6/6 số trúng thuộc nhóm (kỳ vọng 4,3).
+   - Tuy nhiên 93% kết quả ngẫu nhiên cũng có một hướng mạnh như vậy.
+   - Tính chung, độ lệch của hướng mạnh nhất (0,249 và 0,252) **bằng** mức của kết quả ngẫu nhiên. Số kỳ nổi bật cũng không vượt mức may rủi, cả năm 2026 lẫn 2018–2025.
+2. **Hướng đứng đầu thay đổi liên tục.**
+   - Ở 6/55, hướng hay đứng đầu nhất chỉ đứng đầu 11/131 kỳ.
+   - Chính hướng đối chứng, vốn là thứ tự ngẫu nhiên, cũng đứng đầu 11 kỳ.
+   - Ở 6/45 năm 2026 nó xếp hạng 2, và trên 1.225 kỳ của 2018–2025 nó xếp **hạng 1**. Đây là bằng chứng trực tiếp rằng việc một hướng xếp đầu chỉ là nhiễu.
+3. **Không hướng nào ổn định qua thời gian.**
+   - Mọi |z| đều dưới ngưỡng sau hiệu chỉnh.
+   - Hướng mạnh nhất cũng đổi theo giai đoạn: 6/55 năm 2026 là "Nửa nhỏ", còn 2018–2025 lại là chiều ngược "Nửa lớn".
+4. **Kết quả thẩm định không dùng được cho kỳ sau.**
+   - Đi theo hướng mạnh nhất của 1, 10, 30 kỳ hay mọi kỳ trước đều cho AUC kỳ sau ≈ 0,5 và vé trúng ≈ mức ngẫu nhiên.
+   - Năm 2026, cách "mọi kỳ trước" cho z khoảng −2 ở cả hai sản phẩm. Nhưng trên 2018–2025 chỉ còn −1,15 và −0,09, và ở 07–12/2025 cũng quanh 0. Vậy đó là dao động ngẫu nhiên, không phải "đảo chiều" có thật.
+
+**Kết luận:** sau mỗi kỳ, công cụ chỉ ra hướng nào liên quan nhất tới lô số trúng và mức đó so với may rủi ra sao. Câu trả lời nhất quán là: mối liên quan tìm được sau khi biết kết quả không lặp lại ở kỳ sau. Các kỳ quay vẫn hành xử như ngẫu nhiên độc lập.
+
 ## 6. Hướng phát triển đề xuất
 
 - Thêm Power 5/35 làm sản phẩm được dự đoán (hiện chỉ dùng làm nguồn dữ liệu phụ) sau khi xác nhận cơ cấu giải chính thức. Keno và Bingo18 cũng cần định nghĩa `GameSpec` riêng.

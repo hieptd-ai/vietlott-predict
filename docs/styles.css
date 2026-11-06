@@ -1414,6 +1414,42 @@ td:nth-child(5) {
     border: 2px dashed var(--cat-orange);
 }
 
+.dir-lines {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.dir-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.86rem;
+}
+
+.dir-line .pick-index {
+    width: 1.2rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+.dir-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dir-meta {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+.picks-history td.dir-cell {
+    min-width: 9rem;
+    white-space: normal;
+    font-size: 0.8rem;
+}
+
 .picks-vote {
     grid-column: 1 / -1;
     border-color: var(--color-brand-border);

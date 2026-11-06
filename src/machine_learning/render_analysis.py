@@ -42,19 +42,17 @@ def _compact(value, digits: int = 6):
 
 def attach_vote_picks(payload: dict) -> None:
     """Add the voting suggestion (next draw, draw-by-draw tickets and totals) to the homepage picks."""
-    from machine_learning.analysis import default_strategies, encode_tickets
+    from machine_learning.analysis import encode_tickets
     from machine_learning.probabilities import (
         METHOD_CODES,
-        METHOD_LABELS,
         VOTE_KEY,
         load_probabilities,
+        method_names,
         summarise_votes,
         vote_history,
     )
 
-    names = {key: name for key, name, _ in default_strategies(42, None)}
-    names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
-    names.update(METHOD_LABELS)
+    names = method_names()
     codes = {code: names.get(key, key) for key, code in METHOD_CODES.items()}
     for key, product in payload.get("products", {}).items():
         picks = product.get("picks")
@@ -82,6 +80,47 @@ def attach_vote_picks(payload: dict) -> None:
             if vote:
                 draw["tickets"][VOTE_KEY] = encode_tickets(vote["tickets"])
                 draw["names"][VOTE_KEY] = "10 bộ bỏ phiếu"
+
+
+def write_directions(payload: dict, out_dir: Path, since: str = "2026-01-01") -> None:
+    """Write ``directions.json`` / ``directions.js`` and add each draw's most related directions to the picks."""
+    from machine_learning.analysis import load_sources
+    from machine_learning.directions import directions_payload, long_check
+    from machine_learning.probabilities import load_probabilities
+
+    sources = load_sources()
+    products = {}
+    for key, product in payload.get("products", {}).items():
+        game = get_game(key)
+        df = load_draws(game)
+        data = directions_payload(df, game, sources, load_probabilities(key), since)
+        data["long"] = long_check(df, game, sources, until=since)
+        products[key] = data
+        picks = product.get("picks")
+        if picks is None:
+            continue
+        rows = {d["draw_id"]: d for d in data["draws"]}
+        for draw in (picks.get("history") or {}).get("draws", []):
+            row = rows.get(draw["draw_id"])
+            if row:
+                draw["directions"] = {
+                    "best": row["best"],
+                    "p_best": row["p_best"],
+                }
+        summary = data["summary"]
+        picks["directions"] = {
+            "since": summary["since"],
+            "n_draws": summary["n_draws"],
+            "best": summary["best"],
+            "top": summary["directions"][:3],
+            "bonferroni_z": summary["bonferroni_z"],
+            "follow": [f for f in summary["follow"] if f["window"] == 10],
+            "expected_matches": summary["expected_matches"],
+        }
+    text = json.dumps(_compact({"products": products}), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "directions.json").write_text(text + "\n", encoding="utf-8")
+    (out_dir / "directions.js").write_text(f"window.VIETLOTT_DIRECTIONS = {text};\n", encoding="utf-8")
+    logger.info(f"wrote {out_dir / 'directions.js'} ({len(text) / 1024:.0f} KiB)")
 
 
 def write_probabilities(out_dir: Path) -> None:
@@ -140,6 +179,8 @@ def refresh_picks(out_dir: Path) -> None:
             "history": picks_history(df, game, ledger, load_replay_entries(key), (replay or {}).get("validate_from")),
         }
     attach_vote_picks(payload)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_directions(payload, out_dir)
     write_analysis(payload, out_dir)
     write_probabilities(out_dir)
 
@@ -173,6 +214,8 @@ def main(out_dir: Path, tickets: int, runs: int, ml_eval: int, seed: int, play_f
         n_runs=runs,
     )
     attach_vote_picks(payload)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_directions(payload, out_dir)
     write_analysis(payload, out_dir)
     write_probabilities(out_dir)
 

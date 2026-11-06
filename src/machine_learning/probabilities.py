@@ -258,6 +258,14 @@ METHOD_LABELS = {
 }
 
 
+def method_names() -> Dict[str, str]:
+    """Display name of every probability column (methods and composites)."""
+    names = {key: name for key, name, _ in default_strategies(42, None)}
+    names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
+    names.update(METHOD_LABELS)
+    return names
+
+
 def probabilities_payload(
     product: str, game: GameSpec, df: pd.DataFrame, prob_dir: Optional[Path] = None, since: Optional[str] = "2026-01-01"
 ) -> dict:
@@ -269,9 +277,7 @@ def probabilities_payload(
     entries = load_probabilities(product, prob_dir)
     votes = {v["draw_id"]: v for v in vote_history(entries, df, game)}
     shown = [e for e in entries if not since or e["date"] >= since]
-    names = {key: name for key, name, _ in default_strategies(42, None)}
-    names["ml_multi"] = "ML đa nguồn (sản phẩm khác + lịch quay)"
-    names.update(METHOD_LABELS)
+    names = method_names()
     draws = {str(r.id): r for r in df.itertuples(index=False)}
     out = []
     for entry in shown:

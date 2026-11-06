@@ -388,6 +388,12 @@ def test_validation_markdown_lists_picks_first():
     text = validation_markdown("Power 6/55", scored)
     assert "kỳ #01419" in text and text.index("Top 20") < text.index("Random")
     assert "Chưa có" in validation_markdown("Mega", {"n_recorded": 0, "scored": []})
+    best = {"key": "odd", "name": "Số lẻ", "auc": 0.81, "hits": 5, "expected": 3.05}
+    directions = {"draw_id": "01419", "p_best": 0.42, "best": [best]}
+    text = validation_markdown("Power 6/55", scored, directions)
+    assert "Hướng liên quan nhất tới lô số trúng: Số lẻ (AUC 0,810; 5/6 số trúng thuộc nhóm này, kỳ vọng 3,0)" in text
+    assert "42%" in text
+    assert "Hướng" not in validation_markdown("Power 6/55", scored, {**directions, "draw_id": "01418"})
     print("validation report is readable")
 
 
@@ -718,3 +724,85 @@ def test_vote_summary_z_counts_draws_not_correlated_tickets():
     assert abs(summary["all"]["z"]) < abs(summary["all"]["z_naive"])
     assert math.isclose(summary["selected_hits"], 1.0)
     print("the voting z-score treats a draw's tickets as one correlated group")
+
+
+# ---------------------------------------------------------------------------
+# Directions related to the winning numbers (validation step)
+# ---------------------------------------------------------------------------
+
+
+def test_direction_features_only_read_earlier_draws():
+    from machine_learning.directions import feature_scores
+
+    df = prepare_draws(_raw_draws(60), POWER_655)
+    sources = {"power_645": prepare_draws(_raw_draws(70, pool=45, bonus=False, seed=9), MEGA_645)}
+    before = dict(feature_scores(df, POWER_655, sources, start=50))[50]
+    altered = df.copy()
+    for i in range(50, 60):
+        altered.at[altered.index[i], "result"] = [1, 2, 3, 4, 5, 6]
+        altered.at[altered.index[i], "bonus"] = 7
+    after = dict(feature_scores(altered, POWER_655, sources, start=50))[50]
+    assert before.keys() == after.keys() and "src:power_645" in before and "bonus_prev" in before
+    assert all(np.array_equal(before[k], after[k]) for k in before)
+    assert before["repeat"].sum() == 6 and before["odd"].sum() == 28
+    print("direction features of a draw only use the draws before it")
+
+
+def test_auc_table_matches_pairwise_auc_and_exact_null_variance():
+    from machine_learning.directions import auc_table
+    from machine_learning.probabilities import draw_auc
+
+    rng = np.random.default_rng(1)
+    scores = {"cont": rng.random(55), "ties": rng.integers(0, 4, 55).astype(float)}
+    drawn = [0, 5, 9, 20, 33, 54]
+    table = auc_table(scores, drawn, np.random.default_rng(2), null_sets=200)
+    for key, vec in scores.items():
+        assert math.isclose(table["auc"][key], draw_auc(vec, [n + 1 for n in drawn], POWER_655))
+        sims = [auc_table({key: vec}, rng.choice(55, 6, replace=False), rng, 1)["auc"][key] for _ in range(3000)]
+        assert abs(np.var(sims) - table["var"][key]) < 0.15 * table["var"][key]
+    assert 0 <= table["p_best"] <= 1 and table["null_best"] > 0
+    print("AUC by ranks equals the pairwise AUC and its null variance is exact")
+
+
+def test_planted_direction_is_found_and_followed():
+    from machine_learning.directions import direction_history, summarise_directions
+
+    rng = random.Random(3)
+    other, rows = [], []
+    for i in range(80):
+        day = date(2024, 1, 1) + timedelta(days=2 * i)
+        mega = sorted(rng.sample(range(1, 46), 6))
+        other.append({"date": str(day - timedelta(days=1)), "id": f"{i + 1:05d}", "result": mega})
+        extra = rng.sample([n for n in range(1, 56) if n not in mega], 2)
+        rows.append({"date": str(day), "id": f"{i + 1:05d}", "result": sorted(mega[:5] + extra[:1]) + extra[1:]})
+    df = prepare_draws(pd.DataFrame(rows), POWER_655)
+    sources = {"power_645": prepare_draws(pd.DataFrame(other), MEGA_645)}
+    history, specs = direction_history(df, POWER_655, sources, [], since="2024-03-01", null_sets=200)
+    key = "src:power_645"
+    assert sum(r["best"][0]["key"] == key for r in history) >= 0.9 * len(history)
+    assert all(r["hits"][key]["hits"] == 5 for r in history)
+    assert all(b["auc"] >= 0.5 for r in history for b in r["best"])
+    assert all("control" in r["auc"] and "m:random" not in r["auc"] for r in history)
+    assert all(r["best"][0]["hits"] == 5 for r in history if r["best"][0]["key"] == key)
+    assert sum(r["p_best"] < 0.05 for r in history) >= 0.9 * len(history)
+    assert all(f["key"] == key and f["sign"] == 1 for r in history[1:] for f in r["follow"].values())
+    summary = summarise_directions(history, specs, POWER_655, "2024-03-01")
+    top = summary["directions"][0]
+    assert top["key"] == key and top["name"] == "Vừa ra ở 6/45" and top["z"] > summary["bonferroni_z"]
+    assert all(f["avg_matches"] > 3 for f in summary["follow"])
+    print("a lottery copying 5 numbers of Mega 6/45 makes that direction the most related and followed")
+
+
+def test_followed_direction_is_chosen_before_the_result():
+    from machine_learning.directions import direction_history
+
+    df = prepare_draws(_raw_draws(70), POWER_655)
+    history, _ = direction_history(df, POWER_655, None, [], since=str(df["date"].iloc[55]), null_sets=50)
+    altered = df.copy()
+    altered.at[altered.index[-1], "result"] = [1, 2, 3, 4, 5, 6]
+    again, _ = direction_history(altered, POWER_655, None, [], since=str(df["date"].iloc[55]), null_sets=50)
+    for w, f in history[-1]["follow"].items():
+        g = again[-1]["follow"][w]
+        assert (f["key"], f["sign"], f["ticket"]) == (g["key"], g["sign"], g["ticket"])
+    assert again[-1]["main"] == [1, 2, 3, 4, 5, 6] and history[-2] == again[-2]
+    print("the direction followed for a draw only depends on earlier validations")
